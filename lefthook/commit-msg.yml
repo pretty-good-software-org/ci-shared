@@ -1,0 +1,5 @@
+commit-msg:
+  commands:
+    commitlint:
+      run: npx --no -- commitlint --edit {1}
+      fail_text: "commit message does not follow conventional commits"
