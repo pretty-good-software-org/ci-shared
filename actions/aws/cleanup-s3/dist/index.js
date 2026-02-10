@@ -2,7 +2,7 @@
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 547:
+/***/ 836:
 /***/ ((module, exports, __nccwpck_require__) => {
 
 
@@ -12,46 +12,8 @@
 // Delete markers before removing the bucket itself.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const { execCapture } = __nccwpck_require__(361);
-const toEntry = (entry) => ({ Key: entry.Key, VersionId: entry.VersionId });
-const collectObjects = (data) => [
-    ...(data.Versions || []).map(toEntry),
-    ...(data.DeleteMarkers || []).map(toEntry),
-];
-const batchDelete = (ctx, objects) => {
-    ctx.exec("aws", ["s3api", "delete-objects", "--bucket", ctx.bucket, "--region", ctx.region,
-        "--delete", JSON.stringify({ Objects: objects, Quiet: true })]);
-};
-const listVersionPage = (ctx, marker) => {
-    const args = ["s3api", "list-object-versions", "--bucket", ctx.bucket, "--region", ctx.region, "--output", "json"];
-    if (marker.key) {
-        args.push("--key-marker", marker.key);
-        args.push("--version-id-marker", marker.versionId);
-    }
-    return JSON.parse(ctx.exec("aws", args));
-};
-const processPage = (ctx, marker) => {
-    const data = listVersionPage(ctx, marker);
-    const objects = collectObjects(data);
-    if (objects.length > 0) {
-        batchDelete(ctx, objects);
-    }
-    if (!data.IsTruncated) {
-        return undefined;
-    }
-    return { key: data.NextKeyMarker || "", versionId: data.NextVersionIdMarker || "" };
-};
-const deleteAllVersions = (bucket, region, exec = execCapture) => {
-    const ctx = { bucket, exec, region };
-    let marker = { key: "", versionId: "" };
-    while (marker) {
-        marker = processPage(ctx, marker);
-    }
-};
-const listBuckets = (prefix, region, exec = execCapture) => {
-    const raw = exec("aws", ["s3api", "list-buckets", "--region", region, "--output", "json"]);
-    const data = JSON.parse(raw);
-    return (data.Buckets || []).filter((bucket) => bucket.Name.startsWith(prefix)).map((bucket) => bucket.Name);
-};
+const { deleteAllVersions } = __nccwpck_require__(27);
+const { listBuckets } = __nccwpck_require__(368);
 const run = ({ prefix, region }, exec = execCapture) => {
     const buckets = listBuckets(prefix, region, exec);
     for (const bucket of buckets) {
@@ -80,6 +42,78 @@ const main = (args = {}) => {
     }
 };
 module.exports = Object.assign(main, { deleteAllVersions, listBuckets, run });
+
+
+/***/ }),
+
+/***/ 27:
+/***/ ((module, exports, __nccwpck_require__) => {
+
+
+// Delete all object versions and delete markers from an S3 bucket.
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const { execCapture } = __nccwpck_require__(361);
+const toEntry = (entry) => ({ Key: entry.Key, VersionId: entry.VersionId });
+const collectObjects = (data) => [
+    ...(data.Versions || []).map(toEntry),
+    ...(data.DeleteMarkers || []).map(toEntry),
+];
+const batchDelete = (ctx, objects) => {
+    ctx.exec("aws", [
+        "s3api",
+        "delete-objects",
+        "--bucket",
+        ctx.bucket,
+        "--region",
+        ctx.region,
+        "--delete",
+        JSON.stringify({ Objects: objects, Quiet: true }),
+    ]);
+};
+const listVersionPage = (ctx, marker) => {
+    const args = ["s3api", "list-object-versions", "--bucket", ctx.bucket, "--region", ctx.region, "--output", "json"];
+    if (marker.key) {
+        args.push("--key-marker", marker.key);
+        args.push("--version-id-marker", marker.versionId);
+    }
+    return JSON.parse(ctx.exec("aws", args));
+};
+const processPage = (ctx, marker) => {
+    const data = listVersionPage(ctx, marker);
+    const objects = collectObjects(data);
+    if (objects.length > 0) {
+        batchDelete(ctx, objects);
+    }
+    if (!data.IsTruncated) {
+        return undefined;
+    }
+    return { key: data.NextKeyMarker || "", versionId: data.NextVersionIdMarker || "" };
+};
+const deleteAllVersions = (bucket, region, exec = execCapture) => {
+    const ctx = { bucket, exec, region };
+    let marker = { key: "", versionId: "" };
+    while (marker) {
+        marker = processPage(ctx, marker);
+    }
+};
+module.exports = { deleteAllVersions };
+
+
+/***/ }),
+
+/***/ 368:
+/***/ ((module, exports, __nccwpck_require__) => {
+
+
+// List S3 buckets matching a name prefix.
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const { execCapture } = __nccwpck_require__(361);
+const listBuckets = (prefix, region, exec = execCapture) => {
+    const raw = exec("aws", ["s3api", "list-buckets", "--region", region, "--output", "json"]);
+    const data = JSON.parse(raw);
+    return (data.Buckets || []).filter((bucket) => bucket.Name.startsWith(prefix)).map((bucket) => bucket.Name);
+};
+module.exports = { listBuckets };
 
 
 /***/ }),
@@ -179,7 +213,7 @@ module.exports = require("node:child_process");
 /******/ 	// startup
 /******/ 	// Load entry module and return exports
 /******/ 	// This entry module is referenced by other modules so it can't be inlined
-/******/ 	var __webpack_exports__ = __nccwpck_require__(547);
+/******/ 	var __webpack_exports__ = __nccwpck_require__(836);
 /******/ 	module.exports = __webpack_exports__;
 /******/ 	
 /******/ })()

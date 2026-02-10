@@ -5,7 +5,7 @@ tasks:
     desc: Compile TypeScript to JavaScript
     vars:
       ACTIONS:
-        sh: find actions -name '*.ts' -not -path '*/tests/*' -not -path '*/dist/*'
+        sh: find actions -name 'action.ts' -not -path '*/tests/*' -not -path '*/dist/*'
     cmds:
       - for: {var: ACTIONS, split: "\n"}
         cmd: npx ncc build {{.ITEM}} -o $(dirname {{.ITEM}})/dist

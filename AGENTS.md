@@ -20,56 +20,60 @@ actions/
 ├── aws/
 │   ├── cleanup-dynamodb/           # Delete DynamoDB tables by prefix
 │   │   ├── action.yml
-│   │   ├── cleanup-dynamodb.ts
+│   │   ├── action.ts
 │   │   ├── dist/index.js
 │   │   └── tests/cleanup-dynamodb.test.ts
 │   └── cleanup-s3/                 # Delete S3 buckets by prefix (versioned)
 │       ├── action.yml
-│       ├── cleanup-s3.ts
+│       ├── action.ts
 │       ├── dist/index.js
 │       └── tests/cleanup-s3.test.ts
 ├── setup/
 │   └── mise/                       # Checkout + mise install
 │       ├── action.yml
-│       ├── mise.ts
+│       ├── action.ts
 │       ├── dist/index.js
 │       └── tests/mise.test.ts
+├── github/
+│   └── comment/            # Create or update PR comment by identifier
+│       ├── action.yml
+│       ├── action.ts
+│       ├── dist/index.js
+│       └── tests/comment.test.ts
 └── tofu/
     ├── apply/                      # Apply plan
     │   ├── action.yml
-    │   ├── apply.ts
+    │   ├── action.ts
     │   ├── dist/index.js
     │   └── tests/apply.test.ts
+    ├── build-plan-comment/         # Build plan results markdown comment
+    │   ├── action.yml
+    │   ├── action.ts
+    │   ├── dist/index.js
+    │   └── tests/build-plan-comment.test.ts
     ├── fmt-check/                  # Check formatting
     │   ├── action.yml
-    │   ├── fmt-check.ts
+    │   ├── action.ts
     │   ├── dist/index.js
     │   └── tests/fmt-check.test.ts
     ├── init/                       # Initialize configuration
     │   ├── action.yml
-    │   ├── init.ts
+    │   ├── action.ts
     │   ├── dist/index.js
     │   └── tests/init.test.ts
     ├── plan/                       # Create plan + capture outputs
     │   ├── action.yml
-    │   ├── plan.ts
+    │   ├── action.ts
     │   ├── dist/index.js
     │   └── tests/plan.test.ts
     ├── policy/                     # Conftest policy check
     │   ├── action.yml
-    │   ├── policy.ts
+    │   ├── action.ts
     │   ├── dist/index.js
     │   └── tests/policy.test.ts
-    ├── post-plan-comment/          # Post plan results as PR comment
-    │   ├── action.yml
-    │   ├── post-plan-comment.ts
-    │   ├── dist/index.js
-    │   └── tests/
-    │       ├── build-comment.test.ts
-    │       └── post-comment.test.ts
     └── validate/                   # Validate configuration
         ├── action.yml
-        ├── validate.ts
+        ├── action.ts
         ├── dist/index.js
         └── tests/validate.test.ts
 taskfiles/
@@ -94,6 +98,7 @@ lefthook/
 - Source is TypeScript (`.ts`), bundled JavaScript (`dist/index.js`) is committed
 - Tests must pass before merge
 - Conventional commits enforced via commitlint
+- Entry point for each action is `action.ts` — other `.ts` files in the directory are helpers bundled via `require()`
 - Squash merge only
 
 ## Setup
@@ -161,7 +166,7 @@ Managed via [lefthook](https://github.com/evilmartians/lefthook). Hooks are spli
 ## Adding a New Action
 
 1. Create `actions/<category>/<action-name>/action.yml` with composite action definition
-2. Add implementation in TypeScript alongside `action.yml`
+2. Add implementation in `action.ts` alongside `action.yml`
 3. Add tests in `actions/<category>/<action-name>/tests/` using Node built-in test runner (`node:test` + `node:assert`)
 4. Tests are auto-discovered via `actions/*/*/tests/*.test.ts` glob
 5. Run `task build` to bundle TypeScript with `ncc` — compiled `dist/index.js` must be committed
@@ -193,7 +198,8 @@ git push origin v1.x.x v1 --force
 - uses: OlechowskiMichal/ci-shared/actions/tofu/policy@v1
   with:
     plan-json: ${{ steps.plan.outputs.plan-json }}
-- uses: OlechowskiMichal/ci-shared/actions/tofu/post-plan-comment@v1
+- uses: OlechowskiMichal/ci-shared/actions/tofu/build-plan-comment@v1
+  id: comment
   with:
     plan: ${{ steps.plan.outputs.plan }}
     fmt_outcome: ${{ steps.fmt.outcome }}
@@ -202,6 +208,10 @@ git push origin v1.x.x v1 --force
     plan_outcome: ${{ steps.plan.outcome }}
     has_violations: ${{ steps.policy.outputs.has_violations }}
     actor: ${{ github.actor }}
+- uses: OlechowskiMichal/ci-shared/actions/github/comment@v1
+  with:
+    comment-body: ${{ steps.comment.outputs.comment-body }}
+    comment-identifier: '### OpenTofu Plan Results'
 - uses: OlechowskiMichal/ci-shared/actions/tofu/apply@v1
   with:
     plan-file: ${{ steps.plan.outputs.plan-file }}

@@ -110,12 +110,13 @@ Run Conftest policy checks against an OpenTofu plan.
 | `has_violations` | Whether policy violations were found (`true`/`false`) |
 | `policy_violations` | Violation details (empty if none) |
 
-### tofu/post-plan-comment
+### tofu/build-plan-comment
 
-Posts OpenTofu plan results as a PR comment. Creates a new comment or updates an existing one.
+Builds OpenTofu plan results as a markdown comment body.
 
 ```yaml
-- uses: OlechowskiMichal/ci-shared/actions/tofu/post-plan-comment@v1
+- uses: OlechowskiMichal/ci-shared/actions/tofu/build-plan-comment@v1
+  id: comment
   with:
     plan: ${{ steps.plan.outputs.plan }}
     fmt_outcome: ${{ steps.fmt.outcome }}
@@ -135,6 +136,26 @@ Posts OpenTofu plan results as a PR comment. Creates a new comment or updates an
 | `plan_outcome` | Outcome of the plan step |
 | `has_violations` | Whether conftest policy violations were found (`true`/`false`) |
 | `actor` | GitHub actor who triggered the workflow |
+
+| Output | Description |
+|--------|-------------|
+| `comment-body` | Markdown comment body |
+
+### github/comment
+
+Create or update a PR comment identified by a marker string.
+
+```yaml
+- uses: OlechowskiMichal/ci-shared/actions/github/comment@v1
+  with:
+    comment-body: ${{ steps.comment.outputs.comment-body }}
+    comment-identifier: '### OpenTofu Plan Results'
+```
+
+| Input | Description |
+|-------|-------------|
+| `comment-body` | Full markdown body of the comment |
+| `comment-identifier` | String used to match an existing comment (matched via startsWith) |
 
 ### aws/cleanup-s3
 

@@ -2,7 +2,7 @@
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 395:
+/***/ 986:
 /***/ ((module, exports, __nccwpck_require__) => {
 
 
@@ -11,26 +11,7 @@
 // Lists all tables, filters by prefix, and deletes each match.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const { execCapture } = __nccwpck_require__(361);
-const fetchTablePage = (region, startTable, exec) => {
-    const args = ["dynamodb", "list-tables", "--region", region, "--output", "json"];
-    if (startTable) {
-        args.push("--exclusive-start-table-name", startTable);
-    }
-    return JSON.parse(exec("aws", args));
-};
-const listTables = (prefix, region, exec = execCapture) => {
-    const tables = [];
-    let startTable = undefined;
-    for (;;) {
-        const page = fetchTablePage(region, startTable, exec);
-        tables.push(...(page.TableNames || []).filter((name) => name.startsWith(prefix)));
-        if (!page.LastEvaluatedTableName) {
-            break;
-        }
-        startTable = page.LastEvaluatedTableName;
-    }
-    return tables;
-};
+const { listTables } = __nccwpck_require__(692);
 const run = ({ prefix, region }, exec = execCapture) => {
     const tables = listTables(prefix, region, exec);
     for (const table of tables) {
@@ -58,6 +39,38 @@ const main = (args = {}) => {
     }
 };
 module.exports = Object.assign(main, { listTables, run });
+
+
+/***/ }),
+
+/***/ 692:
+/***/ ((module, exports, __nccwpck_require__) => {
+
+
+// List DynamoDB tables matching a prefix with pagination.
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const { execCapture } = __nccwpck_require__(361);
+const fetchTablePage = (region, startTable, exec) => {
+    const args = ["dynamodb", "list-tables", "--region", region, "--output", "json"];
+    if (startTable) {
+        args.push("--exclusive-start-table-name", startTable);
+    }
+    return JSON.parse(exec("aws", args));
+};
+const listTables = (prefix, region, exec = execCapture) => {
+    const tables = [];
+    let startTable = undefined;
+    for (;;) {
+        const page = fetchTablePage(region, startTable, exec);
+        tables.push(...(page.TableNames || []).filter((name) => name.startsWith(prefix)));
+        if (!page.LastEvaluatedTableName) {
+            break;
+        }
+        startTable = page.LastEvaluatedTableName;
+    }
+    return tables;
+};
+module.exports = { listTables };
 
 
 /***/ }),
@@ -157,7 +170,7 @@ module.exports = require("node:child_process");
 /******/ 	// startup
 /******/ 	// Load entry module and return exports
 /******/ 	// This entry module is referenced by other modules so it can't be inlined
-/******/ 	var __webpack_exports__ = __nccwpck_require__(395);
+/******/ 	var __webpack_exports__ = __nccwpck_require__(986);
 /******/ 	module.exports = __webpack_exports__;
 /******/ 	
 /******/ })()
