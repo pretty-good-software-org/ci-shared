@@ -1,11 +1,11 @@
-// Build OpenTofu plan results as a markdown comment body.
+// Build OpenTofu policy summary as a markdown fragment.
 //
 // Pure markdown builder — no GitHub API calls.
-// Reads step outcomes and plan output from INPUT_* environment variables.
-// Builds a markdown comment and sets the comment-body output.
+// Reads policy violation status and actor from INPUT_* environment variables.
+// Builds a policy status line + actor footer and sets the policy-summary output.
 
 const { resolveOutputWriter } = require("../../../lib/github-output.ts");
-const { buildComment } = require("./build-comment.ts");
+const { buildPolicySummary } = require("./build-policy-summary.ts");
 const { parseEnv } = require("./parse-env.ts");
 
 interface MainArgs {
@@ -16,11 +16,11 @@ interface MainArgs {
 
 const main = async (args: MainArgs = {}): Promise<void> => {
   const env = args.env || process.env;
-  const commentArgs = parseEnv(env);
-  const body = buildComment(commentArgs);
+  const policyArgs = parseEnv(env);
+  const body = buildPolicySummary(policyArgs);
 
   const setOutput = resolveOutputWriter(args);
-  setOutput("comment-body", body);
+  setOutput("policy-summary", body);
 };
 
-module.exports = Object.assign(main, { buildComment, parseEnv });
+module.exports = Object.assign(main, { buildPolicySummary, parseEnv });

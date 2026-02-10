@@ -8,8 +8,8 @@
 
 // Create OpenTofu plan and capture outputs.
 //
-// Orchestration entry point — delegates plan execution to run.ts
-// and writes GitHub Actions outputs.
+// Orchestration entry point — delegates plan execution to run.ts,
+// Writes GitHub Actions outputs.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const { writeFileSync } = __nccwpck_require__(24);
 const { execCapture } = __nccwpck_require__(361);
@@ -54,6 +54,9 @@ const truncatePlan = (text) => {
     return text;
 };
 const run = ({ workingDirectory }, exec = execCapture, write = writeFileSync) => {
+    if (workingDirectory.includes("..")) {
+        throw new Error(`working directory must not contain path traversal: ${workingDirectory}`);
+    }
     exec("tofu", [`-chdir=${workingDirectory}`, "plan", "-no-color", "-out=plan.tfplan"]);
     const planText = exec("tofu", [`-chdir=${workingDirectory}`, "show", "-no-color", "plan.tfplan"]);
     const planJsonOutput = exec("tofu", [`-chdir=${workingDirectory}`, "show", "-json", "plan.tfplan"]);

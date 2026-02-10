@@ -46,11 +46,21 @@ actions/
     │   ├── action.ts
     │   ├── dist/index.js
     │   └── tests/apply.test.ts
-    ├── build-plan-comment/         # Build plan results markdown comment
+    ├── build-plan-details/          # Build plan output as collapsible details block
     │   ├── action.yml
     │   ├── action.ts
     │   ├── dist/index.js
-    │   └── tests/build-plan-comment.test.ts
+    │   └── tests/build-plan-details.test.ts
+    ├── build-policy-summary/        # Build policy check result markdown fragment
+    │   ├── action.yml
+    │   ├── action.ts
+    │   ├── dist/index.js
+    │   └── tests/build-policy-summary.test.ts
+    ├── build-step-summary/          # Build step outcomes markdown fragment
+    │   ├── action.yml
+    │   ├── action.ts
+    │   ├── dist/index.js
+    │   └── tests/build-step-summary.test.ts
     ├── fmt-check/                  # Check formatting
     │   ├── action.yml
     │   ├── action.ts
@@ -198,19 +208,28 @@ git push origin v1.x.x v1 --force
 - uses: OlechowskiMichal/ci-shared/actions/tofu/policy@v1
   with:
     plan-json: ${{ steps.plan.outputs.plan-json }}
-- uses: OlechowskiMichal/ci-shared/actions/tofu/build-plan-comment@v1
-  id: comment
+- uses: OlechowskiMichal/ci-shared/actions/tofu/build-step-summary@v1
+  id: step-summary
   with:
-    plan: ${{ steps.plan.outputs.plan }}
     fmt_outcome: ${{ steps.fmt.outcome }}
     init_outcome: ${{ steps.init.outcome }}
     validate_outcome: ${{ steps.validate.outcome }}
     plan_outcome: ${{ steps.plan.outcome }}
+- uses: OlechowskiMichal/ci-shared/actions/tofu/build-plan-details@v1
+  id: plan-details
+  with:
+    plan: ${{ steps.plan.outputs.plan }}
+- uses: OlechowskiMichal/ci-shared/actions/tofu/build-policy-summary@v1
+  id: policy-summary
+  with:
     has_violations: ${{ steps.policy.outputs.has_violations }}
     actor: ${{ github.actor }}
 - uses: OlechowskiMichal/ci-shared/actions/github/comment@v1
   with:
-    comment-body: ${{ steps.comment.outputs.comment-body }}
+    comment-body: |
+      ${{ steps.step-summary.outputs.step-summary }}
+      ${{ steps.plan-details.outputs.plan-details }}
+      ${{ steps.policy-summary.outputs.policy-summary }}
     comment-identifier: '### OpenTofu Plan Results'
 - uses: OlechowskiMichal/ci-shared/actions/tofu/apply@v1
   with:

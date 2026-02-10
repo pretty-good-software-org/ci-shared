@@ -1,9 +1,6 @@
-name: 'Build Plan Comment'
-description: 'Build OpenTofu plan results markdown comment body'
+name: 'Build Step Summary'
+description: 'Build OpenTofu step outcomes as a markdown fragment'
 inputs:
-  plan:
-    description: 'OpenTofu plan output text'
-    required: true
   fmt_outcome:
     description: 'Outcome of the format check step'
     required: true
@@ -16,29 +13,20 @@ inputs:
   plan_outcome:
     description: 'Outcome of the plan step'
     required: true
-  has_violations:
-    description: 'Whether conftest policy violations were found (true/false)'
-    required: true
-  actor:
-    description: 'GitHub actor who triggered the workflow'
-    required: true
 outputs:
-  comment-body:
-    description: 'Markdown comment body'
-    value: ${{ steps.build.outputs.comment-body }}
+  step-summary:
+    description: 'Markdown heading and step outcome lines'
+    value: ${{ steps.build.outputs.step-summary }}
 runs:
   using: 'composite'
   steps:
     - uses: actions/github-script@v7
       id: build
       env:
-        INPUT_PLAN: ${{ inputs.plan }}
         INPUT_FMT_OUTCOME: ${{ inputs.fmt_outcome }}
         INPUT_INIT_OUTCOME: ${{ inputs.init_outcome }}
         INPUT_VALIDATE_OUTCOME: ${{ inputs.validate_outcome }}
         INPUT_PLAN_OUTCOME: ${{ inputs.plan_outcome }}
-        INPUT_HAS_VIOLATIONS: ${{ inputs.has_violations }}
-        INPUT_ACTOR: ${{ inputs.actor }}
       with:
         github-token: ${{ github.token }}
         script: |

@@ -21,8 +21,14 @@ const run = async ({ body, context, github, identifier }) => {
     }
 };
 const main = async ({ context, env = process.env, github }) => {
+    const identifier = (env.INPUT_COMMENT_IDENTIFIER || "").trim();
     const body = env.INPUT_COMMENT_BODY || "";
-    const identifier = env.INPUT_COMMENT_IDENTIFIER || "";
+    if (!identifier) {
+        throw new Error("INPUT_COMMENT_IDENTIFIER is required");
+    }
+    if (!body) {
+        throw new Error("INPUT_COMMENT_BODY is required");
+    }
     await run({ body, context, github, identifier });
 };
 module.exports = Object.assign(main, { createComment, findComment, run, updateComment });
@@ -59,6 +65,7 @@ const findComment = async ({ context, github, identifier }) => {
     const { data: comments } = await github.rest.issues.listComments({
         issue_number: context.issue.number,
         owner,
+        per_page: 100,
         repo,
     });
     return comments.find((comment) => comment.body?.startsWith(identifier));

@@ -14,11 +14,21 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 const { execCapture } = __nccwpck_require__(361);
 const { deleteAllVersions } = __nccwpck_require__(27);
 const { listBuckets } = __nccwpck_require__(368);
+const MIN_PREFIX_LENGTH = 5;
 const run = ({ prefix, region }, exec = execCapture) => {
     const buckets = listBuckets(prefix, region, exec);
+    const failed = [];
     for (const bucket of buckets) {
-        deleteAllVersions(bucket, region, exec);
-        exec("aws", ["s3", "rb", `s3://${bucket}`, "--region", region, "--force"]);
+        try {
+            deleteAllVersions(bucket, region, exec);
+            exec("aws", ["s3", "rb", `s3://${bucket}`, "--region", region, "--force"]);
+        }
+        catch {
+            failed.push(bucket);
+        }
+    }
+    if (failed.length > 0) {
+        throw new Error(`Failed to delete ${failed.length} bucket(s): ${failed.join(", ")}`);
     }
     return buckets;
 };
@@ -27,6 +37,9 @@ const parseRunArgs = (env) => {
     const region = env.INPUT_REGION || "us-east-1";
     if (!prefix) {
         throw new Error("INPUT_PREFIX is required");
+    }
+    if (prefix.length < MIN_PREFIX_LENGTH) {
+        throw new Error(`INPUT_PREFIX must be at least ${MIN_PREFIX_LENGTH} characters (got "${prefix}")`);
     }
     if (!/^[a-z]{2}-[a-z]+-\d+$/.test(region)) {
         throw new Error(`Invalid AWS region: ${region}`);
@@ -58,17 +71,21 @@ const collectObjects = (data) => [
     ...(data.Versions || []).map(toEntry),
     ...(data.DeleteMarkers || []).map(toEntry),
 ];
+const BATCH_LIMIT = 1000;
 const batchDelete = (ctx, objects) => {
-    ctx.exec("aws", [
-        "s3api",
-        "delete-objects",
-        "--bucket",
-        ctx.bucket,
-        "--region",
-        ctx.region,
-        "--delete",
-        JSON.stringify({ Objects: objects, Quiet: true }),
-    ]);
+    for (let i = 0; i < objects.length; i += BATCH_LIMIT) {
+        const chunk = objects.slice(i, i + BATCH_LIMIT);
+        ctx.exec("aws", [
+            "s3api",
+            "delete-objects",
+            "--bucket",
+            ctx.bucket,
+            "--region",
+            ctx.region,
+            "--delete",
+            JSON.stringify({ Objects: chunk, Quiet: true }),
+        ]);
+    }
 };
 const listVersionPage = (ctx, marker) => {
     const args = ["s3api", "list-object-versions", "--bucket", ctx.bucket, "--region", ctx.region, "--output", "json"];

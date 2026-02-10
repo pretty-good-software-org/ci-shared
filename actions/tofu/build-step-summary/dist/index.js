@@ -2,81 +2,61 @@
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 404:
+/***/ 824:
 /***/ ((module, exports, __nccwpck_require__) => {
 
 
-// Build OpenTofu plan results as a markdown comment body.
+// Build OpenTofu step summary as a markdown fragment.
 //
 // Pure markdown builder — no GitHub API calls.
-// Reads step outcomes and plan output from INPUT_* environment variables.
-// Builds a markdown comment and sets the comment-body output.
+// Reads step outcomes from INPUT_* environment variables.
+// Builds a markdown heading + step outcome lines and sets the step-summary output.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const { resolveOutputWriter } = __nccwpck_require__(1);
-const { buildComment } = __nccwpck_require__(212);
-const { parseEnv } = __nccwpck_require__(805);
+const { buildStepSummary } = __nccwpck_require__(990);
+const { parseEnv } = __nccwpck_require__(361);
 const main = async (args = {}) => {
     const env = args.env || process.env;
-    const commentArgs = parseEnv(env);
-    const body = buildComment(commentArgs);
+    const summaryArgs = parseEnv(env);
+    const body = buildStepSummary(summaryArgs);
     const setOutput = resolveOutputWriter(args);
-    setOutput("comment-body", body);
+    setOutput("step-summary", body);
 };
-module.exports = Object.assign(main, { buildComment, parseEnv });
+module.exports = Object.assign(main, { buildStepSummary, parseEnv });
 
 
 /***/ }),
 
-/***/ 212:
+/***/ 990:
 /***/ ((module, exports) => {
 
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const fallback = (value) => value || "unknown";
-const buildComment = (args) => {
-    const { hasViolations, plan } = args;
-    let policyStatus = "PASSED";
-    let policyMessage = "All policies passed";
-    if (hasViolations) {
-        policyStatus = "FAILED";
-        policyMessage = "**Policy Violations:** See Conftest step output for details";
-    }
+const buildStepSummary = (args) => {
     return [
         "### OpenTofu Plan Results",
         `#### Format Check: \`${fallback(args.fmtOutcome)}\``,
         `#### Init: \`${fallback(args.initOutcome)}\``,
         `#### Validate: \`${fallback(args.validateOutcome)}\``,
         `#### Plan: \`${fallback(args.planOutcome)}\``,
-        "<details><summary>Show Plan</summary>",
-        "",
-        "```terraform",
-        plan,
-        "```",
-        "",
-        "</details>",
-        `#### Conftest Policy Check: \`${policyStatus}\``,
-        policyMessage,
-        `*Pushed by: @${fallback(args.actor)}*`,
     ].join("\n");
 };
-module.exports = { buildComment, fallback };
+module.exports = { buildStepSummary, fallback };
 
 
 /***/ }),
 
-/***/ 805:
+/***/ 361:
 /***/ ((module, exports) => {
 
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const parseEnv = (env) => ({
-    actor: env.INPUT_ACTOR,
     fmtOutcome: env.INPUT_FMT_OUTCOME,
-    hasViolations: env.INPUT_HAS_VIOLATIONS === "true",
     initOutcome: env.INPUT_INIT_OUTCOME,
-    plan: env.INPUT_PLAN || "",
-    planOutcome: env.INPUT_PLAN_OUTCOME,
     validateOutcome: env.INPUT_VALIDATE_OUTCOME,
+    planOutcome: env.INPUT_PLAN_OUTCOME,
 });
 module.exports = { parseEnv };
 
@@ -172,7 +152,7 @@ module.exports = require("node:fs");
 /******/ 	// startup
 /******/ 	// Load entry module and return exports
 /******/ 	// This entry module is referenced by other modules so it can't be inlined
-/******/ 	var __webpack_exports__ = __nccwpck_require__(404);
+/******/ 	var __webpack_exports__ = __nccwpck_require__(824);
 /******/ 	module.exports = __webpack_exports__;
 /******/ 	
 /******/ })()
