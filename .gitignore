@@ -9,6 +9,5 @@
 .DS_Store
 Thumbs.db
 
-# Node (commitlint)
+# Node
 node_modules/
-package-lock.json

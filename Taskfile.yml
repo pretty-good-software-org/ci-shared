@@ -13,10 +13,15 @@ tasks:
       - MISE_ENV=development mise exec -- lefthook install
       - npm install
 
+  build:
+    desc: Compile TypeScript to JavaScript
+    cmds:
+      - npx ncc build actions/post-plan-comment/post-plan-comment.ts -o actions/post-plan-comment/dist
+
   test:
     desc: Run all tests
     cmds:
-      - node --test actions/*/tests/*.test.js
+      - node --experimental-strip-types --test actions/*/tests/*.test.ts
 
   lint:
     desc: Run all linters
@@ -24,7 +29,8 @@ tasks:
       - task: lint:actions
       - task: lint:yaml
       - task: lint:markdown
-      - task: lint:js
+      - task: lint:ts
+      - task: typecheck
       - task: format:check
 
   lint:actions:
@@ -42,23 +48,29 @@ tasks:
     cmds:
       - markdownlint-cli2 "**/*.md"
 
-  lint:js:
-    desc: Lint JavaScript files
+  lint:ts:
+    desc: Lint TypeScript files
     cmds:
       - oxlint actions/
 
-  format:
-    desc: Auto-format JavaScript files
+  typecheck:
+    desc: Type-check TypeScript files
     cmds:
-      - oxfmt --write 'actions/**/*.js'
+      - npx tsc --noEmit
+
+  format:
+    desc: Auto-format TypeScript files
+    cmds:
+      - oxfmt --write 'actions/**/*.ts'
 
   format:check:
-    desc: Check JavaScript formatting
+    desc: Check TypeScript formatting
     cmds:
-      - oxfmt --check 'actions/**/*.js'
+      - oxfmt --check 'actions/**/*.ts'
 
   ci:validate:
     desc: Run all CI checks
     cmds:
+      - task: build
       - task: lint
       - task: test

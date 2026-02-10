@@ -37,5 +37,5 @@ runs:
       with:
         github-token: ${{ github.token }}
         script: |
-          const script = require('${{ github.action_path }}/post-plan-comment.js')
+          const script = require('${{ github.action_path }}/dist/index.js')
           await script({github, context})

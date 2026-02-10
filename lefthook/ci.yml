@@ -13,10 +13,14 @@ pre-commit:
       run: markdownlint-cli2 "**/*.md"
       fail_text: "markdownlint found issues"
     oxlint:
-      glob: "*.js"
+      glob: "*.ts"
       run: oxlint actions/
       fail_text: "oxlint found issues"
     oxfmt:
-      glob: "*.js"
-      run: oxfmt --check 'actions/**/*.js'
+      glob: "*.ts"
+      run: oxfmt --check 'actions/**/*.ts'
       fail_text: "oxfmt found formatting issues"
+    typecheck:
+      glob: "*.ts"
+      run: npx tsc --noEmit
+      fail_text: "TypeScript type errors found"
