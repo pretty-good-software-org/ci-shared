@@ -32,27 +32,39 @@ Posts OpenTofu plan results as a PR comment. Creates a new comment or updates an
 
 ## Development
 
-```bash
-# Run tests
-node --test actions/post-plan-comment/post-plan-comment.test.js
+Prerequisites: [mise](https://mise.jdx.dev/)
 
-# Lint workflows
-actionlint
+```bash
+# Install all dev tools (node, task, linters) and git hooks
+task setup
+
+# Run tests
+task test
+
+# Run all linters
+task lint
+
+# Compile TypeScript and bundle with ncc
+task build
+
+# Run full CI validation locally (build + lint + test)
+task ci:validate
 ```
+
+## Adding a New Action
+
+1. Create `actions/<action-name>/action.yml` with composite action definition
+2. Add implementation in TypeScript alongside `action.yml`
+3. Add tests in `actions/<action-name>/tests/` using Node built-in test runner (`node:test` + `node:assert`)
+4. Tests are auto-discovered via `actions/*/tests/*.test.ts` glob
+5. Run `task build` to bundle with `ncc` — compiled `dist/index.js` must be committed
 
 ## Versioning
 
-Consumers pin to `@v1`. On release:
+Consumers pin to `@v1` (floating major tag). On release:
 
 ```bash
 git tag -a v1.x.x -m "Release description"
 git tag -f v1 v1.x.x
 git push origin v1.x.x v1 --force
 ```
-
-## Adding a New Action
-
-1. Create `actions/<action-name>/action.yml`
-2. Add implementation script alongside `action.yml`
-3. Add tests using Node built-in test runner (`node:test` + `node:assert`)
-4. Update `.github/workflows/ci.yml` to run new tests

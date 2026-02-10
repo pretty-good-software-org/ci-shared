@@ -1,10 +1,15 @@
+---
+last_validated: 2026-02-10T00:00:00Z
+project_type: github-actions
+---
+
 # Agent Instructions: ci-shared
 
-## Overview
+## Repository Overview
 
-Shared composite actions for CI/CD across the organization. Each action is a self-contained directory under `actions/` with its own `action.yml`, implementation, and tests.
+Shared composite actions for CI/CD across the organization. Each action is a self-contained directory under `actions/` with its own `action.yml`, TypeScript implementation, bundled JS, and tests.
 
-## Structure
+## Repository Structure
 
 ```text
 actions/
@@ -24,6 +29,16 @@ lefthook/
 └── general.yml                     # whitespace, EOF, merge conflict, large file hooks
 ```
 
+## Development Guidelines
+
+- Zero npm runtime dependencies — use Node built-in modules only
+- `typescript` and `@types/node` are devDependencies only (build-time)
+- Each action is self-contained (no shared code between actions)
+- Source is TypeScript (`.ts`), bundled JavaScript (`dist/index.js`) is committed
+- Tests must pass before merge
+- Conventional commits enforced via commitlint
+- Squash merge only
+
 ## Setup
 
 ```bash
@@ -31,46 +46,51 @@ lefthook/
 task setup
 ```
 
-This installs mise tools (node, task, actionlint, yamllint, markdownlint-cli2, oxlint, oxfmt, lefthook), configures git hooks via lefthook, and installs npm dependencies (commitlint, typescript, @types/node).
+This runs `mise install` (node 22, task 3, actionlint, yamllint, markdownlint-cli2, oxlint, oxfmt, lefthook), configures git hooks via lefthook, and installs npm dependencies (commitlint, typescript, @types/node, @vercel/ncc).
 
-## Commands
+## Available Commands
 
 ```bash
-# Compile TypeScript to JavaScript
-task build
-
-# Run tests
-task test
-
-# Run all linters (actionlint + yamllint + markdownlint + oxlint + typecheck + oxfmt)
-task lint
-
-# Run individual linters
-task lint:actions
-task lint:yaml
-task lint:markdown
-task lint:ts
-task typecheck
-
-# Auto-format TypeScript files
-task format
-
-# Check TypeScript formatting
-task format:check
-
-# Run full CI validation locally
-task ci:validate
+task build            # Compile TypeScript to JavaScript via ncc
+task test             # Run all tests (auto-discovered via actions/*/tests/*.test.ts)
+task lint             # Run all linters (actionlint + yamllint + markdownlint + oxlint + typecheck + oxfmt)
+task lint:actions     # Lint GitHub Actions workflows
+task lint:yaml        # Lint YAML files
+task lint:markdown    # Lint Markdown files
+task lint:ts          # Lint TypeScript files
+task typecheck        # Type-check TypeScript files
+task format           # Auto-format TypeScript files
+task format:check     # Check TypeScript formatting
+task ci:validate      # Run full CI validation locally (build + lint + test)
 ```
+
+## Testing
+
+Tests use Node built-in test runner (`node:test` + `node:assert`) with `--experimental-strip-types` to run TypeScript directly.
+
+```bash
+task test
+```
+
+Tests are auto-discovered via the glob `actions/*/tests/*.test.ts`. No additional test dependencies are needed.
 
 ## Tool Management
 
 Tools are managed via [mise](https://mise.jdx.dev/):
 
-- `.mise.toml` — base tools (node, task, actionlint, yamllint, markdownlint-cli2, oxlint, oxfmt)
+- `.mise.toml` — base tools (node 22, task 3, actionlint, yamllint, markdownlint-cli2, oxlint, oxfmt)
 - `.mise.development.toml` — local dev extras (lefthook)
 - `.mise.ci.toml` — CI profile (empty, uses base tools only)
 
-## Git Hooks
+## Git Workflow
+
+1. Run `git status` to check current state
+2. Create a feature branch from `main`
+3. Make changes and commit using conventional commits
+4. Run `task ci:validate` before pushing
+5. Push and create a PR — squash merge only
+
+### Git Hooks
 
 Managed via [lefthook](https://github.com/evilmartians/lefthook). Hooks are split into files under `lefthook/`:
 
@@ -109,13 +129,3 @@ git push origin v1.x.x v1 --force
     has_violations: ${{ steps.policy.outputs.has_violations }}
     actor: ${{ github.actor }}
 ```
-
-## Guidelines
-
-- Zero npm runtime dependencies — use Node built-in modules only
-- `typescript` and `@types/node` are devDependencies only (build-time)
-- Each action is self-contained (no shared code between actions)
-- Source is TypeScript (`.ts`), bundled JavaScript (`dist/index.js`) is committed
-- Tests must pass before merge
-- Conventional commits
-- Squash merge only
