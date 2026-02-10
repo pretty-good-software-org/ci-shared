@@ -1,0 +1,21 @@
+name: 'Upsert PR Comment'
+description: 'Create or update a PR comment identified by a marker string'
+inputs:
+  comment-body:
+    description: 'Full markdown body of the comment'
+    required: true
+  comment-identifier:
+    description: 'String used to match an existing comment (matched via startsWith)'
+    required: true
+runs:
+  using: 'composite'
+  steps:
+    - uses: actions/github-script@v7
+      env:
+        INPUT_COMMENT_BODY: ${{ inputs.comment-body }}
+        INPUT_COMMENT_IDENTIFIER: ${{ inputs.comment-identifier }}
+      with:
+        github-token: ${{ github.token }}
+        script: |
+          const script = require('${{ github.action_path }}/dist/index.js')
+          await script({github, context})

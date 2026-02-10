@@ -2,20 +2,50 @@
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 52:
+/***/ 869:
 /***/ ((module, exports, __nccwpck_require__) => {
 
 
 // Create OpenTofu plan and capture outputs.
 //
-// 1. Runs tofu plan -no-color -out=plan.tfplan
-// 2. Captures text output via tofu show, truncated to 60k chars
-// 3. Exports JSON plan to plan.json
-// 4. Writes plan, plan-file, and plan-json outputs
+// Orchestration entry point — delegates plan execution to run.ts
+// and writes GitHub Actions outputs.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const { writeFileSync } = __nccwpck_require__(24);
 const { execCapture } = __nccwpck_require__(361);
 const { resolveOutputWriter } = __nccwpck_require__(1);
+const { MAX_PLAN_LENGTH, run } = __nccwpck_require__(758);
+const resolveMainArgs = (args) => ({
+    env: args.env || process.env,
+    exec: args.exec || execCapture,
+    write: args.write || writeFileSync,
+});
+const main = async (args = {}) => {
+    const { env, exec, write } = resolveMainArgs(args);
+    const workingDirectory = env.INPUT_WORKING_DIRECTORY || "tofu";
+    const result = run({ workingDirectory }, exec, write);
+    const setOutput = resolveOutputWriter(args);
+    setOutput("plan", result.plan);
+    setOutput("plan-file", result.planFile);
+    setOutput("plan-json", result.planJson);
+};
+module.exports = Object.assign(main, { MAX_PLAN_LENGTH, run });
+
+
+/***/ }),
+
+/***/ 758:
+/***/ ((module, exports, __nccwpck_require__) => {
+
+
+// Execute tofu plan and capture outputs.
+//
+// 1. Runs tofu plan -no-color -out=plan.tfplan
+// 2. Captures text output via tofu show, truncated to 60k chars
+// 3. Exports JSON plan to plan.json
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const { writeFileSync } = __nccwpck_require__(24);
+const { execCapture } = __nccwpck_require__(361);
 const MAX_PLAN_LENGTH = 60_000;
 const truncatePlan = (text) => {
     if (text.length > MAX_PLAN_LENGTH) {
@@ -35,21 +65,7 @@ const run = ({ workingDirectory }, exec = execCapture, write = writeFileSync) =>
         planJson: planJsonPath,
     };
 };
-const resolveMainArgs = (args) => ({
-    env: args.env || process.env,
-    exec: args.exec || execCapture,
-    write: args.write || writeFileSync,
-});
-const main = async (args = {}) => {
-    const { env, exec, write } = resolveMainArgs(args);
-    const workingDirectory = env.INPUT_WORKING_DIRECTORY || "tofu";
-    const result = run({ workingDirectory }, exec, write);
-    const setOutput = resolveOutputWriter(args);
-    setOutput("plan", result.plan);
-    setOutput("plan-file", result.planFile);
-    setOutput("plan-json", result.planJson);
-};
-module.exports = Object.assign(main, { MAX_PLAN_LENGTH, run });
+module.exports = { MAX_PLAN_LENGTH, run };
 
 
 /***/ }),
@@ -196,7 +212,7 @@ module.exports = require("node:fs");
 /******/ 	// startup
 /******/ 	// Load entry module and return exports
 /******/ 	// This entry module is referenced by other modules so it can't be inlined
-/******/ 	var __webpack_exports__ = __nccwpck_require__(52);
+/******/ 	var __webpack_exports__ = __nccwpck_require__(869);
 /******/ 	module.exports = __webpack_exports__;
 /******/ 	
 /******/ })()

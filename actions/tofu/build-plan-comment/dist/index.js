@@ -2,85 +2,83 @@
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 486:
+/***/ 404:
 /***/ ((module, exports, __nccwpck_require__) => {
 
 
-// Run Conftest policy checks against an OpenTofu plan.
+// Build OpenTofu plan results as a markdown comment body.
 //
-// 1. Runs conftest update to pull latest policies
-// 2. Runs conftest test against the JSON plan file
-// 3. Sets has_violations and policy_violations outputs
+// Pure markdown builder — no GitHub API calls.
+// Reads step outcomes and plan output from INPUT_* environment variables.
+// Builds a markdown comment and sets the comment-body output.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const { execCapture } = __nccwpck_require__(361);
 const { resolveOutputWriter } = __nccwpck_require__(1);
-const run = ({ planJson }, exec = execCapture) => {
-    exec("conftest", ["update"]);
-    try {
-        exec("conftest", ["test", planJson]);
-        return { hasViolations: false, policyViolations: "" };
-    }
-    catch (error) {
-        const execError = error;
-        const output = (execError.stdout || "") + (execError.stderr || "");
-        return { hasViolations: true, policyViolations: output };
-    }
-};
+const { buildComment } = __nccwpck_require__(212);
+const { parseEnv } = __nccwpck_require__(805);
 const main = async (args = {}) => {
-    const { env = process.env, exec = execCapture } = args;
-    const planJson = env.INPUT_PLAN_JSON || "tofu/plan.json";
-    const result = run({ planJson }, exec);
+    const env = args.env || process.env;
+    const commentArgs = parseEnv(env);
+    const body = buildComment(commentArgs);
     const setOutput = resolveOutputWriter(args);
-    setOutput("has_violations", String(result.hasViolations));
-    setOutput("policy_violations", result.policyViolations);
+    setOutput("comment-body", body);
 };
-module.exports = Object.assign(main, { run });
+module.exports = Object.assign(main, { buildComment, parseEnv });
 
 
 /***/ }),
 
-/***/ 361:
-/***/ ((module, exports, __nccwpck_require__) => {
+/***/ 212:
+/***/ ((module, exports) => {
 
 
-// Shared execution helpers wrapping child_process.execFileSync.
-//
-// All functions use execFileSync (no shell) to prevent command injection.
-// Three variants covering every action's needs:
-// - execCapture: returns stdout (pipe mode)
-// - execStream: streams to console (inherit mode)
-// - execStreamWithEnv: streams to console with optional env override
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const { execFileSync } = __nccwpck_require__(421);
-const logStderr = (error) => {
-    const stderr = String(error.stderr || "").trim();
-    if (stderr) {
-        console.error(stderr);
+const fallback = (value) => value || "unknown";
+const buildComment = (args) => {
+    const { hasViolations, plan } = args;
+    let policyStatus = "PASSED";
+    let policyMessage = "All policies passed";
+    if (hasViolations) {
+        policyStatus = "FAILED";
+        policyMessage = "**Policy Violations:** See Conftest step output for details";
     }
+    return [
+        "### OpenTofu Plan Results",
+        `#### Format Check: \`${fallback(args.fmtOutcome)}\``,
+        `#### Init: \`${fallback(args.initOutcome)}\``,
+        `#### Validate: \`${fallback(args.validateOutcome)}\``,
+        `#### Plan: \`${fallback(args.planOutcome)}\``,
+        "<details><summary>Show Plan</summary>",
+        "",
+        "```terraform",
+        plan,
+        "```",
+        "",
+        "</details>",
+        `#### Conftest Policy Check: \`${policyStatus}\``,
+        policyMessage,
+        `*Pushed by: @${fallback(args.actor)}*`,
+    ].join("\n");
 };
-const execCapture = (bin, args) => {
-    console.log(`+ ${bin} ${args.join(" ")}`);
-    try {
-        const output = execFileSync(bin, args, { encoding: "utf8", stdio: "pipe" });
-        if (output) {
-            console.log(output);
-        }
-        return output;
-    }
-    catch (error) {
-        logStderr(error);
-        throw error;
-    }
-};
-const execStream = (bin, args) => {
-    console.log(`+ ${bin} ${args.join(" ")}`);
-    execFileSync(bin, args, { stdio: "inherit" });
-};
-const execStreamWithEnv = (bin, args, env) => {
-    console.log(`+ ${bin} ${args.join(" ")}`);
-    execFileSync(bin, args, { env, stdio: "inherit" });
-};
-module.exports = { execCapture, execStream, execStreamWithEnv };
+module.exports = { buildComment, fallback };
+
+
+/***/ }),
+
+/***/ 805:
+/***/ ((module, exports) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const parseEnv = (env) => ({
+    actor: env.INPUT_ACTOR,
+    fmtOutcome: env.INPUT_FMT_OUTCOME,
+    hasViolations: env.INPUT_HAS_VIOLATIONS === "true",
+    initOutcome: env.INPUT_INIT_OUTCOME,
+    plan: env.INPUT_PLAN || "",
+    planOutcome: env.INPUT_PLAN_OUTCOME,
+    validateOutcome: env.INPUT_VALIDATE_OUTCOME,
+});
+module.exports = { parseEnv };
 
 
 /***/ }),
@@ -115,13 +113,6 @@ const resolveOutputWriter = ({ core, writeOutput }) => {
 };
 module.exports = { resolveOutputWriter, writeGitHubOutput };
 
-
-/***/ }),
-
-/***/ 421:
-/***/ ((module) => {
-
-module.exports = require("node:child_process");
 
 /***/ }),
 
@@ -181,7 +172,7 @@ module.exports = require("node:fs");
 /******/ 	// startup
 /******/ 	// Load entry module and return exports
 /******/ 	// This entry module is referenced by other modules so it can't be inlined
-/******/ 	var __webpack_exports__ = __nccwpck_require__(486);
+/******/ 	var __webpack_exports__ = __nccwpck_require__(404);
 /******/ 	module.exports = __webpack_exports__;
 /******/ 	
 /******/ })()
