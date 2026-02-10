@@ -62,6 +62,8 @@ task typecheck        # Type-check TypeScript files
 task format           # Auto-format TypeScript files
 task format:check     # Check TypeScript formatting
 task ci:validate      # Run full CI validation locally (build + lint + test)
+task changelog        # Generate CHANGELOG.md from commit history
+task release          # Create a release (usage: task release VERSION=x.y.z)
 ```
 
 ## Testing

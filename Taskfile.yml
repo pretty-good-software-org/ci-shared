@@ -68,6 +68,27 @@ tasks:
     cmds:
       - oxfmt --check 'actions/**/*.ts'
 
+  changelog:
+    desc: Generate CHANGELOG.md from commit history
+    cmds:
+      - git-cliff -o CHANGELOG.md
+
+  release:
+    desc: "Create a release (usage: task release VERSION=x.y.z)"
+    requires:
+      vars: [VERSION]
+    vars:
+      MAJOR:
+        sh: echo "{{.VERSION}}" | cut -d. -f1
+    cmds:
+      - git-cliff -o CHANGELOG.md --tag "v{{.VERSION}}"
+      - git add CHANGELOG.md
+      - 'git commit -m "chore(release): v{{.VERSION}}"'
+      - git tag -a "v{{.VERSION}}" -m "Release v{{.VERSION}}"
+      - git tag -f "v{{.MAJOR}}" "v{{.VERSION}}"
+      - git push origin main "v{{.VERSION}}" "v{{.MAJOR}}" --force
+      - git-cliff --latest --strip header | gh release create "v{{.VERSION}}" --title "v{{.VERSION}}" --notes-file -
+
   ci:validate:
     desc: Run all CI checks
     cmds:
