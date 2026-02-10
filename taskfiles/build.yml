@@ -3,5 +3,9 @@ version: '3'
 tasks:
   default:
     desc: Compile TypeScript to JavaScript
+    vars:
+      ACTIONS:
+        sh: find actions -name '*.ts' -not -path '*/tests/*' -not -path '*/dist/*'
     cmds:
-      - npx ncc build actions/tofu/post-plan-comment/post-plan-comment.ts -o actions/tofu/post-plan-comment/dist
+      - for: {var: ACTIONS, split: "\n"}
+        cmd: npx ncc build {{.ITEM}} -o $(dirname {{.ITEM}})/dist

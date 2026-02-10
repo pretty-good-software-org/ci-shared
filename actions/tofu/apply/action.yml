@@ -1,0 +1,19 @@
+name: 'OpenTofu Apply'
+description: 'Apply an OpenTofu plan'
+inputs:
+  working-directory:
+    description: 'Directory containing OpenTofu configuration'
+    required: false
+    default: 'tofu'
+  plan-file:
+    description: 'Path to the plan file (relative to working directory)'
+    required: false
+    default: 'plan.tfplan'
+runs:
+  using: 'composite'
+  steps:
+    - shell: bash
+      env:
+        INPUT_WORKING_DIRECTORY: ${{ inputs.working-directory }}
+        INPUT_PLAN_FILE: ${{ inputs.plan-file }}
+      run: node ${{ github.action_path }}/dist/index.js

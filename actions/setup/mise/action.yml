@@ -1,0 +1,15 @@
+name: 'Setup Mise'
+description: 'Checkout repository and install tools via mise'
+inputs:
+  mise-env:
+    description: 'MISE_ENV value (e.g., "ci")'
+    required: false
+    default: ''
+runs:
+  using: 'composite'
+  steps:
+    - uses: actions/checkout@v4
+    - shell: bash
+      env:
+        INPUT_MISE_ENV: ${{ inputs.mise-env }}
+      run: node ${{ github.action_path }}/dist/index.js

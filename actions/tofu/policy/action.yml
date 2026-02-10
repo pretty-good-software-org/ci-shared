@@ -1,0 +1,26 @@
+name: 'OpenTofu Policy Check'
+description: 'Run Conftest policy checks against an OpenTofu plan'
+inputs:
+  plan-json:
+    description: 'Path to the JSON plan file'
+    required: false
+    default: 'tofu/plan.json'
+outputs:
+  has_violations:
+    description: 'Whether policy violations were found (true/false)'
+    value: ${{ steps.policy.outputs.has_violations }}
+  policy_violations:
+    description: 'Violation details (empty if none)'
+    value: ${{ steps.policy.outputs.policy_violations }}
+runs:
+  using: 'composite'
+  steps:
+    - uses: actions/github-script@v7
+      id: policy
+      env:
+        INPUT_PLAN_JSON: ${{ inputs.plan-json }}
+      with:
+        github-token: ${{ github.token }}
+        script: |
+          const script = require('${{ github.action_path }}/dist/index.js')
+          await script({core})

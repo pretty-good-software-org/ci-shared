@@ -29,7 +29,7 @@ tasks:
   ts:
     desc: Lint TypeScript files
     cmds:
-      - oxlint actions/
+      - oxlint actions/ lib/
 
   typecheck:
     desc: Type-check TypeScript files
@@ -39,9 +39,9 @@ tasks:
   format:
     desc: Auto-format TypeScript files
     cmds:
-      - oxfmt --write 'actions/**/*.ts'
+      - oxfmt --write 'actions/**/*.ts' 'lib/**/*.ts'
 
   format:check:
     desc: Check TypeScript formatting
     cmds:
-      - oxfmt --check 'actions/**/*.ts'
+      - oxfmt --check 'actions/**/*.ts' 'lib/**/*.ts'

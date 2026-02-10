@@ -1,0 +1,14 @@
+name: 'OpenTofu Format Check'
+description: 'Check OpenTofu formatting'
+inputs:
+  working-directory:
+    description: 'Directory containing OpenTofu configuration'
+    required: false
+    default: 'tofu'
+runs:
+  using: 'composite'
+  steps:
+    - shell: bash
+      env:
+        INPUT_WORKING_DIRECTORY: ${{ inputs.working-directory }}
+      run: node ${{ github.action_path }}/dist/index.js
