@@ -13,25 +13,62 @@ actions/
     ├── post-plan-comment.js        # Script (runs via actions/github-script)
     └── post-plan-comment.test.js   # Tests (Node built-in test runner)
 .github/workflows/
-└── ci.yml                          # Self-CI: tests + actionlint
+└── ci.yml                          # Self-CI: tests + linting via mise + task
+lefthook/
+├── ci.yml                          # actionlint, yamllint, markdownlint hooks
+├── commit-msg.yml                  # commitlint hook
+└── general.yml                     # whitespace, EOF, merge conflict, large file hooks
 ```
+
+## Setup
+
+```bash
+# Install all dev tools and git hooks
+task setup
+```
+
+This installs mise tools (node, task, actionlint, yamllint, markdownlint-cli2, lefthook), configures git hooks via lefthook, and installs npm dependencies (commitlint).
 
 ## Commands
 
 ```bash
 # Run tests
-node --test actions/post-plan-comment/post-plan-comment.test.js
+task test
 
-# Lint workflows
-actionlint
+# Run all linters (actionlint + yamllint + markdownlint)
+task lint
+
+# Run individual linters
+task lint:actions
+task lint:yaml
+task lint:markdown
+
+# Run full CI validation locally
+task ci:validate
 ```
+
+## Tool Management
+
+Tools are managed via [mise](https://mise.jdx.dev/):
+
+- `.mise.toml` — base tools (node, task, actionlint, yamllint, markdownlint-cli2)
+- `.mise.development.toml` — local dev extras (lefthook)
+- `.mise.ci.toml` — CI profile (empty, uses base tools only)
+
+## Git Hooks
+
+Managed via [lefthook](https://github.com/evilmartians/lefthook). Hooks are split into files under `lefthook/`:
+
+- **commit-msg** — enforces conventional commits via commitlint
+- **pre-commit (general)** — trailing whitespace, EOF newline, YAML syntax, large files, merge conflicts
+- **pre-commit (ci)** — actionlint, yamllint, markdownlint
 
 ## Adding a New Action
 
 1. Create `actions/<action-name>/action.yml` with composite action definition
 2. Add implementation script alongside `action.yml`
 3. Add tests using Node built-in test runner (`node:test` + `node:assert`)
-4. Update CI workflow to run new tests
+4. Tests are auto-discovered via `actions/*/*.test.js` glob
 
 ## Versioning
 

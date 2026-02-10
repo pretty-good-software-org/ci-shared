@@ -1,0 +1,47 @@
+version: '3'
+
+tasks:
+  default:
+    desc: Show available tasks
+    cmds:
+      - task --list
+
+  setup:
+    desc: Install dev tools and git hooks
+    cmds:
+      - MISE_ENV=development mise install
+      - MISE_ENV=development mise exec -- lefthook install
+      - npm install
+
+  test:
+    desc: Run all tests
+    cmds:
+      - node --test actions/*/*.test.js
+
+  lint:
+    desc: Run all linters
+    cmds:
+      - task: lint:actions
+      - task: lint:yaml
+      - task: lint:markdown
+
+  lint:actions:
+    desc: Lint GitHub Actions workflows
+    cmds:
+      - actionlint
+
+  lint:yaml:
+    desc: Lint YAML files
+    cmds:
+      - yamllint --strict .
+
+  lint:markdown:
+    desc: Lint Markdown files
+    cmds:
+      - markdownlint-cli2 "**/*.md"
+
+  ci:validate:
+    desc: Run all CI checks
+    cmds:
+      - task: lint
+      - task: test

@@ -5,6 +5,9 @@ on:
   push:
     branches: [main]
 
+env:
+  MISE_ENV: ci
+
 jobs:
   test:
     name: Test
@@ -12,8 +15,10 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
+      - name: Install tools
+        run: mise install
       - name: Run tests
-        run: node --test actions/post-plan-comment/post-plan-comment.test.js
+        run: mise exec -- task test
 
   lint:
     name: Lint
@@ -21,5 +26,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-      - name: Actionlint
-        run: actionlint
+      - name: Install tools
+        run: mise install
+      - name: Run linters
+        run: mise exec -- task lint
