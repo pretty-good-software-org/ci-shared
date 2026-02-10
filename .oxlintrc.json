@@ -23,5 +23,5 @@
     "complexity": ["error", { "max": 5 }],
     "no-magic-numbers": ["error", { "ignore": [0, 1, -1], "ignoreArrayIndexes": true, "ignoreDefaultValues": true }]
   },
-  "ignorePatterns": ["node_modules/"]
+  "ignorePatterns": ["node_modules/", "actions/*/dist"]
 }

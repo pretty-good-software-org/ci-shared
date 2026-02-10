@@ -4,9 +4,52 @@
 // Reads step outcomes and plan output from environment variables,
 // Builds a markdown comment, and creates or updates the PR comment.
 
+interface BuildCommentArgs {
+  actor: string | undefined;
+  fmtOutcome: string | undefined;
+  hasViolations: boolean;
+  initOutcome: string | undefined;
+  plan: string | undefined;
+  planOutcome: string | undefined;
+  validateOutcome: string | undefined;
+}
+
+interface IssueComment {
+  body?: string;
+  id: number;
+}
+
+interface GitHubContext {
+  issue: { number: number };
+  repo: { owner: string; repo: string };
+}
+
+interface GitHubClient {
+  rest: {
+    issues: {
+      createComment: (args: { body: string; issue_number: number; owner: string; repo: string }) => Promise<unknown>;
+      listComments: (args: { issue_number: number; owner: string; repo: string }) => Promise<{ data: IssueComment[] }>;
+      updateComment: (args: { body: string; comment_id: number; owner: string; repo: string }) => Promise<unknown>;
+    };
+  };
+}
+
+interface PostCommentArgs {
+  body: string;
+  context: GitHubContext;
+  github: GitHubClient;
+}
+
+interface MainArgs {
+  context: GitHubContext;
+  env?: NodeJS.ProcessEnv;
+  github: GitHubClient;
+}
+
 const BOT_COMMENT_IDENTIFIER = "### OpenTofu Plan Results";
 
-const buildComment = ({ actor, fmtOutcome, hasViolations, initOutcome, plan, planOutcome, validateOutcome }) => {
+const buildComment = (args: BuildCommentArgs): string => {
+  const { actor, fmtOutcome, hasViolations, initOutcome, plan, planOutcome, validateOutcome } = args;
   let policyStatus = "PASSED";
   if (hasViolations) {
     policyStatus = "FAILED";
@@ -34,7 +77,7 @@ const buildComment = ({ actor, fmtOutcome, hasViolations, initOutcome, plan, pla
   ].join("\n");
 };
 
-const postComment = async ({ body, context, github }) => {
+const postComment = async ({ body, context, github }: PostCommentArgs): Promise<void> => {
   const { owner, repo } = context.repo;
   const issueNumber = context.issue.number;
   const { data: comments } = await github.rest.issues.listComments({
@@ -60,7 +103,7 @@ const postComment = async ({ body, context, github }) => {
   }
 };
 
-module.exports = async ({ context, env = process.env, github }) => {
+const main = async ({ context, env = process.env, github }: MainArgs): Promise<void> => {
   const body = buildComment({
     actor: env.ACTOR,
     fmtOutcome: env.FMT_OUTCOME,
@@ -73,6 +116,4 @@ module.exports = async ({ context, env = process.env, github }) => {
   await postComment({ body, context, github });
 };
 
-module.exports.buildComment = buildComment;
-module.exports.postComment = postComment;
-module.exports.BOT_COMMENT_IDENTIFIER = BOT_COMMENT_IDENTIFIER;
+module.exports = Object.assign(main, { BOT_COMMENT_IDENTIFIER, buildComment, postComment });

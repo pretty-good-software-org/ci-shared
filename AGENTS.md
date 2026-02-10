@@ -10,14 +10,16 @@ Shared composite actions for CI/CD across the organization. Each action is a sel
 actions/
 └── post-plan-comment/
     ├── action.yml                  # Composite action definition
-    ├── post-plan-comment.js        # Script (runs via actions/github-script)
+    ├── post-plan-comment.ts        # TypeScript source
+    ├── dist/
+    │   └── index.js                # Bundled JS (committed, used at runtime)
     └── tests/
-        ├── build-comment.test.js   # Tests for buildComment
-        └── post-comment.test.js    # Tests for postComment
+        ├── build-comment.test.ts   # Tests for buildComment
+        └── post-comment.test.ts    # Tests for postComment
 .github/workflows/
-└── ci.yml                          # Self-CI: tests + linting via mise + task
+└── ci.yml                          # Self-CI: tests + linting + build via mise + task
 lefthook/
-├── ci.yml                          # actionlint, yamllint, markdownlint, oxlint, oxfmt hooks
+├── ci.yml                          # actionlint, yamllint, markdownlint, oxlint, oxfmt, typecheck hooks
 ├── commit-msg.yml                  # commitlint hook
 └── general.yml                     # whitespace, EOF, merge conflict, large file hooks
 ```
@@ -29,27 +31,31 @@ lefthook/
 task setup
 ```
 
-This installs mise tools (node, task, actionlint, yamllint, markdownlint-cli2, oxlint, oxfmt, lefthook), configures git hooks via lefthook, and installs npm dependencies (commitlint).
+This installs mise tools (node, task, actionlint, yamllint, markdownlint-cli2, oxlint, oxfmt, lefthook), configures git hooks via lefthook, and installs npm dependencies (commitlint, typescript, @types/node).
 
 ## Commands
 
 ```bash
+# Compile TypeScript to JavaScript
+task build
+
 # Run tests
 task test
 
-# Run all linters (actionlint + yamllint + markdownlint + oxlint + oxfmt)
+# Run all linters (actionlint + yamllint + markdownlint + oxlint + typecheck + oxfmt)
 task lint
 
 # Run individual linters
 task lint:actions
 task lint:yaml
 task lint:markdown
-task lint:js
+task lint:ts
+task typecheck
 
-# Auto-format JavaScript files
+# Auto-format TypeScript files
 task format
 
-# Check JavaScript formatting
+# Check TypeScript formatting
 task format:check
 
 # Run full CI validation locally
@@ -70,14 +76,15 @@ Managed via [lefthook](https://github.com/evilmartians/lefthook). Hooks are spli
 
 - **commit-msg** — enforces conventional commits via commitlint
 - **pre-commit (general)** — trailing whitespace, EOF newline, YAML syntax, large files, merge conflicts
-- **pre-commit (ci)** — actionlint, yamllint, markdownlint, oxlint, oxfmt
+- **pre-commit (ci)** — actionlint, yamllint, markdownlint, oxlint, oxfmt, typecheck
 
 ## Adding a New Action
 
 1. Create `actions/<action-name>/action.yml` with composite action definition
-2. Add implementation script alongside `action.yml`
+2. Add implementation in TypeScript alongside `action.yml`
 3. Add tests in `actions/<action-name>/tests/` using Node built-in test runner (`node:test` + `node:assert`)
-4. Tests are auto-discovered via `actions/*/tests/*.test.js` glob
+4. Tests are auto-discovered via `actions/*/tests/*.test.ts` glob
+5. Run `task build` to bundle TypeScript with `ncc` — compiled `dist/index.js` must be committed
 
 ## Versioning
 
@@ -105,8 +112,10 @@ git push origin v1.x.x v1 --force
 
 ## Guidelines
 
-- Zero npm dependencies — use Node built-in modules only
+- Zero npm runtime dependencies — use Node built-in modules only
+- `typescript` and `@types/node` are devDependencies only (build-time)
 - Each action is self-contained (no shared code between actions)
+- Source is TypeScript (`.ts`), bundled JavaScript (`dist/index.js`) is committed
 - Tests must pass before merge
 - Conventional commits
 - Squash merge only

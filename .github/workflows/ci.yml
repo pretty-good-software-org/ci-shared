@@ -17,6 +17,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install tools
         run: mise install
+      - name: Install npm dependencies
+        run: mise exec -- npm ci
       - name: Run tests
         run: mise exec -- task test
 
@@ -28,5 +30,22 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install tools
         run: mise install
+      - name: Install npm dependencies
+        run: mise exec -- npm ci
       - name: Run linters
         run: mise exec -- task lint
+
+  build:
+    name: Build
+    runs-on: [self-hosted, macOS, ARM64]
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install tools
+        run: mise install
+      - name: Install npm dependencies
+        run: mise exec -- npm ci
+      - name: Compile TypeScript
+        run: mise exec -- task build
+      - name: Verify compiled JS is up-to-date
+        run: git diff --exit-code actions/*/dist/

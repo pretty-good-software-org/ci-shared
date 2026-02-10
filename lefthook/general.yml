@@ -2,7 +2,7 @@ pre-commit:
   parallel: true
   commands:
     trailing-whitespace:
-      glob: "*.{js,yaml,yml,md,json}"
+      glob: "*.{js,ts,yaml,yml,md,json}"
       run: |
         if grep -Hn '[[:blank:]]$' {staged_files} 2>/dev/null; then
           echo "Trailing whitespace found"
@@ -11,7 +11,7 @@ pre-commit:
       fail_text: "trailing whitespace found"
 
     end-of-file:
-      glob: "*.{js,yaml,yml,md,json}"
+      glob: "*.{js,ts,yaml,yml,md,json}"
       run: |
         for f in {staged_files}; do
           if [ -s "$f" ] && [ -n "$(tail -c 1 "$f")" ]; then
