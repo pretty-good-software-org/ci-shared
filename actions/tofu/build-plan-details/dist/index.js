@@ -34,15 +34,7 @@ module.exports = Object.assign(main, { buildPlanDetails, parseEnv });
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const buildPlanDetails = (args) => {
     const plan = (args.plan ?? "").replace(/```/g, "` ` `");
-    return [
-        "<details><summary>Show Plan</summary>",
-        "",
-        "```terraform",
-        plan,
-        "```",
-        "",
-        "</details>",
-    ].join("\n");
+    return ["<details><summary>Show Plan</summary>", "", "```terraform", plan, "```", "", "</details>"].join("\n");
 };
 module.exports = { buildPlanDetails };
 

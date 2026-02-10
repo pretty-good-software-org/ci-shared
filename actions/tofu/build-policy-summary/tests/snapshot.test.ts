@@ -4,11 +4,9 @@ const { buildPolicySummary } = require("../build-policy-summary.ts");
 
 describe("buildPolicySummary snapshot", () => {
   it("matches expected full output for PASSED", () => {
-    const expected = [
-      "#### Conftest Policy Check: `PASSED`",
-      "All policies passed",
-      "*Pushed by: @testuser*",
-    ].join("\n");
+    const expected = ["#### Conftest Policy Check: `PASSED`", "All policies passed", "*Pushed by: @testuser*"].join(
+      "\n",
+    );
     assert.strictEqual(buildPolicySummary({ hasViolations: false, actor: "testuser" }), expected);
   });
   it("matches expected full output for FAILED", () => {
