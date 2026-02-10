@@ -24,6 +24,7 @@ tasks:
       - task: lint:actions
       - task: lint:yaml
       - task: lint:markdown
+      - task: lint:js
 
   lint:actions:
     desc: Lint GitHub Actions workflows
@@ -39,6 +40,16 @@ tasks:
     desc: Lint Markdown files
     cmds:
       - markdownlint-cli2 "**/*.md"
+
+  lint:js:
+    desc: Lint and format-check JavaScript files
+    cmds:
+      - biome check .
+
+  format:
+    desc: Auto-format JavaScript files
+    cmds:
+      - biome format --write .
 
   ci:validate:
     desc: Run all CI checks

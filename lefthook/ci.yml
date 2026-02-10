@@ -12,3 +12,7 @@ pre-commit:
       glob: "*.md"
       run: markdownlint-cli2 "**/*.md"
       fail_text: "markdownlint found issues"
+    biome:
+      glob: "*.js"
+      run: biome check .
+      fail_text: "biome found issues"

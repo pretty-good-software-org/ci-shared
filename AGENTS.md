@@ -27,7 +27,7 @@ lefthook/
 task setup
 ```
 
-This installs mise tools (node, task, actionlint, yamllint, markdownlint-cli2, lefthook), configures git hooks via lefthook, and installs npm dependencies (commitlint).
+This installs mise tools (node, task, actionlint, yamllint, markdownlint-cli2, biome, lefthook), configures git hooks via lefthook, and installs npm dependencies (commitlint).
 
 ## Commands
 
@@ -35,13 +35,17 @@ This installs mise tools (node, task, actionlint, yamllint, markdownlint-cli2, l
 # Run tests
 task test
 
-# Run all linters (actionlint + yamllint + markdownlint)
+# Run all linters (actionlint + yamllint + markdownlint + biome)
 task lint
 
 # Run individual linters
 task lint:actions
 task lint:yaml
 task lint:markdown
+task lint:js
+
+# Auto-format JavaScript files
+task format
 
 # Run full CI validation locally
 task ci:validate
@@ -51,7 +55,7 @@ task ci:validate
 
 Tools are managed via [mise](https://mise.jdx.dev/):
 
-- `.mise.toml` — base tools (node, task, actionlint, yamllint, markdownlint-cli2)
+- `.mise.toml` — base tools (node, task, actionlint, yamllint, markdownlint-cli2, biome)
 - `.mise.development.toml` — local dev extras (lefthook)
 - `.mise.ci.toml` — CI profile (empty, uses base tools only)
 
@@ -61,7 +65,7 @@ Managed via [lefthook](https://github.com/evilmartians/lefthook). Hooks are spli
 
 - **commit-msg** — enforces conventional commits via commitlint
 - **pre-commit (general)** — trailing whitespace, EOF newline, YAML syntax, large files, merge conflicts
-- **pre-commit (ci)** — actionlint, yamllint, markdownlint
+- **pre-commit (ci)** — actionlint, yamllint, markdownlint, biome
 
 ## Adding a New Action
 
