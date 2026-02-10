@@ -4,4 +4,4 @@ tasks:
   default:
     desc: Compile TypeScript to JavaScript
     cmds:
-      - npx ncc build actions/post-plan-comment/post-plan-comment.ts -o actions/post-plan-comment/dist
+      - npx ncc build actions/tofu/post-plan-comment/post-plan-comment.ts -o actions/tofu/post-plan-comment/dist

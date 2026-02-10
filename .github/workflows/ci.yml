@@ -48,4 +48,4 @@ jobs:
       - name: Compile TypeScript
         run: mise exec -- task build
       - name: Verify compiled JS is up-to-date
-        run: git diff --exit-code actions/*/dist/
+        run: git diff --exit-code actions/*/*/dist/

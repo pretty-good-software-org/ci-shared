@@ -4,12 +4,12 @@ Shared composite actions for CI/CD across the organization.
 
 ## Actions
 
-### post-plan-comment
+### tofu/post-plan-comment
 
 Posts OpenTofu plan results as a PR comment. Creates a new comment or updates an existing one.
 
 ```yaml
-- uses: OlechowskiMichal/ci-shared/actions/post-plan-comment@v1
+- uses: OlechowskiMichal/ci-shared/actions/tofu/post-plan-comment@v1
   with:
     plan: ${{ steps.plan.outputs.plan }}
     fmt_outcome: ${{ steps.fmt.outcome }}
@@ -53,10 +53,10 @@ task ci:validate
 
 ## Adding a New Action
 
-1. Create `actions/<action-name>/action.yml` with composite action definition
+1. Create `actions/<category>/<action-name>/action.yml` with composite action definition
 2. Add implementation in TypeScript alongside `action.yml`
-3. Add tests in `actions/<action-name>/tests/` using Node built-in test runner (`node:test` + `node:assert`)
-4. Tests are auto-discovered via `actions/*/tests/*.test.ts` glob
+3. Add tests in `actions/<category>/<action-name>/tests/` using Node built-in test runner (`node:test` + `node:assert`)
+4. Tests are auto-discovered via `actions/*/*/tests/*.test.ts` glob
 5. Run `task build` to bundle with `ncc` — compiled `dist/index.js` must be committed
 
 ## Versioning

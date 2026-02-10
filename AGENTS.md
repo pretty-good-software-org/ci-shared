@@ -13,14 +13,15 @@ Shared composite actions for CI/CD across the organization. Each action is a sel
 
 ```text
 actions/
-└── post-plan-comment/
-    ├── action.yml                  # Composite action definition
-    ├── post-plan-comment.ts        # TypeScript source
-    ├── dist/
-    │   └── index.js                # Bundled JS (committed, used at runtime)
-    └── tests/
-        ├── build-comment.test.ts   # Tests for buildComment
-        └── post-comment.test.ts    # Tests for postComment
+└── tofu/
+    └── post-plan-comment/
+        ├── action.yml              # Composite action definition
+        ├── post-plan-comment.ts    # TypeScript source
+        ├── dist/
+        │   └── index.js            # Bundled JS (committed, used at runtime)
+        └── tests/
+            ├── build-comment.test.ts
+            └── post-comment.test.ts
 taskfiles/
 ├── setup.yml                       # Dev tools, git hooks, npm deps
 ├── build.yml                       # ncc build
@@ -59,7 +60,7 @@ This runs `mise install` (node 22, task 3, actionlint, yamllint, markdownlint-cl
 ```bash
 task setup              # Install dev tools, git hooks, and npm deps
 task build              # Compile TypeScript to JavaScript via ncc
-task test               # Run all tests (auto-discovered via actions/*/tests/*.test.ts)
+task test               # Run all tests (auto-discovered via actions/*/*/tests/*.test.ts)
 task lint               # Run all linters (actionlint + yamllint + markdownlint + oxlint + typecheck + oxfmt)
 task lint:actions       # Lint GitHub Actions workflows
 task lint:yaml          # Lint YAML files
@@ -81,7 +82,7 @@ Tests use Node built-in test runner (`node:test` + `node:assert`) with `--experi
 task test
 ```
 
-Tests are auto-discovered via the glob `actions/*/tests/*.test.ts`. No additional test dependencies are needed.
+Tests are auto-discovered via the glob `actions/*/*/tests/*.test.ts`. No additional test dependencies are needed.
 
 ## Tool Management
 
@@ -109,10 +110,10 @@ Managed via [lefthook](https://github.com/evilmartians/lefthook). Hooks are spli
 
 ## Adding a New Action
 
-1. Create `actions/<action-name>/action.yml` with composite action definition
+1. Create `actions/<category>/<action-name>/action.yml` with composite action definition
 2. Add implementation in TypeScript alongside `action.yml`
-3. Add tests in `actions/<action-name>/tests/` using Node built-in test runner (`node:test` + `node:assert`)
-4. Tests are auto-discovered via `actions/*/tests/*.test.ts` glob
+3. Add tests in `actions/<category>/<action-name>/tests/` using Node built-in test runner (`node:test` + `node:assert`)
+4. Tests are auto-discovered via `actions/*/*/tests/*.test.ts` glob
 5. Run `task build` to bundle TypeScript with `ncc` — compiled `dist/index.js` must be committed
 
 ## Versioning
@@ -128,7 +129,7 @@ git push origin v1.x.x v1 --force
 ## Consumer Usage
 
 ```yaml
-- uses: OlechowskiMichal/ci-shared/actions/post-plan-comment@v1
+- uses: OlechowskiMichal/ci-shared/actions/tofu/post-plan-comment@v1
   with:
     plan: ${{ steps.plan.outputs.plan }}
     fmt_outcome: ${{ steps.fmt.outcome }}

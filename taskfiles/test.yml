@@ -4,4 +4,4 @@ tasks:
   default:
     desc: Run all tests
     cmds:
-      - node --experimental-strip-types --test actions/*/tests/*.test.ts
+      - node --experimental-strip-types --test actions/*/*/tests/*.test.ts
