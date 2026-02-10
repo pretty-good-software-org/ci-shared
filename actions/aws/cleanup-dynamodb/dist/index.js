@@ -12,10 +12,20 @@
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const { execCapture } = __nccwpck_require__(361);
 const { listTables } = __nccwpck_require__(692);
+const MIN_PREFIX_LENGTH = 5;
 const run = ({ prefix, region }, exec = execCapture) => {
     const tables = listTables(prefix, region, exec);
+    const failed = [];
     for (const table of tables) {
-        exec("aws", ["dynamodb", "delete-table", "--table-name", table, "--region", region]);
+        try {
+            exec("aws", ["dynamodb", "delete-table", "--table-name", table, "--region", region]);
+        }
+        catch {
+            failed.push(table);
+        }
+    }
+    if (failed.length > 0) {
+        throw new Error(`Failed to delete ${failed.length} table(s): ${failed.join(", ")}`);
     }
     return tables;
 };
@@ -24,6 +34,9 @@ const parseRunArgs = (env) => {
     const region = env.INPUT_REGION || "us-east-1";
     if (!prefix) {
         throw new Error("INPUT_PREFIX is required");
+    }
+    if (prefix.length < MIN_PREFIX_LENGTH) {
+        throw new Error(`INPUT_PREFIX must be at least ${MIN_PREFIX_LENGTH} characters (got "${prefix}")`);
     }
     if (!/^[a-z]{2}-[a-z]+-\d+$/.test(region)) {
         throw new Error(`Invalid AWS region: ${region}`);

@@ -3,24 +3,14 @@ const assert = require("node:assert");
 const { parseEnv } = require("../parse-env.ts");
 
 describe("parseEnv mapping", () => {
-  it("maps INPUT_* env vars to BuildCommentArgs", () => {
+  it("maps INPUT_* env vars to PolicySummaryArgs", () => {
     const env = {
-      INPUT_ACTOR: "octocat",
-      INPUT_FMT_OUTCOME: "success",
       INPUT_HAS_VIOLATIONS: "false",
-      INPUT_INIT_OUTCOME: "failure",
-      INPUT_PLAN: "some plan",
-      INPUT_PLAN_OUTCOME: "success",
-      INPUT_VALIDATE_OUTCOME: "cancelled",
+      INPUT_ACTOR: "octocat",
     };
     const args = parseEnv(env);
-    assert.strictEqual(args.actor, "octocat", "actor mismatch");
-    assert.strictEqual(args.fmtOutcome, "success", "fmtOutcome mismatch");
-    assert.strictEqual(args.initOutcome, "failure", "initOutcome mismatch");
-    assert.strictEqual(args.validateOutcome, "cancelled", "validateOutcome mismatch");
-    assert.strictEqual(args.planOutcome, "success", "planOutcome mismatch");
-    assert.strictEqual(args.plan, "some plan", "plan mismatch");
     assert.strictEqual(args.hasViolations, false, "hasViolations should be false");
+    assert.strictEqual(args.actor, "octocat", "actor mismatch");
   });
 });
 
@@ -51,16 +41,8 @@ describe("parseEnv boolean case sensitivity", () => {
 });
 
 describe("parseEnv defaults", () => {
-  it("defaults missing plan to empty string", () => {
-    const args = parseEnv({});
-    assert.strictEqual(args.plan, "", "missing plan should default to empty string");
-  });
-  it("preserves undefined for optional string fields", () => {
+  it("preserves undefined for missing actor", () => {
     const args = parseEnv({});
     assert.strictEqual(args.actor, undefined, "missing actor should be undefined");
-    assert.strictEqual(args.fmtOutcome, undefined, "missing fmtOutcome should be undefined");
-    assert.strictEqual(args.initOutcome, undefined, "missing initOutcome should be undefined");
-    assert.strictEqual(args.validateOutcome, undefined, "missing validateOutcome should be undefined");
-    assert.strictEqual(args.planOutcome, undefined, "missing planOutcome should be undefined");
   });
 });
