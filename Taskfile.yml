@@ -16,7 +16,7 @@ tasks:
   test:
     desc: Run all tests
     cmds:
-      - node --test actions/*/*.test.js
+      - node --test actions/*/tests/*.test.js
 
   lint:
     desc: Run all linters
@@ -25,6 +25,7 @@ tasks:
       - task: lint:yaml
       - task: lint:markdown
       - task: lint:js
+      - task: format:check
 
   lint:actions:
     desc: Lint GitHub Actions workflows
@@ -42,14 +43,19 @@ tasks:
       - markdownlint-cli2 "**/*.md"
 
   lint:js:
-    desc: Lint and format-check JavaScript files
+    desc: Lint JavaScript files
     cmds:
-      - biome check .
+      - oxlint actions/
 
   format:
     desc: Auto-format JavaScript files
     cmds:
-      - biome format --write .
+      - oxfmt --write 'actions/**/*.js'
+
+  format:check:
+    desc: Check JavaScript formatting
+    cmds:
+      - oxfmt --check 'actions/**/*.js'
 
   ci:validate:
     desc: Run all CI checks

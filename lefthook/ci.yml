@@ -12,7 +12,11 @@ pre-commit:
       glob: "*.md"
       run: markdownlint-cli2 "**/*.md"
       fail_text: "markdownlint found issues"
-    biome:
+    oxlint:
       glob: "*.js"
-      run: biome check .
-      fail_text: "biome found issues"
+      run: oxlint actions/
+      fail_text: "oxlint found issues"
+    oxfmt:
+      glob: "*.js"
+      run: oxfmt --check 'actions/**/*.js'
+      fail_text: "oxfmt found formatting issues"

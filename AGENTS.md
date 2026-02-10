@@ -11,11 +11,13 @@ actions/
 └── post-plan-comment/
     ├── action.yml                  # Composite action definition
     ├── post-plan-comment.js        # Script (runs via actions/github-script)
-    └── post-plan-comment.test.js   # Tests (Node built-in test runner)
+    └── tests/
+        ├── build-comment.test.js   # Tests for buildComment
+        └── post-comment.test.js    # Tests for postComment
 .github/workflows/
 └── ci.yml                          # Self-CI: tests + linting via mise + task
 lefthook/
-├── ci.yml                          # actionlint, yamllint, markdownlint hooks
+├── ci.yml                          # actionlint, yamllint, markdownlint, oxlint, oxfmt hooks
 ├── commit-msg.yml                  # commitlint hook
 └── general.yml                     # whitespace, EOF, merge conflict, large file hooks
 ```
@@ -27,7 +29,7 @@ lefthook/
 task setup
 ```
 
-This installs mise tools (node, task, actionlint, yamllint, markdownlint-cli2, biome, lefthook), configures git hooks via lefthook, and installs npm dependencies (commitlint).
+This installs mise tools (node, task, actionlint, yamllint, markdownlint-cli2, oxlint, oxfmt, lefthook), configures git hooks via lefthook, and installs npm dependencies (commitlint).
 
 ## Commands
 
@@ -35,7 +37,7 @@ This installs mise tools (node, task, actionlint, yamllint, markdownlint-cli2, b
 # Run tests
 task test
 
-# Run all linters (actionlint + yamllint + markdownlint + biome)
+# Run all linters (actionlint + yamllint + markdownlint + oxlint + oxfmt)
 task lint
 
 # Run individual linters
@@ -47,6 +49,9 @@ task lint:js
 # Auto-format JavaScript files
 task format
 
+# Check JavaScript formatting
+task format:check
+
 # Run full CI validation locally
 task ci:validate
 ```
@@ -55,7 +60,7 @@ task ci:validate
 
 Tools are managed via [mise](https://mise.jdx.dev/):
 
-- `.mise.toml` — base tools (node, task, actionlint, yamllint, markdownlint-cli2, biome)
+- `.mise.toml` — base tools (node, task, actionlint, yamllint, markdownlint-cli2, oxlint, oxfmt)
 - `.mise.development.toml` — local dev extras (lefthook)
 - `.mise.ci.toml` — CI profile (empty, uses base tools only)
 
@@ -65,14 +70,14 @@ Managed via [lefthook](https://github.com/evilmartians/lefthook). Hooks are spli
 
 - **commit-msg** — enforces conventional commits via commitlint
 - **pre-commit (general)** — trailing whitespace, EOF newline, YAML syntax, large files, merge conflicts
-- **pre-commit (ci)** — actionlint, yamllint, markdownlint, biome
+- **pre-commit (ci)** — actionlint, yamllint, markdownlint, oxlint, oxfmt
 
 ## Adding a New Action
 
 1. Create `actions/<action-name>/action.yml` with composite action definition
 2. Add implementation script alongside `action.yml`
-3. Add tests using Node built-in test runner (`node:test` + `node:assert`)
-4. Tests are auto-discovered via `actions/*/*.test.js` glob
+3. Add tests in `actions/<action-name>/tests/` using Node built-in test runner (`node:test` + `node:assert`)
+4. Tests are auto-discovered via `actions/*/tests/*.test.js` glob
 
 ## Versioning
 

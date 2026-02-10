@@ -2,16 +2,19 @@
 // Used by actions/github-script in plan.yml.
 //
 // Reads step outcomes and plan output from environment variables,
-// builds a markdown comment, and creates or updates the PR comment.
+// Builds a markdown comment, and creates or updates the PR comment.
 
 const BOT_COMMENT_IDENTIFIER = "### OpenTofu Plan Results";
 
-function buildComment({ plan, fmtOutcome, initOutcome, validateOutcome, planOutcome, hasViolations, actor }) {
-  const policyStatus = hasViolations ? "FAILED" : "PASSED";
-  const policyMessage = hasViolations
-    ? "**Policy Violations:** See Conftest step output for details"
-    : "All policies passed";
-
+const buildComment = ({ actor, fmtOutcome, hasViolations, initOutcome, plan, planOutcome, validateOutcome }) => {
+  let policyStatus = "PASSED";
+  if (hasViolations) {
+    policyStatus = "FAILED";
+  }
+  let policyMessage = "All policies passed";
+  if (hasViolations) {
+    policyMessage = "**Policy Violations:** See Conftest step output for details";
+  }
   return [
     "### OpenTofu Plan Results",
     `#### Format Check: \`${fmtOutcome}\``,
@@ -29,49 +32,45 @@ function buildComment({ plan, fmtOutcome, initOutcome, validateOutcome, planOutc
     policyMessage,
     `*Pushed by: @${actor}*`,
   ].join("\n");
-}
+};
 
-async function postComment({ github, context, body }) {
+const postComment = async ({ body, context, github }) => {
   const { owner, repo } = context.repo;
   const issueNumber = context.issue.number;
-
   const { data: comments } = await github.rest.issues.listComments({
+    issue_number: issueNumber,
     owner,
     repo,
-    issue_number: issueNumber,
   });
-
-  const existing = comments.find((c) => c.body?.startsWith(BOT_COMMENT_IDENTIFIER));
-
+  const existing = comments.find((comment) => comment.body?.startsWith(BOT_COMMENT_IDENTIFIER));
   if (existing) {
     await github.rest.issues.updateComment({
+      body,
+      comment_id: existing.id,
       owner,
       repo,
-      comment_id: existing.id,
-      body,
     });
   } else {
     await github.rest.issues.createComment({
+      body,
+      issue_number: issueNumber,
       owner,
       repo,
-      issue_number: issueNumber,
-      body,
     });
   }
-}
+};
 
-module.exports = async ({ github, context, env = process.env }) => {
+module.exports = async ({ context, env = process.env, github }) => {
   const body = buildComment({
-    plan: env.PLAN || "",
-    fmtOutcome: env.FMT_OUTCOME,
-    initOutcome: env.INIT_OUTCOME,
-    validateOutcome: env.VALIDATE_OUTCOME,
-    planOutcome: env.PLAN_OUTCOME,
-    hasViolations: env.HAS_VIOLATIONS === "true",
     actor: env.ACTOR,
+    fmtOutcome: env.FMT_OUTCOME,
+    hasViolations: env.HAS_VIOLATIONS === "true",
+    initOutcome: env.INIT_OUTCOME,
+    plan: env.PLAN || "",
+    planOutcome: env.PLAN_OUTCOME,
+    validateOutcome: env.VALIDATE_OUTCOME,
   });
-
-  await postComment({ github, context, body });
+  await postComment({ body, context, github });
 };
 
 module.exports.buildComment = buildComment;
