@@ -21,6 +21,12 @@ actions/
     └── tests/
         ├── build-comment.test.ts   # Tests for buildComment
         └── post-comment.test.ts    # Tests for postComment
+taskfiles/
+├── setup.yml                       # Dev tools, git hooks, npm deps
+├── build.yml                       # ncc build
+├── lint.yml                        # All linters (actionlint, yamllint, markdownlint, oxlint, oxfmt, typecheck)
+├── test.yml                        # Node test runner
+└── release.yml                     # Changelog generation and release flow
 .github/workflows/
 └── ci.yml                          # Self-CI: tests + linting + build via mise + task
 lefthook/
@@ -51,19 +57,20 @@ This runs `mise install` (node 22, task 3, actionlint, yamllint, markdownlint-cl
 ## Available Commands
 
 ```bash
-task build            # Compile TypeScript to JavaScript via ncc
-task test             # Run all tests (auto-discovered via actions/*/tests/*.test.ts)
-task lint             # Run all linters (actionlint + yamllint + markdownlint + oxlint + typecheck + oxfmt)
-task lint:actions     # Lint GitHub Actions workflows
-task lint:yaml        # Lint YAML files
-task lint:markdown    # Lint Markdown files
-task lint:ts          # Lint TypeScript files
-task typecheck        # Type-check TypeScript files
-task format           # Auto-format TypeScript files
-task format:check     # Check TypeScript formatting
-task ci:validate      # Run full CI validation locally (build + lint + test)
-task changelog        # Generate CHANGELOG.md from commit history
-task release          # Create a release (usage: task release VERSION=x.y.z)
+task setup              # Install dev tools, git hooks, and npm deps
+task build              # Compile TypeScript to JavaScript via ncc
+task test               # Run all tests (auto-discovered via actions/*/tests/*.test.ts)
+task lint               # Run all linters (actionlint + yamllint + markdownlint + oxlint + typecheck + oxfmt)
+task lint:actions       # Lint GitHub Actions workflows
+task lint:yaml          # Lint YAML files
+task lint:markdown      # Lint Markdown files
+task lint:ts            # Lint TypeScript files
+task lint:typecheck     # Type-check TypeScript files
+task lint:format        # Auto-format TypeScript files
+task lint:format:check  # Check TypeScript formatting
+task ci:validate        # Run full CI validation locally (build + lint + test)
+task release:changelog  # Generate CHANGELOG.md from commit history
+task release:release    # Create a release (usage: task release:release VERSION=x.y.z)
 ```
 
 ## Testing

@@ -1,93 +1,22 @@
 version: '3'
 
+includes:
+  setup:
+    taskfile: ./taskfiles/setup.yml
+  build:
+    taskfile: ./taskfiles/build.yml
+  lint:
+    taskfile: ./taskfiles/lint.yml
+  test:
+    taskfile: ./taskfiles/test.yml
+  release:
+    taskfile: ./taskfiles/release.yml
+
 tasks:
   default:
     desc: Show available tasks
     cmds:
       - task --list
-
-  setup:
-    desc: Install dev tools and git hooks
-    cmds:
-      - MISE_ENV=development mise install
-      - MISE_ENV=development mise exec -- lefthook install
-      - npm install
-
-  build:
-    desc: Compile TypeScript to JavaScript
-    cmds:
-      - npx ncc build actions/post-plan-comment/post-plan-comment.ts -o actions/post-plan-comment/dist
-
-  test:
-    desc: Run all tests
-    cmds:
-      - node --experimental-strip-types --test actions/*/tests/*.test.ts
-
-  lint:
-    desc: Run all linters
-    cmds:
-      - task: lint:actions
-      - task: lint:yaml
-      - task: lint:markdown
-      - task: lint:ts
-      - task: typecheck
-      - task: format:check
-
-  lint:actions:
-    desc: Lint GitHub Actions workflows
-    cmds:
-      - actionlint
-
-  lint:yaml:
-    desc: Lint YAML files
-    cmds:
-      - yamllint --strict .
-
-  lint:markdown:
-    desc: Lint Markdown files
-    cmds:
-      - markdownlint-cli2 "**/*.md"
-
-  lint:ts:
-    desc: Lint TypeScript files
-    cmds:
-      - oxlint actions/
-
-  typecheck:
-    desc: Type-check TypeScript files
-    cmds:
-      - npx tsc --noEmit
-
-  format:
-    desc: Auto-format TypeScript files
-    cmds:
-      - oxfmt --write 'actions/**/*.ts'
-
-  format:check:
-    desc: Check TypeScript formatting
-    cmds:
-      - oxfmt --check 'actions/**/*.ts'
-
-  changelog:
-    desc: Generate CHANGELOG.md from commit history
-    cmds:
-      - git-cliff -o CHANGELOG.md
-
-  release:
-    desc: "Create a release (usage: task release VERSION=x.y.z)"
-    requires:
-      vars: [VERSION]
-    vars:
-      MAJOR:
-        sh: echo "{{.VERSION}}" | cut -d. -f1
-    cmds:
-      - git-cliff -o CHANGELOG.md --tag "v{{.VERSION}}"
-      - git add CHANGELOG.md
-      - 'git commit -m "chore(release): v{{.VERSION}}"'
-      - git tag -a "v{{.VERSION}}" -m "Release v{{.VERSION}}"
-      - git tag -f "v{{.MAJOR}}" "v{{.VERSION}}"
-      - git push origin main "v{{.VERSION}}" "v{{.MAJOR}}" --force
-      - git-cliff --latest --strip header | gh release create "v{{.VERSION}}" --title "v{{.VERSION}}" --notes-file -
 
   ci:validate:
     desc: Run all CI checks
