@@ -14,27 +14,19 @@ const defaults = {
 
 describe("buildComment heading and sections", () => {
   it("starts with the literal heading", () => {
-    const body = buildComment(defaults);
-    assert.match(body, /^### OpenTofu Plan Results\n/);
+    assert.match(buildComment(defaults), /^### OpenTofu Plan Results\n/);
   });
-
   it("renders all four step outcome headings", () => {
     const body = buildComment({
-      ...defaults,
-      fmtOutcome: "success",
-      initOutcome: "failure",
-      planOutcome: "skipped",
-      validateOutcome: "cancelled",
+      ...defaults, fmtOutcome: "success", initOutcome: "failure", planOutcome: "skipped", validateOutcome: "cancelled",
     });
     assert.match(body, /#### Format Check: `success`/);
     assert.match(body, /#### Init: `failure`/);
     assert.match(body, /#### Validate: `cancelled`/);
     assert.match(body, /#### Plan: `skipped`/);
   });
-
   it("renders actor with @ mention at the end", () => {
-    const body = buildComment({ ...defaults, actor: "octocat" });
-    assert.match(body, /\*Pushed by: @octocat\*$/);
+    assert.match(buildComment({ ...defaults, actor: "octocat" }), /\*Pushed by: @octocat\*$/);
   });
 });
 
@@ -46,8 +38,6 @@ describe("buildComment plan nesting", () => {
     const planText = body.indexOf("resource changes");
     const codeClose = body.indexOf("```\n", codeOpen + 1);
     const detailsClose = body.indexOf("</details>");
-
-    // Verify structural ordering: details > code fence > plan > close fence > close details
     assert.ok(detailsOpen < codeOpen, "details must open before code block");
     assert.ok(codeOpen < planText, "code block must open before plan");
     assert.ok(planText < codeClose, "plan must appear before code block close");
@@ -62,7 +52,6 @@ describe("buildComment policy status", () => {
     assert.match(body, /All policies passed/);
     assert.ok(!body.includes("FAILED"), "must not mention FAILED");
   });
-
   it("shows FAILED with violation details when violations exist", () => {
     const body = buildComment({ ...defaults, hasViolations: true });
     assert.match(body, /Conftest Policy Check: `FAILED`/);
@@ -73,53 +62,39 @@ describe("buildComment policy status", () => {
 });
 
 describe("buildComment step outcomes", () => {
-  const outcomes = ["success", "failure", "cancelled", "skipped"];
-
-  for (const outcome of outcomes) {
+  for (const outcome of ["success", "failure", "cancelled", "skipped"]) {
     it(`renders fmtOutcome=${outcome}`, () => {
-      const body = buildComment({ ...defaults, fmtOutcome: outcome });
-      assert.match(body, new RegExp(`Format Check: \`${outcome}\``));
+      assert.match(buildComment({ ...defaults, fmtOutcome: outcome }), new RegExp(`Format Check: \`${outcome}\``));
     });
   }
 });
 
 describe("buildComment edge cases", () => {
   it("handles empty plan string", () => {
-    const body = buildComment({ ...defaults, plan: "" });
-    assert.match(body, /```terraform\n\n```/);
+    assert.match(buildComment({ ...defaults, plan: "" }), /```terraform\n\n```/);
   });
-
   it("handles undefined actor", () => {
-    const body = buildComment({ ...defaults, actor: undefined });
-    assert.match(body, /\*Pushed by: @undefined\*/);
+    assert.match(buildComment({ ...defaults, actor: undefined }), /\*Pushed by: @unknown\*/);
   });
-
+  it("handles undefined outcomes", () => {
+    const body = buildComment({ ...defaults, fmtOutcome: undefined, initOutcome: undefined, planOutcome: undefined, validateOutcome: undefined });
+    assert.match(body, /Format Check: `unknown`/, "fmtOutcome should fall back to 'unknown'");
+    assert.match(body, /Init: `unknown`/, "initOutcome should fall back to 'unknown'");
+    assert.match(body, /Validate: `unknown`/, "validateOutcome should fall back to 'unknown'");
+    assert.match(body, /Plan: `unknown`/, "planOutcome should fall back to 'unknown'");
+  });
   it("handles undefined plan as empty", () => {
-    const body = buildComment({ ...defaults, plan: undefined });
-    // Array.join converts undefined to empty string
-    assert.match(body, /```terraform\n\n```/);
+    assert.match(buildComment({ ...defaults, plan: undefined }), /```terraform\n\n```/);
   });
 });
 
-// Snapshot: full output for the default happy-path input
 describe("buildComment snapshot", () => {
   it("matches expected full output", () => {
     const expected = [
-      "### OpenTofu Plan Results",
-      "#### Format Check: `success`",
-      "#### Init: `success`",
-      "#### Validate: `success`",
-      "#### Plan: `success`",
-      "<details><summary>Show Plan</summary>",
-      "",
-      "```terraform",
-      "No changes.",
-      "```",
-      "",
-      "</details>",
-      "#### Conftest Policy Check: `PASSED`",
-      "All policies passed",
-      "*Pushed by: @testuser*",
+      "### OpenTofu Plan Results", "#### Format Check: `success`", "#### Init: `success`",
+      "#### Validate: `success`", "#### Plan: `success`", "<details><summary>Show Plan</summary>",
+      "", "```terraform", "No changes.", "```", "", "</details>",
+      "#### Conftest Policy Check: `PASSED`", "All policies passed", "*Pushed by: @testuser*",
     ].join("\n");
     assert.strictEqual(buildComment(defaults), expected);
   });

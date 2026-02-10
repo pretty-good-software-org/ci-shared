@@ -1,0 +1,18 @@
+name: 'Cleanup DynamoDB Tables'
+description: 'Delete DynamoDB tables matching a prefix'
+inputs:
+  prefix:
+    description: 'Table name prefix to match'
+    required: true
+  region:
+    description: 'AWS region'
+    required: false
+    default: 'us-east-1'
+runs:
+  using: 'composite'
+  steps:
+    - shell: bash
+      env:
+        INPUT_PREFIX: ${{ inputs.prefix }}
+        INPUT_REGION: ${{ inputs.region }}
+      run: node ${{ github.action_path }}/dist/index.js

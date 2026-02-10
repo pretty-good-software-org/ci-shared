@@ -1,0 +1,18 @@
+name: 'Cleanup S3 Buckets'
+description: 'Delete S3 buckets matching a prefix (handles versioned buckets)'
+inputs:
+  prefix:
+    description: 'Bucket name prefix to match'
+    required: true
+  region:
+    description: 'AWS region'
+    required: false
+    default: 'us-east-1'
+runs:
+  using: 'composite'
+  steps:
+    - shell: bash
+      env:
+        INPUT_PREFIX: ${{ inputs.prefix }}
+        INPUT_REGION: ${{ inputs.region }}
+      run: node ${{ github.action_path }}/dist/index.js

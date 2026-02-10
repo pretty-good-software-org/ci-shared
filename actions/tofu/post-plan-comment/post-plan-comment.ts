@@ -48,22 +48,22 @@ interface MainArgs {
 
 const BOT_COMMENT_IDENTIFIER = "### OpenTofu Plan Results";
 
+const fallback = (value: string | undefined): string => value || "unknown";
+
 const buildComment = (args: BuildCommentArgs): string => {
-  const { actor, fmtOutcome, hasViolations, initOutcome, plan, planOutcome, validateOutcome } = args;
+  const { hasViolations, plan } = args;
   let policyStatus = "PASSED";
-  if (hasViolations) {
-    policyStatus = "FAILED";
-  }
   let policyMessage = "All policies passed";
   if (hasViolations) {
+    policyStatus = "FAILED";
     policyMessage = "**Policy Violations:** See Conftest step output for details";
   }
   return [
     "### OpenTofu Plan Results",
-    `#### Format Check: \`${fmtOutcome}\``,
-    `#### Init: \`${initOutcome}\``,
-    `#### Validate: \`${validateOutcome}\``,
-    `#### Plan: \`${planOutcome}\``,
+    `#### Format Check: \`${fallback(args.fmtOutcome)}\``,
+    `#### Init: \`${fallback(args.initOutcome)}\``,
+    `#### Validate: \`${fallback(args.validateOutcome)}\``,
+    `#### Plan: \`${fallback(args.planOutcome)}\``,
     "<details><summary>Show Plan</summary>",
     "",
     "```terraform",
@@ -73,7 +73,7 @@ const buildComment = (args: BuildCommentArgs): string => {
     "</details>",
     `#### Conftest Policy Check: \`${policyStatus}\``,
     policyMessage,
-    `*Pushed by: @${actor}*`,
+    `*Pushed by: @${fallback(args.actor)}*`,
   ].join("\n");
 };
 

@@ -8,6 +8,6 @@
     "skipLibCheck": true,
     "moduleDetection": "force"
   },
-  "include": ["actions/**/*.ts"],
+  "include": ["actions/**/*.ts", "lib/**/*.ts"],
   "exclude": ["node_modules"]
 }

@@ -4,6 +4,112 @@ Shared composite actions for CI/CD across the organization.
 
 ## Actions
 
+### setup/mise
+
+Checkout repository and install tools via mise.
+
+```yaml
+- uses: OlechowskiMichal/ci-shared/actions/setup/mise@v1
+  with:
+    mise-env: ci
+```
+
+| Input | Description | Default |
+|-------|-------------|---------|
+| `mise-env` | MISE_ENV value (e.g., `ci`) | `''` |
+
+### tofu/fmt-check
+
+Check OpenTofu formatting.
+
+```yaml
+- uses: OlechowskiMichal/ci-shared/actions/tofu/fmt-check@v1
+```
+
+| Input | Description | Default |
+|-------|-------------|---------|
+| `working-directory` | Directory containing OpenTofu configuration | `tofu` |
+
+### tofu/init
+
+Initialize OpenTofu configuration.
+
+```yaml
+- uses: OlechowskiMichal/ci-shared/actions/tofu/init@v1
+  with:
+    backend: 'false'
+```
+
+| Input | Description | Default |
+|-------|-------------|---------|
+| `working-directory` | Directory containing OpenTofu configuration | `tofu` |
+| `backend` | Enable backend initialization (`true`/`false`) | `true` |
+
+### tofu/validate
+
+Validate OpenTofu configuration.
+
+```yaml
+- uses: OlechowskiMichal/ci-shared/actions/tofu/validate@v1
+```
+
+| Input | Description | Default |
+|-------|-------------|---------|
+| `working-directory` | Directory containing OpenTofu configuration | `tofu` |
+
+### tofu/plan
+
+Create OpenTofu plan and capture outputs.
+
+```yaml
+- uses: OlechowskiMichal/ci-shared/actions/tofu/plan@v1
+  id: plan
+```
+
+| Input | Description | Default |
+|-------|-------------|---------|
+| `working-directory` | Directory containing OpenTofu configuration | `tofu` |
+
+| Output | Description |
+|--------|-------------|
+| `plan` | Plan text (truncated to 60k chars) |
+| `plan-file` | Path to binary plan file |
+| `plan-json` | Path to JSON plan file |
+
+### tofu/apply
+
+Apply an OpenTofu plan.
+
+```yaml
+- uses: OlechowskiMichal/ci-shared/actions/tofu/apply@v1
+  with:
+    plan-file: ${{ steps.plan.outputs.plan-file }}
+```
+
+| Input | Description | Default |
+|-------|-------------|---------|
+| `working-directory` | Directory containing OpenTofu configuration | `tofu` |
+| `plan-file` | Path to the plan file (relative to working directory) | `plan.tfplan` |
+
+### tofu/policy
+
+Run Conftest policy checks against an OpenTofu plan.
+
+```yaml
+- uses: OlechowskiMichal/ci-shared/actions/tofu/policy@v1
+  with:
+    plan-json: ${{ steps.plan.outputs.plan-json }}
+```
+
+| Input | Description | Default |
+|-------|-------------|---------|
+| `plan-json` | Path to the JSON plan file | `tofu/plan.json` |
+
+| Output | Description |
+|--------|-------------|
+| `has_violations` | Whether policy violations were found (`true`/`false`) |
+| `policy_violations` | Violation details (empty if none) |
+
 ### tofu/post-plan-comment
 
 Posts OpenTofu plan results as a PR comment. Creates a new comment or updates an existing one.
@@ -29,6 +135,36 @@ Posts OpenTofu plan results as a PR comment. Creates a new comment or updates an
 | `plan_outcome` | Outcome of the plan step |
 | `has_violations` | Whether conftest policy violations were found (`true`/`false`) |
 | `actor` | GitHub actor who triggered the workflow |
+
+### aws/cleanup-s3
+
+Delete S3 buckets matching a prefix. Handles versioned buckets.
+
+```yaml
+- uses: OlechowskiMichal/ci-shared/actions/aws/cleanup-s3@v1
+  with:
+    prefix: my-test-bucket-
+```
+
+| Input | Description | Default |
+|-------|-------------|---------|
+| `prefix` | Bucket name prefix to match | (required) |
+| `region` | AWS region | `us-east-1` |
+
+### aws/cleanup-dynamodb
+
+Delete DynamoDB tables matching a prefix.
+
+```yaml
+- uses: OlechowskiMichal/ci-shared/actions/aws/cleanup-dynamodb@v1
+  with:
+    prefix: my-test-table-
+```
+
+| Input | Description | Default |
+|-------|-------------|---------|
+| `prefix` | Table name prefix to match | (required) |
+| `region` | AWS region | `us-east-1` |
 
 ## Development
 

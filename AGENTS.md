@@ -12,16 +12,66 @@ Shared composite actions for CI/CD across the organization. Each action is a sel
 ## Repository Structure
 
 ```text
+lib/
+├── exec.ts                         # Shared execution helpers (execCapture, execStream, execStreamWithEnv)
+├── github-output.ts                # GitHub Actions output writer (writeGitHubOutput, resolveOutputWriter)
+└── test-helpers.ts                 # Shared test mocks (mockExec, captureCommands, captureOutputs, etc.)
 actions/
+├── aws/
+│   ├── cleanup-dynamodb/           # Delete DynamoDB tables by prefix
+│   │   ├── action.yml
+│   │   ├── cleanup-dynamodb.ts
+│   │   ├── dist/index.js
+│   │   └── tests/cleanup-dynamodb.test.ts
+│   └── cleanup-s3/                 # Delete S3 buckets by prefix (versioned)
+│       ├── action.yml
+│       ├── cleanup-s3.ts
+│       ├── dist/index.js
+│       └── tests/cleanup-s3.test.ts
+├── setup/
+│   └── mise/                       # Checkout + mise install
+│       ├── action.yml
+│       ├── mise.ts
+│       ├── dist/index.js
+│       └── tests/mise.test.ts
 └── tofu/
-    └── post-plan-comment/
-        ├── action.yml              # Composite action definition
-        ├── post-plan-comment.ts    # TypeScript source
-        ├── dist/
-        │   └── index.js            # Bundled JS (committed, used at runtime)
-        └── tests/
-            ├── build-comment.test.ts
-            └── post-comment.test.ts
+    ├── apply/                      # Apply plan
+    │   ├── action.yml
+    │   ├── apply.ts
+    │   ├── dist/index.js
+    │   └── tests/apply.test.ts
+    ├── fmt-check/                  # Check formatting
+    │   ├── action.yml
+    │   ├── fmt-check.ts
+    │   ├── dist/index.js
+    │   └── tests/fmt-check.test.ts
+    ├── init/                       # Initialize configuration
+    │   ├── action.yml
+    │   ├── init.ts
+    │   ├── dist/index.js
+    │   └── tests/init.test.ts
+    ├── plan/                       # Create plan + capture outputs
+    │   ├── action.yml
+    │   ├── plan.ts
+    │   ├── dist/index.js
+    │   └── tests/plan.test.ts
+    ├── policy/                     # Conftest policy check
+    │   ├── action.yml
+    │   ├── policy.ts
+    │   ├── dist/index.js
+    │   └── tests/policy.test.ts
+    ├── post-plan-comment/          # Post plan results as PR comment
+    │   ├── action.yml
+    │   ├── post-plan-comment.ts
+    │   ├── dist/index.js
+    │   └── tests/
+    │       ├── build-comment.test.ts
+    │       └── post-comment.test.ts
+    └── validate/                   # Validate configuration
+        ├── action.yml
+        ├── validate.ts
+        ├── dist/index.js
+        └── tests/validate.test.ts
 taskfiles/
 ├── setup.yml                       # Dev tools, git hooks, npm deps
 ├── build.yml                       # ncc build
@@ -40,7 +90,7 @@ lefthook/
 
 - Zero npm runtime dependencies — use Node built-in modules only
 - `typescript` and `@types/node` are devDependencies only (build-time)
-- Each action is self-contained (no shared code between actions)
+- Shared helpers live in `lib/` — ncc inlines them into each action's `dist/index.js`
 - Source is TypeScript (`.ts`), bundled JavaScript (`dist/index.js`) is committed
 - Tests must pass before merge
 - Conventional commits enforced via commitlint
@@ -129,6 +179,20 @@ git push origin v1.x.x v1 --force
 ## Consumer Usage
 
 ```yaml
+# Setup
+- uses: OlechowskiMichal/ci-shared/actions/setup/mise@v1
+  with:
+    mise-env: ci
+
+# OpenTofu workflow
+- uses: OlechowskiMichal/ci-shared/actions/tofu/fmt-check@v1
+- uses: OlechowskiMichal/ci-shared/actions/tofu/init@v1
+- uses: OlechowskiMichal/ci-shared/actions/tofu/validate@v1
+- uses: OlechowskiMichal/ci-shared/actions/tofu/plan@v1
+  id: plan
+- uses: OlechowskiMichal/ci-shared/actions/tofu/policy@v1
+  with:
+    plan-json: ${{ steps.plan.outputs.plan-json }}
 - uses: OlechowskiMichal/ci-shared/actions/tofu/post-plan-comment@v1
   with:
     plan: ${{ steps.plan.outputs.plan }}
@@ -138,4 +202,15 @@ git push origin v1.x.x v1 --force
     plan_outcome: ${{ steps.plan.outcome }}
     has_violations: ${{ steps.policy.outputs.has_violations }}
     actor: ${{ github.actor }}
+- uses: OlechowskiMichal/ci-shared/actions/tofu/apply@v1
+  with:
+    plan-file: ${{ steps.plan.outputs.plan-file }}
+
+# AWS cleanup
+- uses: OlechowskiMichal/ci-shared/actions/aws/cleanup-s3@v1
+  with:
+    prefix: my-test-bucket-
+- uses: OlechowskiMichal/ci-shared/actions/aws/cleanup-dynamodb@v1
+  with:
+    prefix: my-test-table-
 ```

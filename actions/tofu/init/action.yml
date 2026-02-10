@@ -1,0 +1,19 @@
+name: 'OpenTofu Init'
+description: 'Initialize OpenTofu configuration'
+inputs:
+  working-directory:
+    description: 'Directory containing OpenTofu configuration'
+    required: false
+    default: 'tofu'
+  backend:
+    description: 'Enable backend initialization (true/false)'
+    required: false
+    default: 'true'
+runs:
+  using: 'composite'
+  steps:
+    - shell: bash
+      env:
+        INPUT_WORKING_DIRECTORY: ${{ inputs.working-directory }}
+        INPUT_BACKEND: ${{ inputs.backend }}
+      run: node ${{ github.action_path }}/dist/index.js
