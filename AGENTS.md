@@ -41,6 +41,11 @@ actions/
 │       ├── dist/index.js
 │       └── tests/comment.test.ts
 └── tofu/
+    ├── analyze-drift/              # Detect infrastructure drift from plan JSON
+    │   ├── action.yml
+    │   ├── action.ts
+    │   ├── dist/index.js
+    │   └── tests/analyze-drift.test.ts
     ├── apply/                      # Apply plan
     │   ├── action.yml
     │   ├── action.ts
@@ -234,6 +239,12 @@ git push origin v1.x.x v1 --force
 - uses: OlechowskiMichal/ci-shared/actions/tofu/apply@v1
   with:
     plan-file: ${{ steps.plan.outputs.plan-file }}
+
+# Drift detection
+- uses: OlechowskiMichal/ci-shared/actions/tofu/analyze-drift@v1
+  id: drift
+  with:
+    plan-json: ${{ steps.plan.outputs.plan-json }}
 
 # AWS cleanup
 - uses: OlechowskiMichal/ci-shared/actions/aws/cleanup-s3@v1
