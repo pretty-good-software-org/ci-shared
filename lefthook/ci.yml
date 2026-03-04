@@ -2,25 +2,25 @@ pre-commit:
   commands:
     actionlint:
       glob: ".github/workflows/*.{yaml,yml}"
-      run: actionlint -color -oneline
+      run: task lint:actions
       fail_text: "actionlint found issues"
     yamllint:
       glob: "*.{yaml,yml}"
-      run: yamllint --strict .
+      run: task lint:yaml
       fail_text: "yamllint found issues"
     markdownlint:
       glob: "*.md"
-      run: markdownlint-cli2 "**/*.md"
+      run: task lint:markdown
       fail_text: "markdownlint found issues"
     oxlint:
       glob: "*.ts"
-      run: oxlint actions/
+      run: task lint:ts
       fail_text: "oxlint found issues"
     oxfmt:
       glob: "*.ts"
-      run: oxfmt --check 'actions/**/*.ts'
+      run: task lint:format:check
       fail_text: "oxfmt found formatting issues"
     typecheck:
       glob: "*.ts"
-      run: npx tsc --noEmit
+      run: task lint:typecheck
       fail_text: "TypeScript type errors found"
