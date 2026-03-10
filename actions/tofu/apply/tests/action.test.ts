@@ -31,6 +31,24 @@ describe("run command construction", () => {
     assert.match(commands[0], /custom\.tfplan/, "should include the plan file name");
   });
 
+  it("strips working directory prefix from plan file path", () => {
+    const { commands, exec } = captureCommands();
+    run({ planFile: "tofu/plan.tfplan", workingDirectory: "tofu" }, exec);
+
+    assert.strictEqual(
+      commands[0],
+      "tofu -chdir=tofu apply -input=false -auto-approve plan.tfplan",
+      "should strip working directory prefix to avoid double-nesting",
+    );
+  });
+
+  it("does not strip prefix when plan file has different path", () => {
+    const { commands, exec } = captureCommands();
+    run({ planFile: "other/plan.tfplan", workingDirectory: "tofu" }, exec);
+
+    assert.match(commands[0], /other\/plan\.tfplan/, "should keep non-matching prefix");
+  });
+
   it("includes -chdir with the working directory", () => {
     const { commands, exec } = captureCommands();
     run({ planFile: "plan.tfplan", workingDirectory: "infra" }, exec);
@@ -79,6 +97,20 @@ describe("main env parsing", () => {
     });
 
     assert.match(commands[0], /other\.tfplan/, "should use INPUT_PLAN_FILE from env");
+  });
+
+  it("strips working directory prefix from INPUT_PLAN_FILE", () => {
+    const { commands, exec } = captureCommands();
+    apply({
+      env: { INPUT_PLAN_FILE: "tofu/plan.tfplan" },
+      exec,
+    });
+
+    assert.strictEqual(
+      commands[0],
+      "tofu -chdir=tofu apply -input=false -auto-approve plan.tfplan",
+      "should strip prefix when plan file starts with working directory",
+    );
   });
 });
 
