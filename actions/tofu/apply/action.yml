@@ -16,4 +16,4 @@ runs:
       env:
         INPUT_WORKING_DIRECTORY: ${{ inputs.working-directory }}
         INPUT_PLAN_FILE: ${{ inputs.plan-file }}
-      run: node ${{ github.action_path }}/dist/index.js
+      run: node -e "require('${{ github.action_path }}/dist/index.js')()"
