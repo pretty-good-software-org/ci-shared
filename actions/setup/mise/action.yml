@@ -9,7 +9,8 @@ runs:
   using: 'composite'
   steps:
     - uses: actions/checkout@v4
-    - shell: bash
+    - uses: jdx/mise-action@v2
       env:
-        INPUT_MISE_ENV: ${{ inputs.mise-env }}
-      run: node ${{ github.action_path }}/dist/index.js
+        MISE_ENV: ${{ inputs.mise-env }}
+      with:
+        install_args: '--verbose'
