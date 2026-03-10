@@ -11,8 +11,13 @@
 // Runs tofu apply with -input=false -auto-approve against the plan file.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const { execStream } = __nccwpck_require__(361);
+const stripPrefix = (path, prefix) => {
+    const prefixWithSlash = `${prefix}/`;
+    return path.startsWith(prefixWithSlash) ? path.slice(prefixWithSlash.length) : path;
+};
 const run = ({ planFile, workingDirectory }, exec = execStream) => {
-    exec("tofu", [`-chdir=${workingDirectory}`, "apply", "-input=false", "-auto-approve", planFile]);
+    const relativePlanFile = stripPrefix(planFile, workingDirectory);
+    exec("tofu", [`-chdir=${workingDirectory}`, "apply", "-input=false", "-auto-approve", relativePlanFile]);
 };
 const resolveEnv = (args) => args.env || process.env;
 const main = (args = {}) => {

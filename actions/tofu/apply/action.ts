@@ -11,8 +11,14 @@ interface RunArgs {
 
 type ExecFn = typeof execStream;
 
+const stripPrefix = (path: string, prefix: string): string => {
+  const prefixWithSlash = `${prefix}/`;
+  return path.startsWith(prefixWithSlash) ? path.slice(prefixWithSlash.length) : path;
+};
+
 const run = ({ planFile, workingDirectory }: RunArgs, exec: ExecFn = execStream): void => {
-  exec("tofu", [`-chdir=${workingDirectory}`, "apply", "-input=false", "-auto-approve", planFile]);
+  const relativePlanFile = stripPrefix(planFile, workingDirectory);
+  exec("tofu", [`-chdir=${workingDirectory}`, "apply", "-input=false", "-auto-approve", relativePlanFile]);
 };
 
 interface MainArgs {
