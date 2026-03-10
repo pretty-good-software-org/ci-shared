@@ -8,14 +8,12 @@
 
 // Run Conftest policy checks against an OpenTofu plan.
 //
-// 1. Runs conftest update to pull latest policies
-// 2. Runs conftest test against the JSON plan file
-// 3. Sets has_violations and policy_violations outputs
+// 1. Runs conftest test against the JSON plan file
+// 2. Sets has_violations and policy_violations outputs
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const { execCapture } = __nccwpck_require__(361);
 const { resolveOutputWriter } = __nccwpck_require__(1);
 const run = ({ planJson }, exec = execCapture) => {
-    exec("conftest", ["update"]);
     try {
         exec("conftest", ["test", planJson]);
         return { hasViolations: false, policyViolations: "" };

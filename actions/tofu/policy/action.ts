@@ -1,8 +1,7 @@
 // Run Conftest policy checks against an OpenTofu plan.
 //
-// 1. Runs conftest update to pull latest policies
-// 2. Runs conftest test against the JSON plan file
-// 3. Sets has_violations and policy_violations outputs
+// 1. Runs conftest test against the JSON plan file
+// 2. Sets has_violations and policy_violations outputs
 
 const { execCapture } = require("../../../lib/exec.ts");
 const { resolveOutputWriter } = require("../../../lib/github-output.ts");
@@ -19,8 +18,6 @@ interface PolicyResult {
 type ExecFn = typeof execCapture;
 
 const run = ({ planJson }: RunArgs, exec: ExecFn = execCapture): PolicyResult => {
-  exec("conftest", ["update"]);
-
   try {
     exec("conftest", ["test", planJson]);
     return { hasViolations: false, policyViolations: "" };
