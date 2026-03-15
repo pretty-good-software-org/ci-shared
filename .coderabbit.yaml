@@ -10,6 +10,7 @@ reviews:
   collapse_walkthrough: true
   poem: false
   auto_review:
+    drafts: false
     enabled: true
     auto_incremental_review: true
     base_branches:
