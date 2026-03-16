@@ -43,10 +43,11 @@ const logStderr = (error) => {
         console.error(stderr);
     }
 };
+const MAX_BUFFER = 50 * 1024 * 1024; // 50 MB — default 1 MB is too small for large tofu plan JSON
 const execCapture = (bin, args) => {
     console.log(`+ ${bin} ${args.join(" ")}`);
     try {
-        const output = execFileSync(bin, args, { encoding: "utf8", stdio: "pipe" });
+        const output = execFileSync(bin, args, { encoding: "utf8", maxBuffer: MAX_BUFFER, stdio: "pipe" });
         if (output) {
             console.log(output);
         }
