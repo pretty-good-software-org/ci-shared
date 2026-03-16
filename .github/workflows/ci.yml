@@ -15,12 +15,11 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-      - name: Install tools
-        run: mise install
+      - uses: jdx/mise-action@v2
       - name: Install npm dependencies
-        run: mise exec -- npm ci
+        run: npm ci
       - name: Run tests
-        run: mise exec -- task test
+        run: task test
 
   lint:
     name: Lint
@@ -28,12 +27,11 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-      - name: Install tools
-        run: mise install
+      - uses: jdx/mise-action@v2
       - name: Install npm dependencies
-        run: mise exec -- npm ci
+        run: npm ci
       - name: Run linters
-        run: mise exec -- task lint
+        run: task lint
 
   build:
     name: Build
@@ -41,11 +39,10 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-      - name: Install tools
-        run: mise install
+      - uses: jdx/mise-action@v2
       - name: Install npm dependencies
-        run: mise exec -- npm ci
+        run: npm ci
       - name: Compile TypeScript
-        run: mise exec -- task build
+        run: task build
       - name: Verify compiled JS is up-to-date
         run: git diff --exit-code actions/*/*/dist/
