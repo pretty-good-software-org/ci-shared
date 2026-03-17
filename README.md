@@ -9,7 +9,7 @@ Shared composite actions for CI/CD across the organization.
 Checkout repository and install tools via mise.
 
 ```yaml
-- uses: OlechowskiMichal/ci-shared/actions/setup/mise@v1
+- uses: prettygood-software/ci-shared/actions/setup/mise@v1
   with:
     mise-env: ci
 ```
@@ -23,7 +23,7 @@ Checkout repository and install tools via mise.
 Check OpenTofu formatting.
 
 ```yaml
-- uses: OlechowskiMichal/ci-shared/actions/tofu/fmt-check@v1
+- uses: prettygood-software/ci-shared/actions/tofu/fmt-check@v1
 ```
 
 | Input | Description | Default |
@@ -35,7 +35,7 @@ Check OpenTofu formatting.
 Initialize OpenTofu configuration.
 
 ```yaml
-- uses: OlechowskiMichal/ci-shared/actions/tofu/init@v1
+- uses: prettygood-software/ci-shared/actions/tofu/init@v1
   with:
     backend: 'false'
 ```
@@ -50,7 +50,7 @@ Initialize OpenTofu configuration.
 Validate OpenTofu configuration.
 
 ```yaml
-- uses: OlechowskiMichal/ci-shared/actions/tofu/validate@v1
+- uses: prettygood-software/ci-shared/actions/tofu/validate@v1
 ```
 
 | Input | Description | Default |
@@ -62,7 +62,7 @@ Validate OpenTofu configuration.
 Create OpenTofu plan and capture outputs.
 
 ```yaml
-- uses: OlechowskiMichal/ci-shared/actions/tofu/plan@v1
+- uses: prettygood-software/ci-shared/actions/tofu/plan@v1
   id: plan
 ```
 
@@ -81,7 +81,7 @@ Create OpenTofu plan and capture outputs.
 Apply an OpenTofu plan.
 
 ```yaml
-- uses: OlechowskiMichal/ci-shared/actions/tofu/apply@v1
+- uses: prettygood-software/ci-shared/actions/tofu/apply@v1
   with:
     plan-file: ${{ steps.plan.outputs.plan-file }}
 ```
@@ -96,7 +96,7 @@ Apply an OpenTofu plan.
 Run Conftest policy checks against an OpenTofu plan.
 
 ```yaml
-- uses: OlechowskiMichal/ci-shared/actions/tofu/policy@v1
+- uses: prettygood-software/ci-shared/actions/tofu/policy@v1
   with:
     plan-json: ${{ steps.plan.outputs.plan-json }}
 ```
@@ -110,43 +110,31 @@ Run Conftest policy checks against an OpenTofu plan.
 | `has_violations` | Whether policy violations were found (`true`/`false`) |
 | `policy_violations` | Violation details (empty if none) |
 
-### tofu/build-plan-comment
+### tofu/build-plan-details
 
-Builds OpenTofu plan results as a markdown comment body.
+Builds OpenTofu plan output as a collapsible markdown fragment.
 
 ```yaml
-- uses: OlechowskiMichal/ci-shared/actions/tofu/build-plan-comment@v1
-  id: comment
+- uses: prettygood-software/ci-shared/actions/tofu/build-plan-details@v1
+  id: plan-details
   with:
     plan: ${{ steps.plan.outputs.plan }}
-    fmt_outcome: ${{ steps.fmt.outcome }}
-    init_outcome: ${{ steps.init.outcome }}
-    validate_outcome: ${{ steps.validate.outcome }}
-    plan_outcome: ${{ steps.plan.outcome }}
-    has_violations: ${{ steps.policy.outputs.has_violations }}
-    actor: ${{ github.actor }}
 ```
 
 | Input | Description |
 |-------|-------------|
 | `plan` | OpenTofu plan output text |
-| `fmt_outcome` | Outcome of the format check step |
-| `init_outcome` | Outcome of the init step |
-| `validate_outcome` | Outcome of the validate step |
-| `plan_outcome` | Outcome of the plan step |
-| `has_violations` | Whether conftest policy violations were found (`true`/`false`) |
-| `actor` | GitHub actor who triggered the workflow |
 
 | Output | Description |
 |--------|-------------|
-| `comment-body` | Markdown comment body |
+| `plan-details` | Collapsible details block with terraform code fence |
 
 ### github/comment
 
 Create or update a PR comment identified by a marker string.
 
 ```yaml
-- uses: OlechowskiMichal/ci-shared/actions/github/comment@v1
+- uses: prettygood-software/ci-shared/actions/github/comment@v1
   with:
     comment-body: ${{ steps.comment.outputs.comment-body }}
     comment-identifier: '### OpenTofu Plan Results'
@@ -162,7 +150,7 @@ Create or update a PR comment identified by a marker string.
 Delete S3 buckets matching a prefix. Handles versioned buckets.
 
 ```yaml
-- uses: OlechowskiMichal/ci-shared/actions/aws/cleanup-s3@v1
+- uses: prettygood-software/ci-shared/actions/aws/cleanup-s3@v1
   with:
     prefix: my-test-bucket-
 ```
@@ -177,7 +165,7 @@ Delete S3 buckets matching a prefix. Handles versioned buckets.
 Delete DynamoDB tables matching a prefix.
 
 ```yaml
-- uses: OlechowskiMichal/ci-shared/actions/aws/cleanup-dynamodb@v1
+- uses: prettygood-software/ci-shared/actions/aws/cleanup-dynamodb@v1
   with:
     prefix: my-test-table-
 ```

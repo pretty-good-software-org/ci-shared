@@ -90,11 +90,11 @@ Consumers can verify with:
 
 ```yaml
 # Pinned to floating major (recommended)
-- uses: OlechowskiMichal/ci-shared/actions/tofu/post-plan-comment@v1
+- uses: prettygood-software/ci-shared/actions/tofu/plan@v1
 
 # Pinned to exact version
-- uses: OlechowskiMichal/ci-shared/actions/tofu/post-plan-comment@v1.2.0
+- uses: prettygood-software/ci-shared/actions/tofu/plan@v1.2.0
 
 # Pinned to commit SHA (most secure)
-- uses: OlechowskiMichal/ci-shared/actions/tofu/post-plan-comment@abc1234
+- uses: prettygood-software/ci-shared/actions/tofu/plan@0123456789abcdef0123456789abcdef01234567
 ```
