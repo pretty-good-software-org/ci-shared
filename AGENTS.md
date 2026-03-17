@@ -200,57 +200,57 @@ git push origin v1.x.x v1 --force
 
 ```yaml
 # Setup
-- uses: OlechowskiMichal/ci-shared/actions/setup/mise@v1
+- uses: prettygood-software/ci-shared/actions/setup/mise@v1
   with:
     mise-env: ci
 
 # OpenTofu workflow
-- uses: OlechowskiMichal/ci-shared/actions/tofu/fmt-check@v1
-- uses: OlechowskiMichal/ci-shared/actions/tofu/init@v1
-- uses: OlechowskiMichal/ci-shared/actions/tofu/validate@v1
-- uses: OlechowskiMichal/ci-shared/actions/tofu/plan@v1
+- uses: prettygood-software/ci-shared/actions/tofu/fmt-check@v1
+- uses: prettygood-software/ci-shared/actions/tofu/init@v1
+- uses: prettygood-software/ci-shared/actions/tofu/validate@v1
+- uses: prettygood-software/ci-shared/actions/tofu/plan@v1
   id: plan
-- uses: OlechowskiMichal/ci-shared/actions/tofu/policy@v1
+- uses: prettygood-software/ci-shared/actions/tofu/policy@v1
   with:
     plan-json: ${{ steps.plan.outputs.plan-json }}
-- uses: OlechowskiMichal/ci-shared/actions/tofu/build-step-summary@v1
+- uses: prettygood-software/ci-shared/actions/tofu/build-step-summary@v1
   id: step-summary
   with:
     fmt_outcome: ${{ steps.fmt.outcome }}
     init_outcome: ${{ steps.init.outcome }}
     validate_outcome: ${{ steps.validate.outcome }}
     plan_outcome: ${{ steps.plan.outcome }}
-- uses: OlechowskiMichal/ci-shared/actions/tofu/build-plan-details@v1
+- uses: prettygood-software/ci-shared/actions/tofu/build-plan-details@v1
   id: plan-details
   with:
     plan: ${{ steps.plan.outputs.plan }}
-- uses: OlechowskiMichal/ci-shared/actions/tofu/build-policy-summary@v1
+- uses: prettygood-software/ci-shared/actions/tofu/build-policy-summary@v1
   id: policy-summary
   with:
     has_violations: ${{ steps.policy.outputs.has_violations }}
     actor: ${{ github.actor }}
-- uses: OlechowskiMichal/ci-shared/actions/github/comment@v1
+- uses: prettygood-software/ci-shared/actions/github/comment@v1
   with:
     comment-body: |
       ${{ steps.step-summary.outputs.step-summary }}
       ${{ steps.plan-details.outputs.plan-details }}
       ${{ steps.policy-summary.outputs.policy-summary }}
     comment-identifier: '### OpenTofu Plan Results'
-- uses: OlechowskiMichal/ci-shared/actions/tofu/apply@v1
+- uses: prettygood-software/ci-shared/actions/tofu/apply@v1
   with:
     plan-file: ${{ steps.plan.outputs.plan-file }}
 
 # Drift detection
-- uses: OlechowskiMichal/ci-shared/actions/tofu/analyze-drift@v1
+- uses: prettygood-software/ci-shared/actions/tofu/analyze-drift@v1
   id: drift
   with:
     plan-json: ${{ steps.plan.outputs.plan-json }}
 
 # AWS cleanup
-- uses: OlechowskiMichal/ci-shared/actions/aws/cleanup-s3@v1
+- uses: prettygood-software/ci-shared/actions/aws/cleanup-s3@v1
   with:
     prefix: my-test-bucket-
-- uses: OlechowskiMichal/ci-shared/actions/aws/cleanup-dynamodb@v1
+- uses: prettygood-software/ci-shared/actions/aws/cleanup-dynamodb@v1
   with:
     prefix: my-test-table-
 ```
