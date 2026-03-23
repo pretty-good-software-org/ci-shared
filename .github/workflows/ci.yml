@@ -15,8 +15,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-      - name: Install tools
-        run: mise install
+      - uses: jdx/mise-action@v2
       - name: Install npm dependencies
         run: mise exec -- npm ci
       - name: Run tests
@@ -28,8 +27,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-      - name: Install tools
-        run: mise install
+      - uses: jdx/mise-action@v2
       - name: Install npm dependencies
         run: mise exec -- npm ci
       - name: Run linters
@@ -41,8 +39,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-      - name: Install tools
-        run: mise install
+      - uses: jdx/mise-action@v2
       - name: Install npm dependencies
         run: mise exec -- npm ci
       - name: Compile TypeScript
