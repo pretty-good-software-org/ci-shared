@@ -22,6 +22,7 @@ runs:
         # private repos using the GITHUB_TOKEN credential that
         # actions/checkout already configured.
         git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
+        git config --global url."https://github.com/".insteadOf "git@github.com:"
 
     - uses: actions/github-script@v7
       id: policy
