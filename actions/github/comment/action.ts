@@ -23,12 +23,12 @@ const run = async ({ body, context, github, identifier }: RunArgs): Promise<void
   const existing = await findComment({ context, github, identifier });
   if (existing) {
     await updateComment({ body, commentId: existing.id, context, github });
-  } else {
-    await createComment({ body, context, github });
+    return;
   }
+  await createComment({ body, context, github });
 };
 
-const main = async ({ context, env = process.env, github }: MainArgs): Promise<void> => {
+const parseMainArgs = (env: NodeJS.ProcessEnv): { body: string; identifier: string } => {
   const identifier = (env.INPUT_COMMENT_IDENTIFIER || "").trim();
   const body = env.INPUT_COMMENT_BODY || "";
   if (!identifier) {
@@ -37,6 +37,11 @@ const main = async ({ context, env = process.env, github }: MainArgs): Promise<v
   if (!body) {
     throw new Error("INPUT_COMMENT_BODY is required");
   }
+  return { body, identifier };
+};
+
+const main = async ({ context, env = process.env, github }: MainArgs): Promise<void> => {
+  const { body, identifier } = parseMainArgs(env);
   await run({ body, context, github, identifier });
 };
 

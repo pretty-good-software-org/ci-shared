@@ -15,12 +15,11 @@ const run = async ({ body, context, github, identifier }) => {
     const existing = await findComment({ context, github, identifier });
     if (existing) {
         await updateComment({ body, commentId: existing.id, context, github });
+        return;
     }
-    else {
-        await createComment({ body, context, github });
-    }
+    await createComment({ body, context, github });
 };
-const main = async ({ context, env = process.env, github }) => {
+const parseMainArgs = (env) => {
     const identifier = (env.INPUT_COMMENT_IDENTIFIER || "").trim();
     const body = env.INPUT_COMMENT_BODY || "";
     if (!identifier) {
@@ -29,6 +28,10 @@ const main = async ({ context, env = process.env, github }) => {
     if (!body) {
         throw new Error("INPUT_COMMENT_BODY is required");
     }
+    return { body, identifier };
+};
+const main = async ({ context, env = process.env, github }) => {
+    const { body, identifier } = parseMainArgs(env);
     await run({ body, context, github, identifier });
 };
 module.exports = Object.assign(main, { createComment, findComment, run, updateComment });

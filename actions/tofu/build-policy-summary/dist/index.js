@@ -57,8 +57,8 @@ module.exports = { buildPolicySummary, fallback };
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const parseEnv = (env) => ({
-    hasViolations: env.INPUT_HAS_VIOLATIONS === "true",
     actor: env.INPUT_ACTOR,
+    hasViolations: env.INPUT_HAS_VIOLATIONS === "true",
 });
 module.exports = { parseEnv };
 

@@ -8,6 +8,7 @@ const IDENTIFIER = "### OpenTofu Plan Results";
 const COMMENT_ID_MATCH = 42;
 const COMMENT_ID_FIRST = 10;
 const COMMENT_ID_SECOND = 20;
+const COMMENTS_PER_PAGE = 100;
 
 const context = {
   issue: { number: ISSUE_NUMBER },
@@ -77,7 +78,7 @@ describe("findComment per_page", () => {
     };
     await findComment({ context, github, identifier: IDENTIFIER });
 
-    assert.strictEqual(capturedArgs.per_page, 100, "should pass per_page: 100");
+    assert.strictEqual(capturedArgs.per_page, COMMENTS_PER_PAGE, "should pass per_page: 100");
     assert.strictEqual(capturedArgs.owner, "org", "should pass correct owner");
     assert.strictEqual(capturedArgs.repo, "repo", "should pass correct repo");
     assert.strictEqual(capturedArgs.issue_number, ISSUE_NUMBER, "should pass correct issue number");

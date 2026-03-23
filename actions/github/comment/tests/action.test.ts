@@ -45,7 +45,9 @@ describe("main create", () => {
     assert.strictEqual(calls.create.length, 1, "should create one comment");
     assert.strictEqual(calls.create[0].body, `${IDENTIFIER}\ntest plan`, "body should match env var");
   });
+});
 
+describe("main validation", () => {
   it("throws when identifier is missing", async () => {
     const { github } = mockGitHub([]);
     await assert.rejects(

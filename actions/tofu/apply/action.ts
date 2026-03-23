@@ -13,7 +13,10 @@ type ExecFn = typeof execStream;
 
 const stripPrefix = (path: string, prefix: string): string => {
   const prefixWithSlash = `${prefix}/`;
-  return path.startsWith(prefixWithSlash) ? path.slice(prefixWithSlash.length) : path;
+  if (path.startsWith(prefixWithSlash)) {
+    return path.slice(prefixWithSlash.length);
+  }
+  return path;
 };
 
 const run = ({ planFile, workingDirectory }: RunArgs, exec: ExecFn = execStream): void => {

@@ -9,7 +9,7 @@ const throwExec = (_bin: string, _args: string[]) => {
   throw new Error("command failed");
 };
 
-describe("run command construction", () => {
+describe("run command flags", () => {
   it("includes -input=false flag", () => {
     const { commands, exec } = captureCommands();
     run({ planFile: "plan.tfplan", workingDirectory: "tofu" }, exec);
@@ -31,6 +31,15 @@ describe("run command construction", () => {
     assert.match(commands[0], /custom\.tfplan/, "should include the plan file name");
   });
 
+  it("includes -chdir with the working directory", () => {
+    const { commands, exec } = captureCommands();
+    run({ planFile: "plan.tfplan", workingDirectory: "infra" }, exec);
+
+    assert.match(commands[0], /-chdir=infra/, "should include -chdir with custom directory");
+  });
+});
+
+describe("run path handling", () => {
   it("strips working directory prefix from plan file path", () => {
     const { commands, exec } = captureCommands();
     run({ planFile: "tofu/plan.tfplan", workingDirectory: "tofu" }, exec);
@@ -49,13 +58,6 @@ describe("run command construction", () => {
     assert.match(commands[0], /other\/plan\.tfplan/, "should keep non-matching prefix");
   });
 
-  it("includes -chdir with the working directory", () => {
-    const { commands, exec } = captureCommands();
-    run({ planFile: "plan.tfplan", workingDirectory: "infra" }, exec);
-
-    assert.match(commands[0], /-chdir=infra/, "should include -chdir with custom directory");
-  });
-
   it("executes exactly one command", () => {
     const { commands, exec } = captureCommands();
     run({ planFile: "plan.tfplan", workingDirectory: "tofu" }, exec);
@@ -64,7 +66,7 @@ describe("run command construction", () => {
   });
 });
 
-describe("main env parsing", () => {
+describe("main env defaults", () => {
   it("defaults working directory to 'tofu'", () => {
     const { commands, exec } = captureCommands();
     apply({ env: {}, exec });
@@ -78,7 +80,9 @@ describe("main env parsing", () => {
 
     assert.match(commands[0], /plan\.tfplan/, "should use default plan file 'plan.tfplan'");
   });
+});
 
+describe("main env overrides", () => {
   it("reads INPUT_WORKING_DIRECTORY from env", () => {
     const { commands, exec } = captureCommands();
     apply({

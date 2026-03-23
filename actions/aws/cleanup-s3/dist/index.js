@@ -32,6 +32,11 @@ const run = ({ prefix, region }, exec = execCapture) => {
     }
     return buckets;
 };
+const validateRegion = (region) => {
+    if (!/^[a-z]{2}-[a-z]+-\d+$/.test(region)) {
+        throw new Error(`Invalid AWS region: ${region}`);
+    }
+};
 const parseRunArgs = (env) => {
     const prefix = (env.INPUT_PREFIX || "").trim();
     const region = env.INPUT_REGION || "us-east-1";
@@ -41,9 +46,7 @@ const parseRunArgs = (env) => {
     if (prefix.length < MIN_PREFIX_LENGTH) {
         throw new Error(`INPUT_PREFIX must be at least ${MIN_PREFIX_LENGTH} characters (got "${prefix}")`);
     }
-    if (!/^[a-z]{2}-[a-z]+-\d+$/.test(region)) {
-        throw new Error(`Invalid AWS region: ${region}`);
-    }
+    validateRegion(region);
     return { prefix, region };
 };
 const main = (args = {}) => {
@@ -73,8 +76,8 @@ const collectObjects = (data) => [
 ];
 const BATCH_LIMIT = 1000;
 const batchDelete = (ctx, objects) => {
-    for (let i = 0; i < objects.length; i += BATCH_LIMIT) {
-        const chunk = objects.slice(i, i + BATCH_LIMIT);
+    for (let idx = 0; idx < objects.length; idx += BATCH_LIMIT) {
+        const chunk = objects.slice(idx, idx + BATCH_LIMIT);
         ctx.exec("aws", [
             "s3api",
             "delete-objects",
@@ -154,7 +157,10 @@ const logStderr = (error) => {
         console.error(stderr);
     }
 };
-const MAX_BUFFER = 50 * 1024 * 1024; // 50 MB — default 1 MB is too small for large tofu plan JSON
+const MEGABYTES_50 = 50;
+const BYTES_PER_KB = 1024;
+const KB_PER_MB = 1024;
+const MAX_BUFFER = MEGABYTES_50 * BYTES_PER_KB * KB_PER_MB; // 50 MB — default 1 MB is too small for large tofu plan JSON
 const execCapture = (bin, args) => {
     console.log(`+ ${bin} ${args.join(" ")}`);
     try {

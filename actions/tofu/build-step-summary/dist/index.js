@@ -33,15 +33,13 @@ module.exports = Object.assign(main, { buildStepSummary, parseEnv });
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const fallback = (value) => value || "unknown";
-const buildStepSummary = (args) => {
-    return [
-        "### OpenTofu Plan Results",
-        `#### Format Check: \`${fallback(args.fmtOutcome)}\``,
-        `#### Init: \`${fallback(args.initOutcome)}\``,
-        `#### Validate: \`${fallback(args.validateOutcome)}\``,
-        `#### Plan: \`${fallback(args.planOutcome)}\``,
-    ].join("\n");
-};
+const buildStepSummary = (args) => [
+    "### OpenTofu Plan Results",
+    `#### Format Check: \`${fallback(args.fmtOutcome)}\``,
+    `#### Init: \`${fallback(args.initOutcome)}\``,
+    `#### Validate: \`${fallback(args.validateOutcome)}\``,
+    `#### Plan: \`${fallback(args.planOutcome)}\``,
+].join("\n");
 module.exports = { buildStepSummary, fallback };
 
 
@@ -55,8 +53,8 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 const parseEnv = (env) => ({
     fmtOutcome: env.INPUT_FMT_OUTCOME,
     initOutcome: env.INPUT_INIT_OUTCOME,
-    validateOutcome: env.INPUT_VALIDATE_OUTCOME,
     planOutcome: env.INPUT_PLAN_OUTCOME,
+    validateOutcome: env.INPUT_VALIDATE_OUTCOME,
 });
 module.exports = { parseEnv };
 

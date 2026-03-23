@@ -25,8 +25,8 @@ const PAGE1 = JSON.stringify({
 });
 const PAGE2 = JSON.stringify({ Versions: [{ Key: "file3.txt", VersionId: "v3" }] });
 
-const paginatedExec = (_b: string, _a: string[]): string => {
-  const cmd = [_b, ..._a].join(" ");
+const paginatedExec = (_bin: string, _args: string[]): string => {
+  const cmd = [_bin, ..._args].join(" ");
   if (!cmd.includes("list-object-versions")) {
     return "";
   }
@@ -35,7 +35,7 @@ const paginatedExec = (_b: string, _a: string[]): string => {
   }
   return PAGE1;
 };
-const throwVersionsExec = (_b: string, _a: string[]) => {
+const throwVersionsExec = (_bin: string, _args: string[]) => {
   throw new Error("versions failed");
 };
 
@@ -75,15 +75,21 @@ describe("deleteAllVersions pagination", () => {
 });
 
 describe("deleteAllVersions batch chunking", () => {
-  it("chunks deletes when objects exceed 1000", () => {
-    const BATCH_LIMIT = 1000;
-    const TOTAL = 1500;
-    const versions = Array.from({ length: TOTAL }, (_, i) => ({ Key: `file${i}.txt`, VersionId: `v${i}` }));
+  const BATCH_LIMIT = 1000;
+  const TOTAL = 1500;
+  const EXPECTED_BATCH_COUNT = 2;
+
+  const buildChunkingFixture = () => {
+    const versions = Array.from({ length: TOTAL }, (_unused, idx) => ({ Key: `file${idx}.txt`, VersionId: `v${idx}` }));
     const response = JSON.stringify({ Versions: versions });
     const { commands, exec } = mockExec({ "list-object-versions": response }, "");
     deleteAllVersions("my-bucket", "us-east-1", exec);
-    const deleteCmds = commands.filter((c: string) => c.includes("delete-objects"));
-    assert.strictEqual(deleteCmds.length, 2, "should split into 2 batch delete calls");
+    return commands.filter((cmd: string) => cmd.includes("delete-objects"));
+  };
+
+  it("chunks deletes when objects exceed 1000", () => {
+    const deleteCmds = buildChunkingFixture();
+    assert.strictEqual(deleteCmds.length, EXPECTED_BATCH_COUNT, "should split into 2 batch delete calls");
     const firstPayload = JSON.parse(deleteCmds[0].split("--delete ")[1]);
     const secondPayload = JSON.parse(deleteCmds[1].split("--delete ")[1]);
     assert.strictEqual(firstPayload.Objects.length, BATCH_LIMIT, "first batch should have 1000 objects");
