@@ -7,8 +7,8 @@ const { run } = cleanupS3;
 const BATCH_CMD_COUNT = 2;
 const ORCHESTRATION_CMD_COUNT = 3;
 const EMPTY = JSON.stringify({});
-const emptyBucketsExec = (_b: string, _a: string[]) => JSON.stringify({ Buckets: [] });
-const throwExec = (_b: string, _a: string[]) => {
+const emptyBucketsExec = (_bin: string, _args: string[]) => JSON.stringify({ Buckets: [] });
+const throwExec = (_bin: string, _args: string[]) => {
   throw new Error("command failed");
 };
 

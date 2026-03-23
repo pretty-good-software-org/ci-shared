@@ -3,8 +3,8 @@ const assert = require("node:assert");
 const { buildPolicySummary, fallback } = require("../build-policy-summary.ts");
 
 const defaults = {
-  hasViolations: false,
   actor: "testuser" as string | undefined,
+  hasViolations: false,
 };
 
 describe("buildPolicySummary policy status", () => {

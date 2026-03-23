@@ -38,8 +38,8 @@ const collectObjects = (data: VersionList): VersionEntry[] => [
 const BATCH_LIMIT = 1000;
 
 const batchDelete = (ctx: BucketCtx, objects: VersionEntry[]): void => {
-  for (let i = 0; i < objects.length; i += BATCH_LIMIT) {
-    const chunk = objects.slice(i, i + BATCH_LIMIT);
+  for (let idx = 0; idx < objects.length; idx += BATCH_LIMIT) {
+    const chunk = objects.slice(idx, idx + BATCH_LIMIT);
     ctx.exec("aws", [
       "s3api",
       "delete-objects",

@@ -5,8 +5,8 @@ const { parseEnv } = require("../parse-env.ts");
 describe("parseEnv mapping", () => {
   it("maps INPUT_* env vars to PolicySummaryArgs", () => {
     const env = {
-      INPUT_HAS_VIOLATIONS: "false",
       INPUT_ACTOR: "octocat",
+      INPUT_HAS_VIOLATIONS: "false",
     };
     const args = parseEnv(env);
     assert.strictEqual(args.hasViolations, false, "hasViolations should be false");

@@ -13,7 +13,10 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 const { execStream } = __nccwpck_require__(361);
 const stripPrefix = (path, prefix) => {
     const prefixWithSlash = `${prefix}/`;
-    return path.startsWith(prefixWithSlash) ? path.slice(prefixWithSlash.length) : path;
+    if (path.startsWith(prefixWithSlash)) {
+        return path.slice(prefixWithSlash.length);
+    }
+    return path;
 };
 const run = ({ planFile, workingDirectory }, exec = execStream) => {
     const relativePlanFile = stripPrefix(planFile, workingDirectory);
@@ -50,10 +53,14 @@ const logStderr = (error) => {
         console.error(stderr);
     }
 };
+const MEGABYTES_50 = 50;
+const BYTES_PER_KB = 1024;
+const KB_PER_MB = 1024;
+const MAX_BUFFER = MEGABYTES_50 * BYTES_PER_KB * KB_PER_MB; // 50 MB — default 1 MB is too small for large tofu plan JSON
 const execCapture = (bin, args) => {
     console.log(`+ ${bin} ${args.join(" ")}`);
     try {
-        const output = execFileSync(bin, args, { encoding: "utf8", stdio: "pipe" });
+        const output = execFileSync(bin, args, { encoding: "utf8", maxBuffer: MAX_BUFFER, stdio: "pipe" });
         if (output) {
             console.log(output);
         }

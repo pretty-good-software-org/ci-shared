@@ -9,8 +9,8 @@ describe("main output passing", () => {
     const env = {
       INPUT_FMT_OUTCOME: "success",
       INPUT_INIT_OUTCOME: "success",
-      INPUT_VALIDATE_OUTCOME: "success",
       INPUT_PLAN_OUTCOME: "success",
+      INPUT_VALIDATE_OUTCOME: "success",
     };
     await buildStepSummary({ env, writeOutput });
     assert.ok(outputs["step-summary"], "step-summary output should be set");
@@ -24,8 +24,8 @@ describe("main output with mixed outcomes", () => {
     const env = {
       INPUT_FMT_OUTCOME: "success",
       INPUT_INIT_OUTCOME: "failure",
-      INPUT_VALIDATE_OUTCOME: "cancelled",
       INPUT_PLAN_OUTCOME: "skipped",
+      INPUT_VALIDATE_OUTCOME: "cancelled",
     };
     await buildStepSummary({ env, writeOutput });
     assert.match(outputs["step-summary"], /Format Check: `success`/, "should contain fmt outcome");

@@ -92,7 +92,10 @@ const logStderr = (error) => {
         console.error(stderr);
     }
 };
-const MAX_BUFFER = 50 * 1024 * 1024; // 50 MB — default 1 MB is too small for large tofu plan JSON
+const MEGABYTES_50 = 50;
+const BYTES_PER_KB = 1024;
+const KB_PER_MB = 1024;
+const MAX_BUFFER = MEGABYTES_50 * BYTES_PER_KB * KB_PER_MB; // 50 MB — default 1 MB is too small for large tofu plan JSON
 const execCapture = (bin, args) => {
     console.log(`+ ${bin} ${args.join(" ")}`);
     try {

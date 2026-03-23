@@ -7,8 +7,8 @@ describe("parseEnv mapping", () => {
     const env = {
       INPUT_FMT_OUTCOME: "success",
       INPUT_INIT_OUTCOME: "failure",
-      INPUT_VALIDATE_OUTCOME: "cancelled",
       INPUT_PLAN_OUTCOME: "skipped",
+      INPUT_VALIDATE_OUTCOME: "cancelled",
     };
     const args = parseEnv(env);
     assert.strictEqual(args.fmtOutcome, "success", "fmtOutcome mismatch");

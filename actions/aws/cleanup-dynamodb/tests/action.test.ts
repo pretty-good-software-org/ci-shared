@@ -6,8 +6,10 @@ const cleanupDynamodb = require("../action.ts");
 const { run } = cleanupDynamodb;
 
 const EXPECTED_LIST_DELETE_COMMANDS = 3;
-const emptyTablesExec = (_bin: string, _args: string[]) => JSON.stringify({ TableNames: [] });
-const throwExec = (_bin: string, _args: string[]) => {
+const SECOND_DELETE_CALL = 2;
+const TOTAL_DELETE_ATTEMPTS = 3;
+const emptyTablesExec = (_bin: string, _args: string[]): string => JSON.stringify({ TableNames: [] });
+const throwExec = (_bin: string, _args: string[]): string => {
   throw new Error("command failed");
 };
 
@@ -40,38 +42,22 @@ describe("run orchestration", () => {
   });
 });
 
-describe("main prefix validation", () => {
+describe("main prefix rejection", () => {
   it("throws when prefix is empty", () => {
-    assert.throws(
-      () => cleanupDynamodb({ env: { INPUT_PREFIX: "" } }),
-      { message: "INPUT_PREFIX is required" },
-      "should throw on empty prefix",
-    );
+    assert.throws(() => cleanupDynamodb({ env: { INPUT_PREFIX: "" } }), { message: "INPUT_PREFIX is required" });
   });
   it("throws when prefix is not set", () => {
-    assert.throws(
-      () => cleanupDynamodb({ env: {} }),
-      { message: "INPUT_PREFIX is required" },
-      "should throw on missing prefix",
-    );
+    assert.throws(() => cleanupDynamodb({ env: {} }), { message: "INPUT_PREFIX is required" });
   });
   it("throws when prefix is whitespace-only", () => {
-    assert.throws(
-      () => cleanupDynamodb({ env: { INPUT_PREFIX: "   " } }),
-      { message: "INPUT_PREFIX is required" },
-      "should throw on whitespace-only prefix",
-    );
+    assert.throws(() => cleanupDynamodb({ env: { INPUT_PREFIX: "   " } }), { message: "INPUT_PREFIX is required" });
+  });
+  it("throws when prefix is shorter than 5 characters", () => {
+    assert.throws(() => cleanupDynamodb({ env: { INPUT_PREFIX: "ab-" } }), { message: /at least 5 characters/ });
   });
 });
 
-describe("main prefix length validation", () => {
-  it("throws when prefix is shorter than 5 characters", () => {
-    assert.throws(
-      () => cleanupDynamodb({ env: { INPUT_PREFIX: "ab-" } }),
-      { message: /at least 5 characters/ },
-      "should reject short prefix",
-    );
-  });
+describe("main prefix acceptance", () => {
   it("accepts prefix of exactly 5 characters", () => {
     const { exec } = mockExec({}, JSON.stringify({ TableNames: [] }));
     cleanupDynamodb({ env: { INPUT_PREFIX: "test-" }, exec });
@@ -87,7 +73,7 @@ describe("run partial failure", () => {
         return JSON.stringify({ TableNames: ["test-a", "test-b", "test-c"] });
       }
       callCount++;
-      if (callCount === 2) {
+      if (callCount === SECOND_DELETE_CALL) {
         throw new Error("delete failed");
       }
       return "";
@@ -97,11 +83,11 @@ describe("run partial failure", () => {
       { message: /Failed to delete 1 table\(s\): test-b/ },
       "should report the failed table",
     );
-    assert.strictEqual(callCount, 3, "should attempt all three deletes");
+    assert.strictEqual(callCount, TOTAL_DELETE_ATTEMPTS, "should attempt all three deletes");
   });
 });
 
-describe("main region validation", () => {
+describe("main region and env parsing", () => {
   it("throws on invalid region", () => {
     assert.throws(
       () => cleanupDynamodb({ env: { INPUT_PREFIX: "test-", INPUT_REGION: "invalid" } }),
@@ -113,9 +99,6 @@ describe("main region validation", () => {
     const { exec } = mockExec({}, JSON.stringify({ TableNames: [] }));
     cleanupDynamodb({ env: { INPUT_PREFIX: "test-", INPUT_REGION: "eu-west-1" }, exec });
   });
-});
-
-describe("main env parsing", () => {
   it("defaults region to 'us-east-1'", () => {
     const { commands, exec } = mockExec({}, JSON.stringify({ TableNames: [] }));
     cleanupDynamodb({ env: { INPUT_PREFIX: "test-" }, exec });
@@ -130,10 +113,6 @@ describe("main env parsing", () => {
 
 describe("run error handling", () => {
   it("propagates exec failure", () => {
-    assert.throws(
-      () => run({ prefix: "test-", region: "us-east-1" }, throwExec),
-      { message: "command failed" },
-      "should propagate exec failure from run",
-    );
+    assert.throws(() => run({ prefix: "test-", region: "us-east-1" }, throwExec), { message: "command failed" });
   });
 });

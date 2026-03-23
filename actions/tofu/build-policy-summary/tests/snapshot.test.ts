@@ -7,7 +7,7 @@ describe("buildPolicySummary snapshot", () => {
     const expected = ["#### Conftest Policy Check: `PASSED`", "All policies passed", "*Pushed by: @testuser*"].join(
       "\n",
     );
-    assert.strictEqual(buildPolicySummary({ hasViolations: false, actor: "testuser" }), expected);
+    assert.strictEqual(buildPolicySummary({ actor: "testuser", hasViolations: false }), expected);
   });
   it("matches expected full output for FAILED", () => {
     const expected = [
@@ -15,6 +15,6 @@ describe("buildPolicySummary snapshot", () => {
       "**Policy Violations:** See Conftest step output for details",
       "*Pushed by: @deployer*",
     ].join("\n");
-    assert.strictEqual(buildPolicySummary({ hasViolations: true, actor: "deployer" }), expected);
+    assert.strictEqual(buildPolicySummary({ actor: "deployer", hasViolations: true }), expected);
   });
 });

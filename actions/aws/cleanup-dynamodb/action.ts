@@ -38,6 +38,12 @@ interface MainArgs {
   exec?: ExecFn;
 }
 
+const validateRegion = (region: string): void => {
+  if (!/^[a-z]{2}-[a-z]+-\d+$/.test(region)) {
+    throw new Error(`Invalid AWS region: ${region}`);
+  }
+};
+
 const parseRunArgs = (env: NodeJS.ProcessEnv): RunArgs => {
   const prefix = (env.INPUT_PREFIX || "").trim();
   const region = env.INPUT_REGION || "us-east-1";
@@ -47,9 +53,7 @@ const parseRunArgs = (env: NodeJS.ProcessEnv): RunArgs => {
   if (prefix.length < MIN_PREFIX_LENGTH) {
     throw new Error(`INPUT_PREFIX must be at least ${MIN_PREFIX_LENGTH} characters (got "${prefix}")`);
   }
-  if (!/^[a-z]{2}-[a-z]+-\d+$/.test(region)) {
-    throw new Error(`Invalid AWS region: ${region}`);
-  }
+  validateRegion(region);
   return { prefix, region };
 };
 
