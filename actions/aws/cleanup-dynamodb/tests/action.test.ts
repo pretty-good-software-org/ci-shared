@@ -20,28 +20,56 @@ describe("run orchestration", () => {
     });
     const result = run({ prefix: "test-", region: "us-east-1" }, exec);
     assert.deepStrictEqual(result, ["test-locks", "test-state"], "should return deleted table names");
-    assert.strictEqual(commands.length, EXPECTED_LIST_DELETE_COMMANDS, "should execute 3 commands (1 list + 2 deletes)");
+    assert.strictEqual(
+      commands.length,
+      EXPECTED_LIST_DELETE_COMMANDS,
+      "should execute 3 commands (1 list + 2 deletes)",
+    );
     assert.match(commands[0], /list-tables/, "first command should list tables");
     assert.match(commands[1], /delete-table --table-name test-locks/, "should delete first table");
-    assert.match(commands[EXPECTED_LIST_DELETE_COMMANDS - 1], /delete-table --table-name test-state/, "should delete second table");
+    assert.match(
+      commands[EXPECTED_LIST_DELETE_COMMANDS - 1],
+      /delete-table --table-name test-state/,
+      "should delete second table",
+    );
   });
   it("returns empty array when no tables match", () => {
-    assert.deepStrictEqual(run({ prefix: "test-", region: "us-east-1" }, emptyTablesExec), [], "should return empty array");
+    assert.deepStrictEqual(
+      run({ prefix: "test-", region: "us-east-1" }, emptyTablesExec),
+      [],
+      "should return empty array",
+    );
   });
 });
 
 describe("main prefix validation", () => {
   it("throws when prefix is empty", () => {
-    assert.throws(() => cleanupDynamodb({ env: { INPUT_PREFIX: "" } }), { message: "INPUT_PREFIX is required" }, "should throw on empty prefix");
+    assert.throws(
+      () => cleanupDynamodb({ env: { INPUT_PREFIX: "" } }),
+      { message: "INPUT_PREFIX is required" },
+      "should throw on empty prefix",
+    );
   });
   it("throws when prefix is not set", () => {
-    assert.throws(() => cleanupDynamodb({ env: {} }), { message: "INPUT_PREFIX is required" }, "should throw on missing prefix");
+    assert.throws(
+      () => cleanupDynamodb({ env: {} }),
+      { message: "INPUT_PREFIX is required" },
+      "should throw on missing prefix",
+    );
   });
   it("throws when prefix is whitespace-only", () => {
-    assert.throws(() => cleanupDynamodb({ env: { INPUT_PREFIX: "   " } }), { message: "INPUT_PREFIX is required" }, "should throw on whitespace-only prefix");
+    assert.throws(
+      () => cleanupDynamodb({ env: { INPUT_PREFIX: "   " } }),
+      { message: "INPUT_PREFIX is required" },
+      "should throw on whitespace-only prefix",
+    );
   });
   it("throws when prefix is shorter than 5 characters", () => {
-    assert.throws(() => cleanupDynamodb({ env: { INPUT_PREFIX: "ab-" } }), { message: /at least 5 characters/ }, "should reject short prefix");
+    assert.throws(
+      () => cleanupDynamodb({ env: { INPUT_PREFIX: "ab-" } }),
+      { message: /at least 5 characters/ },
+      "should reject short prefix",
+    );
   });
   it("accepts prefix of exactly 5 characters", () => {
     const { exec } = mockExec({}, JSON.stringify({ TableNames: [] }));
@@ -74,7 +102,11 @@ describe("run partial failure", () => {
 
 describe("main region and env parsing", () => {
   it("throws on invalid region", () => {
-    assert.throws(() => cleanupDynamodb({ env: { INPUT_PREFIX: "test-", INPUT_REGION: "invalid" } }), { message: /Invalid AWS region/ }, "should throw on invalid region");
+    assert.throws(
+      () => cleanupDynamodb({ env: { INPUT_PREFIX: "test-", INPUT_REGION: "invalid" } }),
+      { message: /Invalid AWS region/ },
+      "should throw on invalid region",
+    );
   });
   it("accepts valid region", () => {
     const { exec } = mockExec({}, JSON.stringify({ TableNames: [] }));
