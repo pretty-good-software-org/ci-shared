@@ -15,6 +15,14 @@ outputs:
 runs:
   using: 'composite'
   steps:
+    - name: Configure git HTTPS rewrite for policy fetching
+      shell: bash
+      run: |
+        # Rewrite SSH URLs to HTTPS so conftest can pull policies from
+        # private repos using the GITHUB_TOKEN credential that
+        # actions/checkout already configured.
+        git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
+
     - uses: actions/github-script@v7
       id: policy
       env:
