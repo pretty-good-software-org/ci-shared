@@ -27,7 +27,8 @@ const resolveMainArgs = (args: MainArgs) => ({
 const main = async (args: MainArgs = {}): Promise<void> => {
   const { env, exec, write } = resolveMainArgs(args);
   const workingDirectory = env.INPUT_WORKING_DIRECTORY || "tofu";
-  const result = run({ workingDirectory }, exec, write);
+  const varFile = env.INPUT_VAR_FILE || "";
+  const result = run({ workingDirectory, varFile }, exec, write);
 
   const setOutput = resolveOutputWriter(args);
   setOutput("plan", result.plan);

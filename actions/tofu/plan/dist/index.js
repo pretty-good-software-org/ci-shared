@@ -23,7 +23,8 @@ const resolveMainArgs = (args) => ({
 const main = async (args = {}) => {
     const { env, exec, write } = resolveMainArgs(args);
     const workingDirectory = env.INPUT_WORKING_DIRECTORY || "tofu";
-    const result = run({ workingDirectory }, exec, write);
+    const varFile = env.INPUT_VAR_FILE || "";
+    const result = run({ workingDirectory, varFile }, exec, write);
     const setOutput = resolveOutputWriter(args);
     setOutput("plan", result.plan);
     setOutput("plan-file", result.planFile);
@@ -40,7 +41,7 @@ module.exports = Object.assign(main, { MAX_PLAN_LENGTH, run });
 
 // Execute tofu plan and capture outputs.
 //
-// 1. Runs tofu plan -no-color -out=plan.tfplan
+// 1. Runs tofu plan -no-color -out=plan.tfplan [-var-file=...]
 // 2. Captures text output via tofu show, truncated to 60k chars
 // 3. Exports JSON plan to plan.json
 Object.defineProperty(exports, "__esModule", ({ value: true }));
@@ -53,11 +54,18 @@ const truncatePlan = (text) => {
     }
     return text;
 };
-const run = ({ workingDirectory }, exec = execCapture, write = writeFileSync) => {
+const run = ({ workingDirectory, varFile }, exec = execCapture, write = writeFileSync) => {
     if (workingDirectory.includes("..")) {
         throw new Error(`working directory must not contain path traversal: ${workingDirectory}`);
     }
-    exec("tofu", [`-chdir=${workingDirectory}`, "plan", "-no-color", "-out=plan.tfplan"]);
+    if (varFile && varFile.includes("..")) {
+        throw new Error(`var-file must not contain path traversal: ${varFile}`);
+    }
+    const planArgs = [`-chdir=${workingDirectory}`, "plan", "-no-color", "-out=plan.tfplan"];
+    if (varFile) {
+        planArgs.push(`-var-file=${varFile}`);
+    }
+    exec("tofu", planArgs);
     const planText = exec("tofu", [`-chdir=${workingDirectory}`, "show", "-no-color", "plan.tfplan"]);
     const planJsonOutput = exec("tofu", [`-chdir=${workingDirectory}`, "show", "-json", "plan.tfplan"]);
     const planJsonPath = `${workingDirectory}/plan.json`;
