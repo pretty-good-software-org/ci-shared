@@ -35,4 +35,16 @@ describe("main entry point", () => {
     await main({ env: { INPUT_WORKING_DIRECTORY: "infrastructure" }, exec, write: noopWrite, writeOutput: noopWrite });
     assert.match(commands[0], /-chdir=infrastructure/, "should use INPUT_WORKING_DIRECTORY from env");
   });
+
+  it("passes INPUT_VAR_FILE to plan command", async () => {
+    const { commands, exec } = mockExec(defaultResponses());
+    await main({ env: { INPUT_VAR_FILE: "environments/prod.tfvars" }, exec, write: noopWrite, writeOutput: noopWrite });
+    assert.match(commands[0], /-var-file=environments\/prod\.tfvars/, "should pass var-file to plan");
+  });
+
+  it("does not pass var-file when INPUT_VAR_FILE is empty", async () => {
+    const { commands, exec } = mockExec(defaultResponses());
+    await main({ env: { INPUT_VAR_FILE: "" }, exec, write: noopWrite, writeOutput: noopWrite });
+    assert.ok(!commands[0].includes("-var-file"), "should not include -var-file when empty");
+  });
 });

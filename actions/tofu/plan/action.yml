@@ -5,6 +5,10 @@ inputs:
     description: 'Directory containing OpenTofu configuration'
     required: false
     default: 'tofu'
+  var-file:
+    description: 'Path to a tfvars file (relative to working directory)'
+    required: false
+    default: ''
 outputs:
   plan:
     description: 'Plan text (truncated to 60k chars)'
@@ -22,6 +26,7 @@ runs:
       id: plan
       env:
         INPUT_WORKING_DIRECTORY: ${{ inputs.working-directory }}
+        INPUT_VAR_FILE: ${{ inputs.var-file }}
       with:
         github-token: ${{ github.token }}
         script: |

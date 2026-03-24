@@ -35,6 +35,34 @@ describe("run command order and flags", () => {
   });
 });
 
+describe("var-file support", () => {
+  it("appends -var-file to plan command when provided", () => {
+    const { commands, exec } = mockExec({ "plan ": "", show: "x" });
+    run({ workingDirectory: "tofu", varFile: "environments/prod.tfvars" }, exec, noopWrite);
+    assert.match(commands[0], /-var-file=environments\/prod\.tfvars/, "plan should include -var-file");
+  });
+
+  it("does not include -var-file when empty string", () => {
+    const { commands, exec } = mockExec({ "plan ": "", show: "x" });
+    run({ workingDirectory: "tofu", varFile: "" }, exec, noopWrite);
+    assert.ok(!commands[0].includes("-var-file"), "plan should not include -var-file when empty");
+  });
+
+  it("does not include -var-file when undefined", () => {
+    const { commands, exec } = mockExec({ "plan ": "", show: "x" });
+    run({ workingDirectory: "tofu" }, exec, noopWrite);
+    assert.ok(!commands[0].includes("-var-file"), "plan should not include -var-file when undefined");
+  });
+
+  it("rejects var-file containing path traversal", () => {
+    assert.throws(
+      () => run({ workingDirectory: "tofu", varFile: "../../secrets.tfvars" }, mockExec({}).exec, noopWrite),
+      { message: /path traversal/ },
+      "should reject var-file with '..'",
+    );
+  });
+});
+
 describe("run results and file writing", () => {
   it("returns plan text from show command", () => {
     const { exec } = mockExec({ "plan ": "", "show -json": "{}", "show -no-color": "Plan: 2 to add." });

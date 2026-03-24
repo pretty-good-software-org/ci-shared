@@ -1,6 +1,6 @@
 // Execute tofu plan and capture outputs.
 //
-// 1. Runs tofu plan -no-color -out=plan.tfplan
+// 1. Runs tofu plan -no-color -out=plan.tfplan [-var-file=...]
 // 2. Captures text output via tofu show, truncated to 60k chars
 // 3. Exports JSON plan to plan.json
 
@@ -13,6 +13,7 @@ const MAX_PLAN_LENGTH = 60_000;
 
 interface RunArgs {
   workingDirectory: string;
+  varFile?: string;
 }
 
 interface PlanResult {
@@ -28,11 +29,19 @@ const truncatePlan = (text: string): string => {
   return text;
 };
 
-const run = ({ workingDirectory }: RunArgs, exec: ExecFn = execCapture, write: WriteFn = writeFileSync): PlanResult => {
+const run = ({ workingDirectory, varFile }: RunArgs, exec: ExecFn = execCapture, write: WriteFn = writeFileSync): PlanResult => {
   if (workingDirectory.includes("..")) {
     throw new Error(`working directory must not contain path traversal: ${workingDirectory}`);
   }
-  exec("tofu", [`-chdir=${workingDirectory}`, "plan", "-no-color", "-out=plan.tfplan"]);
+  if (varFile && varFile.includes("..")) {
+    throw new Error(`var-file must not contain path traversal: ${varFile}`);
+  }
+
+  const planArgs = [`-chdir=${workingDirectory}`, "plan", "-no-color", "-out=plan.tfplan"];
+  if (varFile) {
+    planArgs.push(`-var-file=${varFile}`);
+  }
+  exec("tofu", planArgs);
 
   const planText = exec("tofu", [`-chdir=${workingDirectory}`, "show", "-no-color", "plan.tfplan"]);
   const planJsonOutput = exec("tofu", [`-chdir=${workingDirectory}`, "show", "-json", "plan.tfplan"]);
