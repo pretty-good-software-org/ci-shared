@@ -21,9 +21,14 @@ runs:
         # Rewrite SSH URLs to HTTPS so conftest can pull policies from
         # private repos using the GITHUB_TOKEN credential that
         # actions/checkout already configured.
-        git config --local --add url."https://github.com/".insteadOf \
+        #
+        # Must be --global, not --local: conftest uses go-getter which
+        # clones into a temp directory outside the repo checkout.
+        # --local only applies within the checkout dir, so go-getter
+        # never sees the rewrite and fails with "Host key verification failed".
+        git config --global --add url."https://github.com/".insteadOf \
           "ssh://git@github.com/"
-        git config --local --add url."https://github.com/".insteadOf \
+        git config --global --add url."https://github.com/".insteadOf \
           "git@github.com:"
 
     - uses: actions/github-script@v7
