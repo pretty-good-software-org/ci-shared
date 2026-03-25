@@ -5,6 +5,14 @@ inputs:
     description: 'Path to the JSON plan file'
     required: false
     default: 'tofu/plan.json'
+  app-id:
+    description: 'GitHub App ID for cross-repo access (to clone opa-policies)'
+    required: false
+    default: ''
+  private-key:
+    description: 'GitHub App private key for cross-repo access'
+    required: false
+    default: ''
 outputs:
   has_violations:
     description: 'Whether policy violations were found (true/false)'
@@ -15,26 +23,42 @@ outputs:
 runs:
   using: 'composite'
   steps:
-    - name: Configure git HTTPS rewrite for policy fetching
+    - name: Generate cross-repo token for policy fetching
+      if: inputs.app-id != ''
+      uses: actions/create-github-app-token@v1
+      id: app-token
+      with:
+        app-id: ${{ inputs.app-id }}
+        private-key: ${{ inputs.private-key }}
+        owner: prettygood-software
+
+    - name: Configure git for cross-repo policy fetching
       shell: bash
+      env:
+        APP_TOKEN: ${{ steps.app-token.outputs.token || '' }}
       run: |
         # Conftest uses go-getter to clone the opa-policies repo.
         # go-getter runs git from a temp directory outside the checkout,
         # so all git config must be --global (not --local).
         #
-        # 1. Rewrite SSH→HTTPS URLs
-        # 2. Copy the HTTPS auth header that actions/checkout configured
-        #    (GITHUB_TOKEN as basic auth for github.com)
+        # GITHUB_TOKEN only has access to the current repo. The opa-policies
+        # repo requires a cross-repo token from the CI_PRIVATE_CONTENT app.
         git config --global --add url."https://github.com/".insteadOf \
           "ssh://git@github.com/"
         git config --global --add url."https://github.com/".insteadOf \
           "git@github.com:"
 
-        # Propagate the HTTPS auth header from local (set by actions/checkout)
-        # to global so go-getter can authenticate to private repos.
-        EXTRAHEADER=$(git config --local --get http.https://github.com/.extraheader 2>/dev/null || true)
-        if [ -n "$EXTRAHEADER" ]; then
-          git config --global --add http.https://github.com/.extraheader "$EXTRAHEADER"
+        # Use GitHub App token (cross-repo) if available, fall back to
+        # the checkout extraheader (GITHUB_TOKEN, same-repo only).
+        if [ -n "$APP_TOKEN" ]; then
+          HEADER=$(printf 'x-access-token:%s' "$APP_TOKEN" | base64)
+          git config --global --add http.https://github.com/.extraheader \
+            "AUTHORIZATION: basic ${HEADER}"
+        else
+          EXTRAHEADER=$(git config --local --get http.https://github.com/.extraheader 2>/dev/null || true)
+          if [ -n "$EXTRAHEADER" ]; then
+            git config --global --add http.https://github.com/.extraheader "$EXTRAHEADER"
+          fi
         fi
 
     - uses: actions/github-script@v7
