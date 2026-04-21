@@ -5,6 +5,10 @@ inputs:
     description: 'MISE_ENV value (e.g., "ci")'
     required: false
     default: ''
+  github-token:
+    description: 'GitHub token for authenticated API requests during tool install (avoids rate limits)'
+    required: false
+    default: ${{ github.token }}
 runs:
   using: 'composite'
   steps:
@@ -14,3 +18,4 @@ runs:
         MISE_ENV: ${{ inputs.mise-env }}
       with:
         install_args: '--verbose'
+        github_token: ${{ inputs.github-token }}
