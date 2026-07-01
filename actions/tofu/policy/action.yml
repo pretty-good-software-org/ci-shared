@@ -5,8 +5,12 @@ inputs:
     description: 'Path to the JSON plan file'
     required: false
     default: 'tofu/plan.json'
+  client-id:
+    description: 'GitHub App client ID for cross-repo access (to clone opa-policies)'
+    required: false
+    default: ''
   app-id:
-    description: 'GitHub App ID for cross-repo access (to clone opa-policies)'
+    description: 'Deprecated: GitHub App ID for cross-repo access. Use client-id instead.'
     required: false
     default: ''
   private-key:
@@ -24,9 +28,18 @@ runs:
   using: 'composite'
   steps:
     - name: Generate cross-repo token for policy fetching
-      if: inputs.app-id != ''
-      uses: actions/create-github-app-token@v1
+      if: inputs.client-id != ''
+      uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
       id: app-token
+      with:
+        client-id: ${{ inputs.client-id }}
+        private-key: ${{ inputs.private-key }}
+        owner: prettygood-software
+
+    - name: Generate cross-repo token for legacy policy fetching
+      if: inputs.client-id == '' && inputs.app-id != ''
+      uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+      id: app-token-legacy
       with:
         app-id: ${{ inputs.app-id }}
         private-key: ${{ inputs.private-key }}
@@ -35,7 +48,7 @@ runs:
     - name: Configure git for cross-repo policy fetching
       shell: bash
       env:
-        APP_TOKEN: ${{ steps.app-token.outputs.token || '' }}
+        APP_TOKEN: ${{ steps.app-token.outputs.token || steps.app-token-legacy.outputs.token || '' }}
       run: |
         # Conftest uses go-getter to clone the opa-policies repo.
         # go-getter runs git from a temp directory outside the checkout,

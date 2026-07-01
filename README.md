@@ -104,6 +104,9 @@ Run Conftest policy checks against an OpenTofu plan.
 | Input | Description | Default |
 |-------|-------------|---------|
 | `plan-json` | Path to the JSON plan file | `tofu/plan.json` |
+| `client-id` | GitHub App client ID for cross-repo policy fetching | `''` |
+| `private-key` | GitHub App private key for cross-repo policy fetching | `''` |
+| `app-id` | Deprecated GitHub App ID for cross-repo policy fetching | `''` |
 
 | Output | Description |
 |--------|-------------|
