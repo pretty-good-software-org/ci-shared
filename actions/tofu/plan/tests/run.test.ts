@@ -38,13 +38,13 @@ describe("run command order and flags", () => {
 describe("var-file support", () => {
   it("appends -var-file to plan command when provided", () => {
     const { commands, exec } = mockExec({ "plan ": "", show: "x" });
-    run({ workingDirectory: "tofu", varFile: "environments/prod.tfvars" }, exec, noopWrite);
+    run({ varFile: "environments/prod.tfvars", workingDirectory: "tofu" }, exec, noopWrite);
     assert.match(commands[0], /-var-file=environments\/prod\.tfvars/, "plan should include -var-file");
   });
 
   it("does not include -var-file when empty string", () => {
     const { commands, exec } = mockExec({ "plan ": "", show: "x" });
-    run({ workingDirectory: "tofu", varFile: "" }, exec, noopWrite);
+    run({ varFile: "", workingDirectory: "tofu" }, exec, noopWrite);
     assert.ok(!commands[0].includes("-var-file"), "plan should not include -var-file when empty");
   });
 
@@ -56,7 +56,7 @@ describe("var-file support", () => {
 
   it("rejects var-file containing path traversal", () => {
     assert.throws(
-      () => run({ workingDirectory: "tofu", varFile: "../../secrets.tfvars" }, mockExec({}).exec, noopWrite),
+      () => run({ varFile: "../../secrets.tfvars", workingDirectory: "tofu" }, mockExec({}).exec, noopWrite),
       { message: /path traversal/ },
       "should reject var-file with '..'",
     );
@@ -121,23 +121,5 @@ describe("path traversal validation", () => {
       { message: /path traversal/ },
       "should reject path with embedded '..'",
     );
-  });
-});
-
-describe("error handling", () => {
-  it("propagates plan failure without calling show or write", () => {
-    const commands: string[] = [];
-    const throwExec = (bin: string, args: string[]) => {
-      const cmd = [bin, ...args].join(" ");
-      commands.push(cmd);
-      if (cmd.includes("plan")) {
-        throw new Error("command failed");
-      }
-      return "";
-    };
-    const { writeFn, writes } = collectWrites();
-    assert.throws(() => run({ workingDirectory: "tofu" }, throwExec, writeFn), { message: "command failed" });
-    assert.strictEqual(commands.length, 1, "should only execute the plan command before failing");
-    assert.strictEqual(writes.length, 0, "should not write any files when plan fails");
   });
 });

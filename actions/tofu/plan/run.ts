@@ -29,24 +29,34 @@ const truncatePlan = (text: string): string => {
   return text;
 };
 
-const run = ({ workingDirectory, varFile }: RunArgs, exec: ExecFn = execCapture, write: WriteFn = writeFileSync): PlanResult => {
-  if (workingDirectory.includes("..")) {
-    throw new Error(`working directory must not contain path traversal: ${workingDirectory}`);
+const rejectPathTraversal = (label: string, value: string): void => {
+  if (value.includes("..")) {
+    throw new Error(`${label} must not contain path traversal: ${value}`);
   }
-  if (varFile && varFile.includes("..")) {
-    throw new Error(`var-file must not contain path traversal: ${varFile}`);
-  }
+};
 
+const buildPlanArgs = ({ workingDirectory, varFile }: RunArgs): string[] => {
   const planArgs = [`-chdir=${workingDirectory}`, "plan", "-no-color", "-out=plan.tfplan"];
   if (varFile) {
     planArgs.push(`-var-file=${varFile}`);
   }
-  exec("tofu", planArgs);
+  return planArgs;
+};
 
+const run = (
+  { workingDirectory, varFile }: RunArgs,
+  exec: ExecFn = execCapture,
+  write: WriteFn = writeFileSync,
+): PlanResult => {
+  rejectPathTraversal("working directory", workingDirectory);
+  if (varFile) {
+    rejectPathTraversal("var-file", varFile);
+  }
+
+  exec("tofu", buildPlanArgs({ varFile, workingDirectory }));
   const planText = exec("tofu", [`-chdir=${workingDirectory}`, "show", "-no-color", "plan.tfplan"]);
-  const planJsonOutput = exec("tofu", [`-chdir=${workingDirectory}`, "show", "-json", "plan.tfplan"]);
   const planJsonPath = `${workingDirectory}/plan.json`;
-  write(planJsonPath, planJsonOutput);
+  write(planJsonPath, exec("tofu", [`-chdir=${workingDirectory}`, "show", "-json", "plan.tfplan"]));
 
   return {
     plan: truncatePlan(planText),
