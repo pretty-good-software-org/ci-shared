@@ -5,7 +5,7 @@ const main = require("../action.ts");
 
 const defaultResponses = () => ({ "plan ": "", "show -json": "{}", "show -no-color": "No changes." });
 
-describe("main entry point", () => {
+describe("main outputs", () => {
   it("sets all three outputs via writeOutput", async () => {
     const { exec } = mockExec({ "plan ": "", "show -json": '{"ok":true}', "show -no-color": "No changes." });
     const { outputs, writeOutput } = captureOutputs();
@@ -23,7 +23,9 @@ describe("main entry point", () => {
     assert.ok("plan-file" in outputs, "should set plan-file via core.setOutput");
     assert.ok("plan-json" in outputs, "should set plan-json via core.setOutput");
   });
+});
 
+describe("main inputs", () => {
   it("defaults working directory to 'tofu'", async () => {
     const { commands, exec } = mockExec(defaultResponses());
     await main({ env: {}, exec, write: noopWrite, writeOutput: noopWrite });
