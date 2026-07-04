@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE description="Generate CHANGELOG.md from commit history"
+set -euo pipefail
+
+git-cliff -o CHANGELOG.md

@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE description="Lint TypeScript files"
+set -euo pipefail
+
+oxlint actions/ lib/

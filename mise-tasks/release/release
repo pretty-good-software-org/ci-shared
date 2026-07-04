@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+#MISE description="Create a release (VERSION=x.y.z)"
+set -euo pipefail
+
+VERSION="${VERSION:?VERSION is required}"
+MAJOR=$(echo "${VERSION}" | cut -d. -f1)
+
+git-cliff -o CHANGELOG.md --tag "v${VERSION}"
+git add CHANGELOG.md
+git commit -m "chore(release): v${VERSION}"
+git tag -a "v${VERSION}" -m "Release v${VERSION}"
+git tag -f "v${MAJOR}" "v${VERSION}"
+git push origin main "v${VERSION}" "v${MAJOR}" --force
+git-cliff --latest --strip header | gh release create "v${VERSION}" --title "v${VERSION}" --notes-file -

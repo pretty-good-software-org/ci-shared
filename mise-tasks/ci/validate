@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+#MISE description="Run all CI checks"
+set -euo pipefail
+
+mise run build
+mise run lint
+mise run test

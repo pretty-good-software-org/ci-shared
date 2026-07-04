@@ -184,19 +184,19 @@ Prerequisites: [mise](https://mise.jdx.dev/)
 
 ```bash
 # Install all dev tools (node, task, linters) and git hooks
-task setup
+mise run setup
 
 # Run tests
-task test
+mise run test
 
 # Run all linters
-task lint
+mise run lint
 
 # Compile TypeScript and bundle with ncc
-task build
+mise run build
 
 # Run full CI validation locally (build + lint + test)
-task ci:validate
+mise run ci:validate
 ```
 
 ## Adding a New Action
@@ -205,7 +205,7 @@ task ci:validate
 2. Add implementation in TypeScript alongside `action.yml`
 3. Add tests in `actions/<category>/<action-name>/tests/` using Node built-in test runner (`node:test` + `node:assert`)
 4. Tests are auto-discovered via `actions/*/*/tests/*.test.ts` glob
-5. Run `task build` to bundle with `ncc` — compiled `dist/index.js` must be committed
+5. Run `mise run build` to bundle with `ncc` — compiled `dist/index.js` must be committed
 
 ## Versioning
 

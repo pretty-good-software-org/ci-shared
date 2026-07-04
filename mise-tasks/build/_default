@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+#MISE description="Compile TypeScript to JavaScript"
+set -euo pipefail
+
+while IFS= read -r action_file; do
+  npx ncc build "${action_file}" -o "$(dirname "${action_file}")/dist"
+done < <(find actions -name 'action.ts' -not -path '*/tests/*' -not -path '*/dist/*')

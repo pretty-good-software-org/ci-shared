@@ -120,10 +120,10 @@ lefthook/
 
 ```bash
 # Install all dev tools and git hooks
-task setup
+mise run setup
 ```
 
-This runs `mise install` (node 22, task 3, actionlint, yamllint, markdownlint-cli2, oxlint, oxfmt, lefthook), configures git hooks via lefthook, and installs npm dependencies (commitlint, typescript, @types/node, @vercel/ncc).
+This runs `mise install` (node 22, actionlint, yamllint, markdownlint-cli2, oxlint, oxfmt, lefthook), configures git hooks via lefthook, and installs npm dependencies (commitlint, typescript, @types/node, @vercel/ncc).
 
 ## Available Commands
 
@@ -149,7 +149,7 @@ task release:release    # Create a release (usage: task release:release VERSION=
 Tests use Node built-in test runner (`node:test` + `node:assert`) with `--experimental-strip-types` to run TypeScript directly.
 
 ```bash
-task test
+mise run test
 ```
 
 Tests are auto-discovered via the glob `actions/*/*/tests/*.test.ts`. No additional test dependencies are needed.
@@ -158,7 +158,7 @@ Tests are auto-discovered via the glob `actions/*/*/tests/*.test.ts`. No additio
 
 Tools are managed via [mise](https://mise.jdx.dev/):
 
-- `.mise.toml` — base tools (node 22, task 3, actionlint, yamllint, markdownlint-cli2, oxlint, oxfmt)
+- `.mise.toml` — base tools (node 22, actionlint, yamllint, markdownlint-cli2, oxlint, oxfmt)
 - `.mise.development.toml` — local dev extras (lefthook)
 - `.mise.ci.toml` — CI profile (empty, uses base tools only)
 
@@ -167,7 +167,7 @@ Tools are managed via [mise](https://mise.jdx.dev/):
 1. Run `git status` to check current state
 2. Create a feature branch from `main`
 3. Make changes and commit using conventional commits
-4. Run `task ci:validate` before pushing
+4. Run `mise run ci:validate` before pushing
 5. Push and create a PR — squash merge only
 
 ### Git Hooks
@@ -184,7 +184,7 @@ Managed via [lefthook](https://github.com/evilmartians/lefthook). Hooks are spli
 2. Add implementation in `action.ts` alongside `action.yml`
 3. Add tests in `actions/<category>/<action-name>/tests/` using Node built-in test runner (`node:test` + `node:assert`)
 4. Tests are auto-discovered via `actions/*/*/tests/*.test.ts` glob
-5. Run `task build` to bundle TypeScript with `ncc` — compiled `dist/index.js` must be committed
+5. Run `mise run build` to bundle TypeScript with `ncc` — compiled `dist/index.js` must be committed
 
 ## Versioning
 
