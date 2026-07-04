@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+#MISE description="Run all linters"
+set -euo pipefail
+
+mise run lint:actions
+mise run lint:yaml
+mise run lint:markdown
+mise run lint:ts
+mise run lint:typecheck
+mise run lint:format:check

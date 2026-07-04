@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE description="Show available tasks"
+set -euo pipefail
+
+mise tasks

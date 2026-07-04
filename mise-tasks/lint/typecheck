@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE description="Type-check TypeScript files"
+set -euo pipefail
+
+npx tsc --noEmit

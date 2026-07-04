@@ -1,9 +1,0 @@
-version: '3'
-
-tasks:
-  default:
-    desc: Install dev tools and git hooks
-    cmds:
-      - MISE_ENV=development mise install
-      - MISE_ENV=development mise exec -- lefthook install
-      - npm install
