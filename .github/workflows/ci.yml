@@ -8,6 +8,12 @@ on:
 env:
   MISE_ENV: ci
 
+# One live run per ref — a new push supersedes the queued/running one
+# instead of piling up when runners are saturated or offline.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     name: Test
