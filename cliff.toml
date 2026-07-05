@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.\n
 """
 body = """
 {%- macro remote_url() -%}
-  https://github.com/prettygood-software/ci-shared
+  https://github.com/pretty-good-software-org/ci-shared
 {%- endmacro -%}
 
 {% if version -%}

@@ -9,7 +9,7 @@ Shared composite actions for CI/CD across the organization.
 Checkout repository and install tools via mise.
 
 ```yaml
-- uses: prettygood-software/ci-shared/actions/setup/mise@v1
+- uses: pretty-good-software-org/ci-shared/actions/setup/mise@v1
   with:
     mise-env: ci
 ```
@@ -23,7 +23,7 @@ Checkout repository and install tools via mise.
 Check OpenTofu formatting.
 
 ```yaml
-- uses: prettygood-software/ci-shared/actions/tofu/fmt-check@v1
+- uses: pretty-good-software-org/ci-shared/actions/tofu/fmt-check@v1
 ```
 
 | Input | Description | Default |
@@ -35,7 +35,7 @@ Check OpenTofu formatting.
 Initialize OpenTofu configuration.
 
 ```yaml
-- uses: prettygood-software/ci-shared/actions/tofu/init@v1
+- uses: pretty-good-software-org/ci-shared/actions/tofu/init@v1
   with:
     backend: 'false'
 ```
@@ -50,7 +50,7 @@ Initialize OpenTofu configuration.
 Validate OpenTofu configuration.
 
 ```yaml
-- uses: prettygood-software/ci-shared/actions/tofu/validate@v1
+- uses: pretty-good-software-org/ci-shared/actions/tofu/validate@v1
 ```
 
 | Input | Description | Default |
@@ -62,7 +62,7 @@ Validate OpenTofu configuration.
 Create OpenTofu plan and capture outputs.
 
 ```yaml
-- uses: prettygood-software/ci-shared/actions/tofu/plan@v1
+- uses: pretty-good-software-org/ci-shared/actions/tofu/plan@v1
   id: plan
 ```
 
@@ -81,7 +81,7 @@ Create OpenTofu plan and capture outputs.
 Apply an OpenTofu plan.
 
 ```yaml
-- uses: prettygood-software/ci-shared/actions/tofu/apply@v1
+- uses: pretty-good-software-org/ci-shared/actions/tofu/apply@v1
   with:
     plan-file: ${{ steps.plan.outputs.plan-file }}
 ```
@@ -96,7 +96,7 @@ Apply an OpenTofu plan.
 Run Conftest policy checks against an OpenTofu plan.
 
 ```yaml
-- uses: prettygood-software/ci-shared/actions/tofu/policy@v1
+- uses: pretty-good-software-org/ci-shared/actions/tofu/policy@v1
   with:
     plan-json: ${{ steps.plan.outputs.plan-json }}
 ```
@@ -118,7 +118,7 @@ Run Conftest policy checks against an OpenTofu plan.
 Builds OpenTofu plan output as a collapsible markdown fragment.
 
 ```yaml
-- uses: prettygood-software/ci-shared/actions/tofu/build-plan-details@v1
+- uses: pretty-good-software-org/ci-shared/actions/tofu/build-plan-details@v1
   id: plan-details
   with:
     plan: ${{ steps.plan.outputs.plan }}
@@ -137,7 +137,7 @@ Builds OpenTofu plan output as a collapsible markdown fragment.
 Create or update a PR comment identified by a marker string.
 
 ```yaml
-- uses: prettygood-software/ci-shared/actions/github/comment@v1
+- uses: pretty-good-software-org/ci-shared/actions/github/comment@v1
   with:
     comment-body: ${{ steps.comment.outputs.comment-body }}
     comment-identifier: '### OpenTofu Plan Results'
@@ -153,7 +153,7 @@ Create or update a PR comment identified by a marker string.
 Delete S3 buckets matching a prefix. Handles versioned buckets.
 
 ```yaml
-- uses: prettygood-software/ci-shared/actions/aws/cleanup-s3@v1
+- uses: pretty-good-software-org/ci-shared/actions/aws/cleanup-s3@v1
   with:
     prefix: my-test-bucket-
 ```
@@ -168,7 +168,7 @@ Delete S3 buckets matching a prefix. Handles versioned buckets.
 Delete DynamoDB tables matching a prefix.
 
 ```yaml
-- uses: prettygood-software/ci-shared/actions/aws/cleanup-dynamodb@v1
+- uses: pretty-good-software-org/ci-shared/actions/aws/cleanup-dynamodb@v1
   with:
     prefix: my-test-table-
 ```

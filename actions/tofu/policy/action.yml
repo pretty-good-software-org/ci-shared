@@ -34,7 +34,7 @@ runs:
       with:
         client-id: ${{ inputs.client-id }}
         private-key: ${{ inputs.private-key }}
-        owner: prettygood-software
+        owner: pretty-good-software-org
 
     - name: Generate cross-repo token for legacy policy fetching
       if: inputs.client-id == '' && inputs.app-id != ''
@@ -43,7 +43,7 @@ runs:
       with:
         app-id: ${{ inputs.app-id }}
         private-key: ${{ inputs.private-key }}
-        owner: prettygood-software
+        owner: pretty-good-software-org
 
     - name: Configure git for cross-repo policy fetching
       shell: bash
