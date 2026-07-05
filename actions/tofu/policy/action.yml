@@ -17,6 +17,10 @@ inputs:
     description: 'GitHub App private key for cross-repo access'
     required: false
     default: ''
+  owner:
+    description: 'GitHub owner where the cross-repo access app is installed'
+    required: false
+    default: ''
 outputs:
   has_violations:
     description: 'Whether policy violations were found (true/false)'
@@ -34,7 +38,7 @@ runs:
       with:
         client-id: ${{ inputs.client-id }}
         private-key: ${{ inputs.private-key }}
-        owner: pretty-good-software-org
+        owner: ${{ inputs.owner || github.repository_owner }}
 
     - name: Generate cross-repo token for legacy policy fetching
       if: inputs.client-id == '' && inputs.app-id != ''
@@ -43,7 +47,7 @@ runs:
       with:
         app-id: ${{ inputs.app-id }}
         private-key: ${{ inputs.private-key }}
-        owner: pretty-good-software-org
+        owner: ${{ inputs.owner || github.repository_owner }}
 
     - name: Configure git for cross-repo policy fetching
       shell: bash
