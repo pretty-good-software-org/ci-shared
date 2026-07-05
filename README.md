@@ -18,6 +18,49 @@ Checkout repository and install tools via mise.
 |-------|-------------|---------|
 | `mise-env` | MISE_ENV value (e.g., `ci`) | `''` |
 
+### setup/npm-auth
+
+Authenticate npm/bun installs against GitHub Packages using a GitHub App installation token, instead of the
+per-repo "Actions access" grant configured in each private package's Settings UI. Those grants are unreproducible
+state — there is no API to manage them, and the 2026-07-05 org rename silently dropped most of them and took org
+CI down. This action mints a short-lived token the same way `org-aws-infrastructure/.github/workflows/plan.yml`
+already does for private policy fetching, writes `~/.npmrc` to route the configured scope to
+`npm.pkg.github.com`, and exports `NODE_AUTH_TOKEN` for install steps that read the token from the environment
+instead.
+
+```yaml
+- uses: pretty-good-software-org/ci-shared/actions/setup/npm-auth@v1
+  with:
+    app-id: ${{ secrets.CI_PRIVATE_CONTENT_APP_ID }}
+    private-key: ${{ secrets.CI_PRIVATE_CONTENT_PRIVATE_KEY }}
+```
+
+| Input | Description | Default |
+|-------|-------------|---------|
+| `app-id` | GitHub App ID | (required) |
+| `private-key` | GitHub App private key | (required) |
+| `scope` | npm scope to route to GitHub Packages | `@pretty-good-software-org` |
+
+The App backing `CI_PRIVATE_CONTENT_APP_ID` needs the `packages: read` permission. That permission is granted in
+the GitHub App settings UI by an org admin — it is not something this action or its workflow can configure.
+
+**Migrating a consumer workflow**, replacing the `GITHUB_TOKEN` env var on a bun/npm install step with a minted
+App token:
+
+```diff
++      - uses: pretty-good-software-org/ci-shared/actions/setup/npm-auth@v1
++        with:
++          app-id: ${{ secrets.CI_PRIVATE_CONTENT_APP_ID }}
++          private-key: ${{ secrets.CI_PRIVATE_CONTENT_PRIVATE_KEY }}
+
+       - name: Install dependencies
+         run: bun install
+-        env:
+-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+> Consumer repos are not migrated by this change — see the PR description for the rollout plan.
+
 ### tofu/fmt-check
 
 Check OpenTofu formatting.

@@ -1,0 +1,32 @@
+name: 'Setup npm Auth'
+description: 'Authenticate npm/bun installs against GitHub Packages using a GitHub App installation token'
+inputs:
+  app-id:
+    description: 'GitHub App ID (e.g. secrets.CI_PRIVATE_CONTENT_APP_ID)'
+    required: true
+  private-key:
+    description: 'GitHub App private key (e.g. secrets.CI_PRIVATE_CONTENT_PRIVATE_KEY)'
+    required: true
+  scope:
+    description: 'npm scope to route to GitHub Packages'
+    required: false
+    default: '@pretty-good-software-org'
+runs:
+  using: 'composite'
+  steps:
+    - uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1.12.0
+      id: app-token
+      with:
+        app-id: ${{ inputs.app-id }}
+        private-key: ${{ inputs.private-key }}
+        owner: pretty-good-software-org
+
+    - uses: actions/github-script@v7
+      env:
+        INPUT_SCOPE: ${{ inputs.scope }}
+        INPUT_TOKEN: ${{ steps.app-token.outputs.token }}
+      with:
+        github-token: ${{ github.token }}
+        script: |
+          const script = require('${{ github.action_path }}/dist/index.js')
+          await script({core})
