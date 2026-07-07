@@ -23,18 +23,20 @@ runs:
       env:
         MISE_ENV: ${{ inputs.mise-env || env.MISE_ENV }}
       with:
-        # TEMPORARY PIN — mise 2026.7.2 (2026-07-07) panics instead of erroring
-        # on locked-mode lockfile entries without URLs. Remove with the step below.
+        # PIN — mise 2026.7.2 (2026-07-07) panics instead of erroring on url-less
+        # lockfile entries (npm/pipx backends have no single-asset URL). Keep the
+        # pin until that panic is fixed upstream; 2026.7.1 handles them cleanly.
         version: 2026.7.1
-        # TEMPORARY — mise-action force-adds --locked whenever mise.lock exists,
-        # and most org lockfiles carry checksum-only entries that locked mode
-        # rejects ("No lockfile URL found"). Skip the action's install and run a
-        # plain (unlocked) install below; remove both once fleet lockfiles are
-        # regenerated URL-complete.
+        # mise-action force-adds --locked whenever a mise.lock exists but does NOT
+        # enable the lockfile setting, so its own install fails with "locked mode
+        # requires lockfile to be enabled". Skip it and run the install below with
+        # the lockfile setting ON (MISE_LOCKFILE=1) — locked mode then verifies the
+        # committed checksums/attestations. Fleet locks are URL-complete (aqua
+        # entries carry url+checksum; npm/pipx carry neither and are tolerated).
         install: false
         github_token: ${{ inputs.github-token }}
-    - run: mise install --verbose
+    - run: mise install --locked --verbose
       shell: bash
       env:
         MISE_ENV: ${{ inputs.mise-env || env.MISE_ENV }}
-        MISE_LOCKFILE: '0'
+        MISE_LOCKFILE: '1'
