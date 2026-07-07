@@ -21,7 +21,7 @@ runs:
         fetch-depth: ${{ inputs.fetch-depth }}
     - uses: jdx/mise-action@v4
       env:
-        MISE_ENV: ${{ inputs.mise-env }}
+        MISE_ENV: ${{ inputs.mise-env || env.MISE_ENV }}
       with:
         install_args: '--verbose'
         github_token: ${{ inputs.github-token }}

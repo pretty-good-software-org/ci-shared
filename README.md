@@ -16,7 +16,7 @@ Checkout repository and install tools via mise.
 
 | Input | Description | Default |
 |-------|-------------|---------|
-| `mise-env` | MISE_ENV value (e.g., `ci`) | `''` |
+| `mise-env` | MISE_ENV value (e.g., `ci`) | `''` (falls back to the caller's `MISE_ENV` env) |
 
 ### setup/npm-auth
 
