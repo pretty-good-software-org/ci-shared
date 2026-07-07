@@ -22,10 +22,15 @@ runs:
     - uses: jdx/mise-action@v4
       env:
         MISE_ENV: ${{ inputs.mise-env || env.MISE_ENV }}
+        # TEMPORARY — locked-mode installs fail on lockfile entries without
+        # URLs (checksum-only), which most org mise.lock files carry for some
+        # backends; mise then hard-errors ("No lockfile URL found"). Install
+        # from the exact version pins instead until fleet lockfiles are
+        # regenerated URL-complete, then remove this and the version pin.
+        MISE_LOCKFILE: '0'
       with:
-        # TEMPORARY PIN — mise 2026.7.2 (2026-07-07) hard-fails locked mode on
-        # lockfile entries without URLs, which most org mise.lock files have.
-        # Remove after fleet lockfiles are regenerated with URL-complete entries.
+        # TEMPORARY PIN — mise 2026.7.2 (2026-07-07) panics instead of erroring
+        # on the same locked-mode condition. Remove together with MISE_LOCKFILE.
         version: 2026.7.1
         install_args: '--verbose'
         github_token: ${{ inputs.github-token }}
