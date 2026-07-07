@@ -1,0 +1,72 @@
+# Reusable publish workflow for the org's bun packages. One authoritative source
+# for: mise/tool setup, npm auth, build, version-from-tag, and an idempotent
+# publish. Consumers call it from a thin publish.yml:
+#
+#   jobs:
+#     publish:
+#       uses: pretty-good-software-org/ci-shared/.github/workflows/bun-publish.yml@v1
+#       secrets: inherit
+#
+# The caller keeps only the trigger (`on: push: tags: ["v*.*.*"]`) and the
+# concurrency group — everything else lives here, so a fix lands once.
+name: Bun Publish (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      runs-on:
+        description: "runs-on target as a JSON array"
+        type: string
+        default: '["self-hosted", "Linux", "ARM64"]'
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    name: Publish to GitHub Packages
+    runs-on: ${{ fromJSON(inputs.runs-on) }}
+    # Job-level so BOTH `bun install` and `npm publish` authenticate — the
+    # committed .npmrc reads ${NODE_AUTH_TOKEN}. GITHUB_TOKEN has packages:write
+    # for the repo's own package.
+    env:
+      MISE_ENV: ci
+      NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Setup
+        uses: pretty-good-software-org/ci-shared/actions/setup/mise@v1
+        with:
+          mise-env: ci
+          fetch-depth: 0
+
+      - run: bun install --frozen-lockfile
+      - run: bun run check
+      - run: bun run build
+
+      - name: Set version from tag
+        env:
+          REF: ${{ github.ref_name }}
+        run: |
+          VERSION="${REF#v}"
+          bun pm pkg set version="$VERSION"
+
+      - name: Publish (idempotent)
+        run: |
+          PKG="$(bun pm pkg get name | tr -d '"')"
+          VERSION="$(bun pm pkg get version | tr -d '"')"
+          if npm publish; then
+            echo "::notice::published ${PKG}@${VERSION}"
+            exit 0
+          fi
+          # npm publish reported failure. GitHub Packages returns 409 when npm
+          # retries a PUT that already succeeded, so succeed ONLY if this exact
+          # version is now in the registry. Anything else (401 auth, build, a
+          # genuinely-missing version) stays a loud red failure.
+          registry_version="$(npm view "${PKG}@${VERSION}" version 2>/dev/null || true)"
+          if [ "$registry_version" = "$VERSION" ]; then
+            echo "::notice::${PKG}@${VERSION} already in registry — treating publish conflict as success"
+            exit 0
+          fi
+          echo "::error::publish failed and ${PKG}@${VERSION} is not in the registry"
+          exit 1
