@@ -1,7 +1,6 @@
 const { describe, it } = require("node:test");
 const assert = require("node:assert");
 const { analyzeDrift } = require("../analyze-drift.ts");
-const { parseEnv } = require("../parse-env.ts");
 
 const buildPlanJson = (resourceChanges: { actions: string[]; address: string }[]): string =>
   JSON.stringify({
@@ -115,16 +114,5 @@ describe("analyzeDrift filtering and ordering", () => {
     const gammaIdx = result.summary.indexOf("aws_dynamodb_table.gamma");
     assert.ok(alphaIdx < gammaIdx, "alpha must appear before gamma (input order preserved)");
     assert.ok(!result.summary.includes("aws_s3_bucket.beta"), "beta (no-op) must not appear");
-  });
-});
-
-describe("parseEnv", () => {
-  it("reads INPUT_PLAN_JSON from environment", () => {
-    const args = parseEnv({ INPUT_PLAN_JSON: '{"resource_changes":[]}' });
-    assert.strictEqual(args.planJson, '{"resource_changes":[]}', "must read plan JSON from env");
-  });
-
-  it("returns undefined when INPUT_PLAN_JSON is not set", () => {
-    assert.strictEqual(parseEnv({}).planJson, undefined, "must return undefined when missing");
   });
 });

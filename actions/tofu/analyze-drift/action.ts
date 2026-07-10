@@ -1,7 +1,8 @@
 // Analyze OpenTofu plan JSON for infrastructure drift.
 //
 // Pure JSON parser + markdown builder — no GitHub API calls.
-// Reads plan JSON from INPUT_PLAN_JSON environment variable.
+// Reads plan JSON from the INPUT_PLAN_JSON_FILE path, with the deprecated inline
+// INPUT_PLAN_JSON env var as a fallback; see parse-env.ts.
 // Detects resource changes and builds a drift summary markdown fragment.
 
 const { resolveOutputWriter } = require("../../../lib/github-output.ts");
