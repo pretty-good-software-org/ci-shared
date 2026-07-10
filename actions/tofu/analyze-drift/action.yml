@@ -1,9 +1,20 @@
 name: "Analyze Drift"
 description: "Parse OpenTofu plan JSON to detect infrastructure drift and build a markdown summary"
 inputs:
+  plan-json-file:
+    description: >-
+      Path to a file holding the OpenTofu plan JSON (output of `tofu show -json planfile`).
+      Preferred over plan-json: the file is read from disk, so a large plan never crosses
+      the execve argument-size limit that fails to spawn node when the JSON is passed inline.
+    required: false
+    default: ""
   plan-json:
-    description: "OpenTofu plan JSON string (output of tofu show -json planfile)"
-    required: true
+    description: >-
+      OpenTofu plan JSON string. DEPRECATED — a plan larger than 128 KiB exceeds the process
+      argument-size limit and fails to start node ("Argument list too long"). Use plan-json-file
+      instead. Kept only so existing callers with small plans keep working during the migration.
+    required: false
+    default: ""
 outputs:
   has-drift:
     description: "Whether drift was detected (true/false)"
@@ -17,6 +28,7 @@ runs:
     - uses: actions/github-script@v7
       id: analyze
       env:
+        INPUT_PLAN_JSON_FILE: ${{ inputs.plan-json-file }}
         INPUT_PLAN_JSON: ${{ inputs.plan-json }}
       with:
         github-token: ${{ github.token }}
