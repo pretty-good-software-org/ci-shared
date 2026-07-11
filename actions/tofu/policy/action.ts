@@ -48,15 +48,36 @@ const successfulPolicyResult = (output: string): PolicyResult => {
   return { hasViolations: false, policyIntegrityFailed: false, policyViolations: "" };
 };
 
-const run = ({ planJson }: RunArgs, exec: ExecFn = execCapture): PolicyResult => {
+const execErrorOutput = (error: unknown): string => {
+  const execError = error as { message?: string; stdout?: string; stderr?: string };
+  return (execError.stdout || "") + (execError.stderr || "") || execError.message || "unknown error";
+};
+
+const runPolicyTest = (planJson: string, exec: ExecFn): PolicyResult => {
   try {
     const output = exec("conftest", ["test", "--quiet=false", planJson]);
     return successfulPolicyResult(output);
   } catch (error: unknown) {
-    const execError = error as { stdout?: string; stderr?: string; status?: number };
-    const output = (execError.stdout || "") + (execError.stderr || "");
-    return { hasViolations: true, policyIntegrityFailed: false, policyViolations: output };
+    return {
+      hasViolations: true,
+      policyIntegrityFailed: false,
+      policyViolations: execErrorOutput(error),
+    };
   }
+};
+
+const run = ({ planJson }: RunArgs, exec: ExecFn = execCapture): PolicyResult => {
+  try {
+    exec("conftest", ["pull"]);
+  } catch (error: unknown) {
+    return {
+      hasViolations: true,
+      policyIntegrityFailed: true,
+      policyViolations: `Policy integrity check failed: conftest pull failed: ${execErrorOutput(error)}`,
+    };
+  }
+
+  return runPolicyTest(planJson, exec);
 };
 
 const enforcePolicyIntegrity = (result: PolicyResult): void => {
