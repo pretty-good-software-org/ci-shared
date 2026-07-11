@@ -40,7 +40,7 @@ describe("run command execution", () => {
       commands,
       [
         "conftest pull git::ssh://git@github.com/pretty-good-software-org/opa-policies.git//policy",
-        "conftest test --quiet=false tofu/plan.json",
+        "conftest test --all-namespaces --quiet=false tofu/plan.json",
       ],
       "commands should fetch policies before testing and keep the count summary visible",
     );

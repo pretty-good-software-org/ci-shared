@@ -56,7 +56,7 @@ const execErrorOutput = (error: unknown): string => {
 
 const runPolicyTest = (planJson: string, exec: ExecFn): PolicyResult => {
   try {
-    const output = exec("conftest", ["test", "--quiet=false", planJson]);
+    const output = exec("conftest", ["test", "--all-namespaces", "--quiet=false", planJson]);
     return successfulPolicyResult(output);
   } catch (error: unknown) {
     return {
