@@ -1,0 +1,42 @@
+{
+  "compliant repo without caller lint standards": {
+    "status": 0,
+    "stderr": "",
+    "stdout": "PASS a - required base-template files exist\nPASS b - forbidden legacy files are absent\nPASS c - lefthook.yml extends explicit base modules without globs\nPASS d - lint default depends on actionlint, yamllint, markdownlint\nPASS e - mise tool versions use exact Style-A semver pins\nPASS f - old org name is absent\nPASS g - lint workflow uses shared mise setup, concurrency, and lint task\nPASS h - lint workflow runner policy is [self-hosted, Linux, ARM64]\nPASS i - repo lint config matches lint-standards.toml and lint tasks do not swallow failures\ntemplate guard passed\n"
+  },
+  "go complexity threshold violation": {
+    "status": 1,
+    "stderr": "  go cyclop: expected 10, got 11\ntemplate guard failed with 1 failure(s)\n",
+    "stdout": "PASS a - required base-template files exist\nPASS b - forbidden legacy files are absent\nPASS c - lefthook.yml extends explicit base modules without globs\nPASS d - lint default depends on actionlint, yamllint, markdownlint\nPASS e - mise tool versions use exact Style-A semver pins\nPASS f - old org name is absent\nPASS g - lint workflow uses shared mise setup, concurrency, and lint task\nPASS h - lint workflow runner policy is [self-hosted, Linux, ARM64]\nFAIL i - repo lint config matches lint-standards.toml and lint tasks do not swallow failures\n"
+  },
+  "go file-length threshold violation": {
+    "status": 1,
+    "stderr": "  go file length: expected 300, got 301\ntemplate guard failed with 1 failure(s)\n",
+    "stdout": "PASS a - required base-template files exist\nPASS b - forbidden legacy files are absent\nPASS c - lefthook.yml extends explicit base modules without globs\nPASS d - lint default depends on actionlint, yamllint, markdownlint\nPASS e - mise tool versions use exact Style-A semver pins\nPASS f - old org name is absent\nPASS g - lint workflow uses shared mise setup, concurrency, and lint task\nPASS h - lint workflow runner policy is [self-hosted, Linux, ARM64]\nFAIL i - repo lint config matches lint-standards.toml and lint tasks do not swallow failures\n"
+  },
+  "rust file-length threshold violation": {
+    "status": 1,
+    "stderr": "  rust too-many-lines: expected 80, got 81\ntemplate guard failed with 1 failure(s)\n",
+    "stdout": "PASS a - required base-template files exist\nPASS b - forbidden legacy files are absent\nPASS c - lefthook.yml extends explicit base modules without globs\nPASS d - lint default depends on actionlint, yamllint, markdownlint\nPASS e - mise tool versions use exact Style-A semver pins\nPASS f - old org name is absent\nPASS g - lint workflow uses shared mise setup, concurrency, and lint task\nPASS h - lint workflow runner policy is [self-hosted, Linux, ARM64]\nFAIL i - repo lint config matches lint-standards.toml and lint tasks do not swallow failures\n"
+  },
+  "python complexity threshold violation": {
+    "status": 1,
+    "stderr": "  python C901: expected 10, got 11\ntemplate guard failed with 1 failure(s)\n",
+    "stdout": "PASS a - required base-template files exist\nPASS b - forbidden legacy files are absent\nPASS c - lefthook.yml extends explicit base modules without globs\nPASS d - lint default depends on actionlint, yamllint, markdownlint\nPASS e - mise tool versions use exact Style-A semver pins\nPASS f - old org name is absent\nPASS g - lint workflow uses shared mise setup, concurrency, and lint task\nPASS h - lint workflow runner policy is [self-hosted, Linux, ARM64]\nFAIL i - repo lint config matches lint-standards.toml and lint tasks do not swallow failures\n"
+  },
+  ".guardrc waiver": {
+    "status": 0,
+    "stderr": "",
+    "stdout": "PASS a - required base-template files exist\nPASS b - forbidden legacy files are absent\nPASS c - lefthook.yml extends explicit base modules without globs\nPASS d - lint default depends on actionlint, yamllint, markdownlint\nPASS e - mise tool versions use exact Style-A semver pins\nPASS f - old org name is absent\nPASS g - lint workflow uses shared mise setup, concurrency, and lint task\nPASS h - lint workflow runner policy is [self-hosted, Linux, ARM64]\nPASS i - skipped via GUARD_SKIP_CHECKS\ntemplate guard passed\n"
+  },
+  "caller-local lint standards override": {
+    "status": 0,
+    "stderr": "",
+    "stdout": "PASS a - required base-template files exist\nPASS b - forbidden legacy files are absent\nPASS c - lefthook.yml extends explicit base modules without globs\nPASS d - lint default depends on actionlint, yamllint, markdownlint\nPASS e - mise tool versions use exact Style-A semver pins\nPASS f - old org name is absent\nPASS g - lint workflow uses shared mise setup, concurrency, and lint task\nPASS h - lint workflow runner policy is [self-hosted, Linux, ARM64]\nPASS i - repo lint config matches lint-standards.toml and lint tasks do not swallow failures\ntemplate guard passed\n"
+  },
+  "archived empty repository with explicit waivers": {
+    "status": 0,
+    "stderr": "",
+    "stdout": "PASS a - skipped via GUARD_SKIP_CHECKS\nPASS b - skipped via GUARD_SKIP_CHECKS\nPASS c - skipped via GUARD_SKIP_CHECKS\nPASS d - skipped via GUARD_SKIP_CHECKS\nPASS e - skipped via GUARD_SKIP_CHECKS\nPASS f - skipped via GUARD_SKIP_CHECKS\nPASS g - skipped via GUARD_SKIP_CHECKS\nPASS h - skipped via GUARD_SKIP_CHECKS\nPASS i - skipped via GUARD_SKIP_CHECKS\ntemplate guard passed\n"
+  }
+}

@@ -1,0 +1,85 @@
+# Organization lint strictness standard.
+#
+# This file is both documentation and machine-readable policy. Template and
+# project repositories should read it instead of copying numbers into prose.
+# Repositories may tighten any ceiling below, but must not loosen one without a
+# documented waiver in that repository. Tests, generated code, and vendored code
+# are exempt from LENGTH rules only; complexity and correctness rules still
+# apply unless a waiver says otherwise.
+
+[meta]
+version = "1.0.0"
+date = "2026-07-06"
+
+[ceilings]
+# Organization-wide maximums. Language-specific tables below map these to each
+# tool's native names. Lower values in a repo are allowed; higher values require
+# a documented waiver.
+cyclomatic = 15
+cognitive = 15
+function_lines = 60
+file_lines = 300
+line_length = 120
+max_params = 6
+max_depth = 4
+
+[go]
+# golangci-lint settings: cyclop, gocognit, funlen, nestif, lll, and the revive
+# file-length-limit rule.
+cyclop = 10
+gocognit = 15
+funlen_lines = 60
+funlen_stmts = 40
+nestif = 4
+lll = 120
+file_length = 300
+
+[rust]
+# Cargo/clippy policy. clippy::pedantic must be denied. clippy::nursery is not
+# enabled by default for org templates. clippy.toml must keep too-many-lines-threshold at
+# or below this value.
+pedantic = "deny"
+too_many_lines = 80
+nursery = "forbidden"
+
+[python]
+# Ruff rule families and thresholds. C901 is McCabe complexity; PLR0912/13/15/11
+# are pylint branch/argument/statement/return limits.
+c901 = 10
+plr0912 = 12
+plr0913 = 6
+plr0915 = 50
+plr0911 = 6
+line = 100
+
+[ts]
+# TypeScript projects consume these via the org ts-config package rather than a
+# root ESLint file copied from this repo.
+complexity = 15
+max_lines = 250
+max_lines_per_function = 60
+max_depth = 4
+max_params = 4
+delivery = "ts-config-package"
+
+[swift]
+# Existing SwiftLint values used by Swift templates.
+complexity = 15
+fn = 60
+file = 250
+line = 100
+
+[yaml]
+line_length = 120
+
+[shell]
+# Bash does not have an org-wide complexity linter today. Guard scripts enforce
+# honesty by rejecting swallowed lint failures such as `|| true` in lint tasks.
+honesty = "ledger: not enforceable"
+
+[exclusions]
+# These path classes are exempt from LENGTH rules only. They are not exempt from
+# complexity, safety, or correctness checks.
+tests = "length-only"
+generated = "length-only"
+vendored = "length-only"

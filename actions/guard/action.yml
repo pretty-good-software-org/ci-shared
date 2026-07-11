@@ -1,0 +1,11 @@
+name: 'Template Guard'
+description: >-
+  Validates the repository in the current workspace against the
+  organization template standard using the checker and standards bundled
+  with this action.
+runs:
+  using: 'composite'
+  steps:
+    - name: Run template guard
+      shell: bash
+      run: bash "${GITHUB_ACTION_PATH}/guard.sh"
