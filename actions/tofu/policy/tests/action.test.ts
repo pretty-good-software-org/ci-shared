@@ -7,16 +7,25 @@ const { run } = policy;
 
 const successOutput = "5 tests, 5 passed, 0 warnings, 0 failures";
 const successExec = (_bin: string, _args: string[]) => successOutput;
-const conftestThrowExec = (_bin: string, _args: string[]) => {
+const conftestThrowExec = (_bin: string, args: string[]) => {
+  if (args[0] === "pull") {
+    return "";
+  }
   const error = new Error("conftest failed") as Error & { stdout: string; stderr: string };
   error.stdout = "FAIL - policy/deny.rego\n";
   error.stderr = "1 test, 0 passed, 0 warnings, 1 failure\n";
   throw error;
 };
-const conftestBareThrowExec = (_bin: string, _args: string[]) => {
+const conftestBareThrowExec = (_bin: string, args: string[]) => {
+  if (args[0] === "pull") {
+    return "";
+  }
   throw new Error("exit code 1");
 };
-const conftestFailExec = (_bin: string, _args: string[]) => {
+const conftestFailExec = (_bin: string, args: string[]) => {
+  if (args[0] === "pull") {
+    return "";
+  }
   const error = new Error("fail") as Error & { stdout: string; stderr: string };
   error.stdout = "FAIL";
   error.stderr = "";
@@ -25,19 +34,18 @@ const conftestFailExec = (_bin: string, _args: string[]) => {
 
 describe("run command execution", () => {
   it("calls conftest test", () => {
-    const { commands, exec } = mockExec();
+    const { commands, exec } = mockExec({}, successOutput);
     run({ planJson: "tofu/plan.json" }, exec);
-    assert.strictEqual(commands.length, 1, "should execute exactly 1 command");
-    assert.strictEqual(
-      commands[0],
-      "conftest test --quiet=false tofu/plan.json",
-      "command should force the policy-count summary to remain visible",
+    assert.deepStrictEqual(
+      commands,
+      ["conftest pull", "conftest test --quiet=false tofu/plan.json"],
+      "commands should fetch policies before testing and keep the count summary visible",
     );
   });
   it("passes plan-json path to conftest test", () => {
-    const { commands, exec } = mockExec();
+    const { commands, exec } = mockExec({}, successOutput);
     run({ planJson: "custom/plan.json" }, exec);
-    assert.match(commands[0], /custom\/plan\.json/, "should include the plan-json path");
+    assert.match(commands[1], /custom\/plan\.json/, "should include the plan-json path");
   });
 });
 
@@ -53,10 +61,14 @@ describe("run policy result", () => {
     assert.match(result.policyViolations, /FAIL/, "policyViolations should contain failure details");
     assert.match(result.policyViolations, /1 failure/, "policyViolations should contain stderr");
   });
-  it("handles error with no stdout or stderr", () => {
+  it("uses the error message when conftest emits no output", () => {
     const result = run({ planJson: "tofu/plan.json" }, conftestBareThrowExec);
     assert.strictEqual(result.hasViolations, true, "hasViolations should be true");
-    assert.strictEqual(result.policyViolations, "", "policyViolations should be empty when no output");
+    assert.strictEqual(
+      result.policyViolations,
+      "exit code 1",
+      "policyViolations should retain the available error context",
+    );
   });
 });
 
@@ -87,11 +99,11 @@ describe("main env parsing", () => {
   it("defaults plan-json to 'tofu/plan.json'", async () => {
     const { commands, exec } = mockExec({}, successOutput);
     await policy({ env: {}, exec, writeOutput: () => {} });
-    assert.match(commands[0], /tofu\/plan\.json/, "should use default plan-json path");
+    assert.match(commands[1], /tofu\/plan\.json/, "should use default plan-json path");
   });
   it("reads INPUT_PLAN_JSON from env", async () => {
     const { commands, exec } = mockExec({}, successOutput);
     await policy({ env: { INPUT_PLAN_JSON: "custom/plan.json" }, exec, writeOutput: () => {} });
-    assert.match(commands[0], /custom\/plan\.json/, "should use INPUT_PLAN_JSON from env");
+    assert.match(commands[1], /custom\/plan\.json/, "should use INPUT_PLAN_JSON from env");
   });
 });

@@ -37,16 +37,35 @@ const successfulPolicyResult = (output) => {
     }
     return { hasViolations: false, policyIntegrityFailed: false, policyViolations: "" };
 };
-const run = ({ planJson }, exec = execCapture) => {
+const execErrorOutput = (error) => {
+    const execError = error;
+    return (execError.stdout || "") + (execError.stderr || "") || execError.message || "unknown error";
+};
+const runPolicyTest = (planJson, exec) => {
     try {
         const output = exec("conftest", ["test", "--quiet=false", planJson]);
         return successfulPolicyResult(output);
     }
     catch (error) {
-        const execError = error;
-        const output = (execError.stdout || "") + (execError.stderr || "");
-        return { hasViolations: true, policyIntegrityFailed: false, policyViolations: output };
+        return {
+            hasViolations: true,
+            policyIntegrityFailed: false,
+            policyViolations: execErrorOutput(error),
+        };
     }
+};
+const run = ({ planJson }, exec = execCapture) => {
+    try {
+        exec("conftest", ["pull"]);
+    }
+    catch (error) {
+        return {
+            hasViolations: true,
+            policyIntegrityFailed: true,
+            policyViolations: `Policy integrity check failed: conftest pull failed: ${execErrorOutput(error)}`,
+        };
+    }
+    return runPolicyTest(planJson, exec);
 };
 const enforcePolicyIntegrity = (result) => {
     if (result.policyIntegrityFailed) {
