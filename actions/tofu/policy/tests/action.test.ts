@@ -1,11 +1,12 @@
 const { describe, it } = require("node:test");
 const assert = require("node:assert");
-const { captureOutputs, mockExec, noopExec } = require("../../../../lib/test-helpers.ts");
+const { captureOutputs, mockExec } = require("../../../../lib/test-helpers.ts");
 
 const policy = require("../action.ts");
 const { run } = policy;
 
-const successExec = (_bin: string, _args: string[]) => "5 tests, 5 passed, 0 warnings, 0 failures";
+const successOutput = "5 tests, 5 passed, 0 warnings, 0 failures";
+const successExec = (_bin: string, _args: string[]) => successOutput;
 const conftestThrowExec = (_bin: string, _args: string[]) => {
   const error = new Error("conftest failed") as Error & { stdout: string; stderr: string };
   error.stdout = "FAIL - policy/deny.rego\n";
@@ -27,7 +28,11 @@ describe("run command execution", () => {
     const { commands, exec } = mockExec();
     run({ planJson: "tofu/plan.json" }, exec);
     assert.strictEqual(commands.length, 1, "should execute exactly 1 command");
-    assert.match(commands[0], /conftest test/, "command should be conftest test");
+    assert.strictEqual(
+      commands[0],
+      "conftest test --quiet=false tofu/plan.json",
+      "command should force the policy-count summary to remain visible",
+    );
   });
   it("passes plan-json path to conftest test", () => {
     const { commands, exec } = mockExec();
@@ -37,7 +42,7 @@ describe("run command execution", () => {
 });
 
 describe("run policy result", () => {
-  it("returns no violations when conftest succeeds", () => {
+  it("returns no violations when conftest loads the minimum policy count", () => {
     const result = run({ planJson: "tofu/plan.json" }, successExec);
     assert.strictEqual(result.hasViolations, false, "hasViolations should be false");
     assert.strictEqual(result.policyViolations, "", "policyViolations should be empty");
@@ -60,7 +65,7 @@ describe("main output writing", () => {
     const { outputs, writeOutput } = captureOutputs();
     await policy({
       env: {},
-      exec: noopExec,
+      exec: successExec,
       writeOutput,
     });
     assert.strictEqual(outputs["has_violations"], "false", "has_violations should be 'false'");
@@ -80,12 +85,12 @@ describe("main output writing", () => {
 
 describe("main env parsing", () => {
   it("defaults plan-json to 'tofu/plan.json'", async () => {
-    const { commands, exec } = mockExec();
+    const { commands, exec } = mockExec({}, successOutput);
     await policy({ env: {}, exec, writeOutput: () => {} });
     assert.match(commands[0], /tofu\/plan\.json/, "should use default plan-json path");
   });
   it("reads INPUT_PLAN_JSON from env", async () => {
-    const { commands, exec } = mockExec();
+    const { commands, exec } = mockExec({}, successOutput);
     await policy({ env: { INPUT_PLAN_JSON: "custom/plan.json" }, exec, writeOutput: () => {} });
     assert.match(commands[0], /custom\/plan\.json/, "should use INPUT_PLAN_JSON from env");
   });
