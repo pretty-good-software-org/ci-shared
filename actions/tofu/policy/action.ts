@@ -19,6 +19,7 @@ interface PolicyResult {
 type ExecFn = typeof execCapture;
 
 const MINIMUM_POLICY_TESTS = 5;
+const POLICY_REPOSITORY = "git::ssh://git@github.com/pretty-good-software-org/opa-policies.git//policy";
 const POLICY_SUMMARY_PATTERN = /(?:^|\n)\s*(\d+) tests?,/;
 
 const policyIntegrityFailure = (output: string): string => {
@@ -68,7 +69,7 @@ const runPolicyTest = (planJson: string, exec: ExecFn): PolicyResult => {
 
 const run = ({ planJson }: RunArgs, exec: ExecFn = execCapture): PolicyResult => {
   try {
-    exec("conftest", ["pull"]);
+    exec("conftest", ["pull", POLICY_REPOSITORY]);
   } catch (error: unknown) {
     return {
       hasViolations: true,
