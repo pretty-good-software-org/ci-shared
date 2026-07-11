@@ -88,8 +88,14 @@ describe("template guard action wiring", () => {
     const expectedSequence = [
       "runs-on: [self-hosted, Linux, ARM64]",
       "uses: actions/checkout@v4",
-      "uses: pretty-good-software-org/ci-shared/actions/guard@main",
+      "uses: pretty-good-software-org/ci-shared/actions/guard@",
     ];
     assertWorkflowSequence(workflow, expectedSequence);
+    // Supply-chain: the guard action must be pinned to an immutable commit SHA,
+    // never a mutable ref like @main.
+    assert.match(
+      workflow,
+      /uses: pretty-good-software-org\/ci-shared\/actions\/guard@[0-9a-f]{40}\b/,
+    );
   });
 });
