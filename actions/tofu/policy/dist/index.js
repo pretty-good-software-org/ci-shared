@@ -14,6 +14,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 const { execCapture } = __nccwpck_require__(361);
 const { resolveOutputWriter } = __nccwpck_require__(1);
 const MINIMUM_POLICY_TESTS = 5;
+const POLICY_REPOSITORY = "git::ssh://git@github.com/pretty-good-software-org/opa-policies.git//policy";
 const POLICY_SUMMARY_PATTERN = /(?:^|\n)\s*(\d+) tests?,/;
 const policyIntegrityFailure = (output) => {
     const summary = output.match(POLICY_SUMMARY_PATTERN);
@@ -56,7 +57,7 @@ const runPolicyTest = (planJson, exec) => {
 };
 const run = ({ planJson }, exec = execCapture) => {
     try {
-        exec("conftest", ["pull"]);
+        exec("conftest", ["pull", POLICY_REPOSITORY]);
     }
     catch (error) {
         return {

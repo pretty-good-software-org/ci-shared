@@ -38,7 +38,10 @@ describe("run command execution", () => {
     run({ planJson: "tofu/plan.json" }, exec);
     assert.deepStrictEqual(
       commands,
-      ["conftest pull", "conftest test --quiet=false tofu/plan.json"],
+      [
+        "conftest pull git::ssh://git@github.com/pretty-good-software-org/opa-policies.git//policy",
+        "conftest test --quiet=false tofu/plan.json",
+      ],
       "commands should fetch policies before testing and keep the count summary visible",
     );
   });
