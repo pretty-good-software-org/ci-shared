@@ -44,7 +44,7 @@ const execErrorOutput = (error) => {
 };
 const runPolicyTest = (planJson, exec) => {
     try {
-        const output = exec("conftest", ["test", "--all-namespaces", "--quiet=false", planJson]);
+        const output = exec("conftest", ["test", "--quiet=false", planJson]);
         return successfulPolicyResult(output);
     }
     catch (error) {
