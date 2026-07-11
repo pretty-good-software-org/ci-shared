@@ -13,15 +13,44 @@
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const { execCapture } = __nccwpck_require__(361);
 const { resolveOutputWriter } = __nccwpck_require__(1);
+const MINIMUM_POLICY_TESTS = 5;
+const POLICY_SUMMARY_PATTERN = /(?:^|\n)\s*(\d+) tests?,/;
+const policyIntegrityFailure = (output) => {
+    const summary = output.match(POLICY_SUMMARY_PATTERN);
+    if (!summary) {
+        return "Policy integrity check failed: conftest did not report a loaded-test count; refusing to trust the policy result";
+    }
+    const loadedTestCount = Number(summary[1]);
+    if (loadedTestCount < MINIMUM_POLICY_TESTS) {
+        return `Policy integrity check failed: conftest loaded ${loadedTestCount} tests; require at least ${MINIMUM_POLICY_TESTS}`;
+    }
+    return "";
+};
+const successfulPolicyResult = (output) => {
+    const integrityFailure = policyIntegrityFailure(output);
+    if (integrityFailure) {
+        return {
+            hasViolations: true,
+            policyIntegrityFailed: true,
+            policyViolations: integrityFailure,
+        };
+    }
+    return { hasViolations: false, policyIntegrityFailed: false, policyViolations: "" };
+};
 const run = ({ planJson }, exec = execCapture) => {
     try {
-        exec("conftest", ["test", planJson]);
-        return { hasViolations: false, policyViolations: "" };
+        const output = exec("conftest", ["test", "--quiet=false", planJson]);
+        return successfulPolicyResult(output);
     }
     catch (error) {
         const execError = error;
         const output = (execError.stdout || "") + (execError.stderr || "");
-        return { hasViolations: true, policyViolations: output };
+        return { hasViolations: true, policyIntegrityFailed: false, policyViolations: output };
+    }
+};
+const enforcePolicyIntegrity = (result) => {
+    if (result.policyIntegrityFailed) {
+        throw new Error(result.policyViolations);
     }
 };
 const main = async (args = {}) => {
@@ -31,6 +60,7 @@ const main = async (args = {}) => {
     const setOutput = resolveOutputWriter(args);
     setOutput("has_violations", String(result.hasViolations));
     setOutput("policy_violations", result.policyViolations);
+    enforcePolicyIntegrity(result);
 };
 module.exports = Object.assign(main, { run });
 

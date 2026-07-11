@@ -13,18 +13,55 @@ interface RunArgs {
 interface PolicyResult {
   hasViolations: boolean;
   policyViolations: string;
+  policyIntegrityFailed: boolean;
 }
 
 type ExecFn = typeof execCapture;
 
+const MINIMUM_POLICY_TESTS = 5;
+const POLICY_SUMMARY_PATTERN = /(?:^|\n)\s*(\d+) tests?,/;
+
+const policyIntegrityFailure = (output: string): string => {
+  const summary = output.match(POLICY_SUMMARY_PATTERN);
+  if (!summary) {
+    return "Policy integrity check failed: conftest did not report a loaded-test count; refusing to trust the policy result";
+  }
+
+  const loadedTestCount = Number(summary[1]);
+  if (loadedTestCount < MINIMUM_POLICY_TESTS) {
+    return `Policy integrity check failed: conftest loaded ${loadedTestCount} tests; require at least ${MINIMUM_POLICY_TESTS}`;
+  }
+
+  return "";
+};
+
+const successfulPolicyResult = (output: string): PolicyResult => {
+  const integrityFailure = policyIntegrityFailure(output);
+  if (integrityFailure) {
+    return {
+      hasViolations: true,
+      policyIntegrityFailed: true,
+      policyViolations: integrityFailure,
+    };
+  }
+
+  return { hasViolations: false, policyIntegrityFailed: false, policyViolations: "" };
+};
+
 const run = ({ planJson }: RunArgs, exec: ExecFn = execCapture): PolicyResult => {
   try {
-    exec("conftest", ["test", planJson]);
-    return { hasViolations: false, policyViolations: "" };
+    const output = exec("conftest", ["test", "--quiet=false", planJson]);
+    return successfulPolicyResult(output);
   } catch (error: unknown) {
     const execError = error as { stdout?: string; stderr?: string; status?: number };
     const output = (execError.stdout || "") + (execError.stderr || "");
-    return { hasViolations: true, policyViolations: output };
+    return { hasViolations: true, policyIntegrityFailed: false, policyViolations: output };
+  }
+};
+
+const enforcePolicyIntegrity = (result: PolicyResult): void => {
+  if (result.policyIntegrityFailed) {
+    throw new Error(result.policyViolations);
   }
 };
 
@@ -43,6 +80,7 @@ const main = async (args: MainArgs = {}): Promise<void> => {
   const setOutput = resolveOutputWriter(args);
   setOutput("has_violations", String(result.hasViolations));
   setOutput("policy_violations", result.policyViolations);
+  enforcePolicyIntegrity(result);
 };
 
 module.exports = Object.assign(main, { run });
