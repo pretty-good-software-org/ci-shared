@@ -17,4 +17,4 @@ jobs:
 
       # PIN: replace @main with this PR's immutable squash-merge SHA before callers migrate.
       - name: Run template guard
-        uses: pretty-good-software-org/ci-shared/actions/guard@main
+        uses: pretty-good-software-org/ci-shared/actions/guard@7aa4137fea1b580904d5a6ef20ae6a741c2bb0e1 # self-contained guard, pinned
