@@ -91,8 +91,8 @@ describe("template guard action wiring", () => {
       "uses: pretty-good-software-org/ci-shared/actions/guard@",
     ];
     assertWorkflowSequence(workflow, expectedSequence);
-    // Supply-chain: the guard action must be pinned to an immutable commit SHA,
-    // never a mutable ref like @main.
+    // Supply-chain: the guard action must be pinned to an immutable commit SHA.
+    // Never a mutable ref such as @main.
     assert.match(
       workflow,
       /uses: pretty-good-software-org\/ci-shared\/actions\/guard@[0-9a-f]{40}\b/,
