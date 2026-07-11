@@ -4,6 +4,12 @@ const { readFileSync, rmSync } = require("node:fs");
 const { join, resolve } = require("node:path");
 const { createCompliantRepository, execute, temporaryDirectories } = require("./fixture.ts");
 
+interface ExecutionResult {
+  status: number | null;
+  stderr: string;
+  stdout: string;
+}
+
 interface Scenario {
   configure: (root: string) => void;
   name: string;
@@ -16,13 +22,24 @@ const currentChecker = join(actionRoot, "guard.sh");
 const referenceChecker = join(actionRoot, "tests/reference/mise-tasks/guard/default");
 const goldenPath = join(actionRoot, "tests/golden/parity.json");
 const jsonIndent = 2;
+const gnuAwkWarningPrefix = "awk: cmd. line:10: warning: regexp escape sequence";
+const gnuAwkWarningSuffix = "is not a known regexp operator";
 
-const captureCurrentResults = (): Record<string, unknown> =>
+const normalizeGoldenResult = (result: ExecutionResult): ExecutionResult => {
+  const stderrLines = result.stderr.split("\n");
+  const portableStderr = stderrLines
+    .filter((line) => !(line.startsWith(gnuAwkWarningPrefix) && line.endsWith(gnuAwkWarningSuffix)))
+    .join("\n");
+  return { ...result, stderr: portableStderr };
+};
+
+const captureCurrentResults = (): Record<string, ExecutionResult> =>
   Object.fromEntries(
     scenarios.map((scenario) => {
       const root = createCompliantRepository();
       scenario.configure(root);
-      return [scenario.name, execute(currentChecker, root)];
+      const result = execute(currentChecker, root);
+      return [scenario.name, normalizeGoldenResult(result)];
     }),
   );
 
