@@ -2,11 +2,7 @@ const { afterEach, describe, it } = require("node:test");
 const assert = require("node:assert/strict");
 const { readFileSync, rmSync } = require("node:fs");
 const { join, resolve } = require("node:path");
-const {
-  createCompliantRepository,
-  execute,
-  temporaryDirectories,
-} = require("./fixture.ts");
+const { createCompliantRepository, execute, temporaryDirectories } = require("./fixture.ts");
 
 interface ExecutionResult {
   status: number | null;
@@ -23,26 +19,16 @@ const { scenarios }: { scenarios: Scenario[] } = require("./scenarios.ts");
 
 const actionRoot = resolve("actions/guard");
 const currentChecker = join(actionRoot, "guard.sh");
-const referenceChecker = join(
-  actionRoot,
-  "tests/reference/mise-tasks/guard/default",
-);
+const referenceChecker = join(actionRoot, "tests/reference/mise-tasks/guard/default");
 const goldenPath = join(actionRoot, "tests/golden/parity.json");
 const jsonIndent = 2;
-const gnuAwkWarningPrefix =
-  "awk: cmd. line:10: warning: regexp escape sequence";
+const gnuAwkWarningPrefix = "awk: cmd. line:10: warning: regexp escape sequence";
 const gnuAwkWarningSuffix = "is not a known regexp operator";
 
 const normalizeGoldenResult = (result: ExecutionResult): ExecutionResult => {
   const stderrLines = result.stderr.split("\n");
   const portableStderr = stderrLines
-    .filter(
-      (line) =>
-        !(
-          line.startsWith(gnuAwkWarningPrefix) &&
-          line.endsWith(gnuAwkWarningSuffix)
-        ),
-    )
+    .filter((line) => !(line.startsWith(gnuAwkWarningPrefix) && line.endsWith(gnuAwkWarningSuffix)))
     .join("\n");
   return { ...result, stderr: portableStderr };
 };
@@ -57,10 +43,7 @@ const captureCurrentResults = (): Record<string, ExecutionResult> =>
     }),
   );
 
-const assertWorkflowSequence = (
-  workflow: string,
-  expectedSequence: string[],
-): void => {
+const assertWorkflowSequence = (workflow: string, expectedSequence: string[]): void => {
   let previousIndex = -1;
   for (const value of expectedSequence) {
     const index = workflow.indexOf(value);
@@ -82,22 +65,14 @@ describe("template guard checker parity", () => {
       scenario.configure(root);
       const expected = execute(referenceChecker, root);
       const actual = execute(currentChecker, root);
-      assert.deepStrictEqual(
-        actual,
-        expected,
-        `${scenario.name} diverged from the base-template checker`,
-      );
+      assert.deepStrictEqual(actual, expected, `${scenario.name} diverged from the base-template checker`);
     }
   });
 
   it("matches the reviewed full-output golden file", () => {
     const actual = `${JSON.stringify(captureCurrentResults(), undefined, jsonIndent)}\n`;
     const expected = readFileSync(goldenPath, "utf8");
-    assert.strictEqual(
-      actual,
-      expected,
-      "guard output must match the reviewed parity golden file",
-    );
+    assert.strictEqual(actual, expected, "guard output must match the reviewed parity golden file");
   });
 });
 
@@ -109,10 +84,7 @@ describe("template guard action wiring", () => {
   });
 
   it("keeps the reusable workflow runner and action wiring explicit", () => {
-    const workflow = readFileSync(
-      ".github/workflows/template-guard.yml",
-      "utf8",
-    );
+    const workflow = readFileSync(".github/workflows/template-guard.yml", "utf8");
     const expectedSequence = [
       "runs-on: [self-hosted, Linux, ARM64]",
       "uses: actions/checkout@v4",
@@ -121,9 +93,6 @@ describe("template guard action wiring", () => {
     assertWorkflowSequence(workflow, expectedSequence);
     // Supply-chain: the guard action must be pinned to an immutable commit SHA.
     // Never a mutable ref such as @main.
-    assert.match(
-      workflow,
-      /uses: pretty-good-software-org\/ci-shared\/actions\/guard@[0-9a-f]{40}\b/,
-    );
+    assert.match(workflow, /uses: pretty-good-software-org\/ci-shared\/actions\/guard@[0-9a-f]{40}\b/);
   });
 });
