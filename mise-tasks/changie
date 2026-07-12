@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE description="Add a changelog entry (changie new); batch+merge on release"
+set -euo pipefail
+
+changie new

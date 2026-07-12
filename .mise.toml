@@ -1,6 +1,7 @@
 [tools]
 actionlint = "1.7.11"
 cocogitto = "6.5.0"
+"github:miniscruff/changie" = "1.24.0"
 git-cliff = "2.12.0"
 markdownlint-cli2 = "0.22.0"
 node = "22.22.1"
