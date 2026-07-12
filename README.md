@@ -238,6 +238,9 @@ mise run lint
 # Compile TypeScript and bundle with ncc
 mise run build
 
+# Add an unreleased changelog entry
+mise run changie
+
 # Run full CI validation locally (build + lint + test)
 mise run ci:validate
 ```
