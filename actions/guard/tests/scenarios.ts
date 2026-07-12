@@ -37,7 +37,18 @@ const configureArchivedRepository = (root: string): void => {
   for (const path of [...requiredFiles, ...languageFiles]) {
     rmSync(join(root, path), { force: true, recursive: true });
   }
-  writeFixtureFile(root, ".guardrc", "GUARD_SKIP_CHECKS=a,b,c,d,e,f,g,h,i\n");
+  writeFixtureFile(root, ".guardrc", "GUARD_SKIP_CHECKS=a,b,c,d,e,f,g,h,i,j\n");
+};
+
+const configureChangieIndentViolation = (root: string): void => {
+  writeFixtureFile(root, ".changie.yaml", "---\nkinds:\n    - label: Added\n      auto: minor\n");
+  writeFixtureFile(root, ".changes/header.tpl.md", "# Changelog\n");
+  writeFixtureFile(root, ".changes/unreleased/.gitkeep", "");
+  replace(root, {
+    from: "[tools]",
+    path: ".mise.toml",
+    to: '[tools]\n"github:miniscruff/changie" = "1.24.0"',
+  });
 };
 
 const scenarios: Scenario[] = [
@@ -70,6 +81,7 @@ const scenarios: Scenario[] = [
   { configure: configureGuardrcWaiver, name: ".guardrc waiver" },
   { configure: configureCallerStandards, name: "caller-local lint standards override" },
   { configure: configureArchivedRepository, name: "archived empty repository with explicit waivers" },
+  { configure: configureChangieIndentViolation, name: "changie config 4-space indent violation" },
 ];
 
 module.exports = { scenarios };

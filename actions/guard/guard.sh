@@ -329,6 +329,25 @@ check_i() {
   check_i_go "$std" && check_i_rust "$std" && check_i_python "$std" && check_i_yaml "$std" && check_i_lint_honesty
 }
 
+check_j() {
+  # Changie changelog config correctness. Presence is provided by class
+  # templates; this enforces conformance only when .changie.yaml exists, so
+  # non-released repos (e.g. infrastructure roots) that omit changie still pass.
+  [[ -f .changie.yaml ]] || return 0
+  local version
+  version="$(toml_value "$(standards_file)" changie tool_version)"
+  grep -Eq "\"github:miniscruff/changie\"[[:space:]]*=[[:space:]]*\"${version//./\\.}\"" .mise.toml || {
+    printf '  changie not pinned to %s in .mise.toml [tools]\n' "$version" >&2
+    return 1
+  }
+  [[ -f .changes/header.tpl.md ]] || { printf '  .changes/header.tpl.md missing\n' >&2; return 1; }
+  [[ -d .changes/unreleased ]] || { printf '  .changes/unreleased/ missing\n' >&2; return 1; }
+  if grep -Eq '^    -[[:space:]]' .changie.yaml; then
+    printf '  .changie.yaml uses 4-space list indent; org standard is 2-space\n' >&2
+    return 1
+  fi
+}
+
 run_check a 'required base-template files exist' check_a
 run_check b 'forbidden legacy files are absent' check_b
 run_check c 'lefthook.yml extends explicit base modules without globs' check_c
@@ -338,6 +357,7 @@ run_check f 'old org name is absent' check_f
 run_check g 'lint workflow uses shared mise setup, concurrency, and lint task' check_g
 run_check h "lint workflow runner policy is ${GUARD_LINT_RUNNER}" check_h
 run_check i 'repo lint config matches lint-standards.toml and lint tasks do not swallow failures' check_i
+run_check j 'changie config, when present, is pinned to the standard and 2-space' check_j
 
 if ((failures > 0)); then
   printf 'template guard failed with %d failure(s)\n' "$failures" >&2
