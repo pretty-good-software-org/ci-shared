@@ -1,8 +1,21 @@
 const { describe, it } = require("node:test");
 const assert = require("node:assert");
+const { mkdtempSync, rmSync, writeFileSync } = require("node:fs");
+const { join } = require("node:path");
+const { tmpdir } = require("node:os");
 
 const policy = require("../action.ts");
 const { run } = policy;
+
+const withTempConftest = (content: string, assertion: (root: string) => void): void => {
+  const root = mkdtempSync(join(tmpdir(), "ci-shared-policy-"));
+  try {
+    writeFileSync(join(root, "conftest.toml"), content);
+    assertion(root);
+  } finally {
+    rmSync(root, { force: true, recursive: true });
+  }
+};
 
 const insufficientPolicyExec = (_bin: string, _args: string[]) => "4 tests, 4 passed, 0 warnings, 0 failures";
 const emptyPolicyExec = (_bin: string, _args: string[]) => "0 tests, 0 passed, 0 warnings, 0 failures";
@@ -35,6 +48,36 @@ describe("policy count integrity", () => {
       },
       "an empty policy set should be an integrity failure",
     );
+  });
+});
+
+describe("conftest namespace integrity", () => {
+  it("fails closed when a conftest.toml has no namespace", () => {
+    withTempConftest('update = ["git::example/policies"]\n', (root) => {
+      const result = run({ cwd: root, planJson: "plan.json" }, insufficientPolicyExec);
+      assert.deepStrictEqual(
+        result,
+        {
+          hasViolations: true,
+          policyIntegrityFailed: true,
+          policyViolations:
+            "Policy integrity check failed: every conftest.toml must declare at least one namespace; missing in conftest.toml",
+        },
+        "a conftest configuration without namespaces should be rejected before policy execution",
+      );
+    });
+  });
+
+  it("accepts a non-empty namespace declaration", () => {
+    withTempConftest('namespace = ["policies.s3"]\n', (root) => {
+      const result = run({ cwd: root, planJson: "plan.json" }, insufficientPolicyExec);
+      assert.strictEqual(result.policyIntegrityFailed, true, "the policy-count floor should still be enforced");
+      assert.match(
+        result.policyViolations,
+        /loaded 4 tests/,
+        "namespace validation should not bypass the policy-count floor",
+      );
+    });
   });
 });
 

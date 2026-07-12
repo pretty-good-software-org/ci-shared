@@ -13,6 +13,7 @@
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const { execCapture } = __nccwpck_require__(361);
 const { resolveOutputWriter } = __nccwpck_require__(1);
+const { validateConftestNamespaces } = __nccwpck_require__(984);
 const MINIMUM_POLICY_TESTS = 5;
 const POLICY_REPOSITORY = "git::ssh://git@github.com/pretty-good-software-org/opa-policies.git//policy";
 const POLICY_SUMMARY_PATTERN = /(?:^|\n)\s*(\d+) tests?,/;
@@ -55,7 +56,15 @@ const runPolicyTest = (planJson, exec) => {
         };
     }
 };
-const run = ({ planJson }, exec = execCapture) => {
+const run = ({ planJson, cwd = process.cwd() }, exec = execCapture) => {
+    const namespaceIntegrityFailure = validateConftestNamespaces(cwd);
+    if (namespaceIntegrityFailure) {
+        return {
+            hasViolations: true,
+            policyIntegrityFailed: true,
+            policyViolations: namespaceIntegrityFailure,
+        };
+    }
     try {
         exec("conftest", ["pull", POLICY_REPOSITORY]);
     }
@@ -83,6 +92,52 @@ const main = async (args = {}) => {
     enforcePolicyIntegrity(result);
 };
 module.exports = Object.assign(main, { run });
+
+
+/***/ }),
+
+/***/ 984:
+/***/ ((module, exports, __nccwpck_require__) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const { readFileSync, readdirSync } = __nccwpck_require__(24);
+const { join, relative } = __nccwpck_require__(760);
+const CONFTEST_FILENAME = "conftest.toml";
+const IGNORED_DIRECTORIES = new Set([".git", ".terraform", "node_modules", ".claude"]);
+const visitDirectory = (entry, directory, root) => {
+    if (IGNORED_DIRECTORIES.has(entry.name)) {
+        return [];
+    }
+    return findConftestFiles(join(directory, entry.name), root);
+};
+const isConftestFile = (entry) => entry.isFile() && entry.name === CONFTEST_FILENAME;
+const visitEntry = (entry, directory, root) => {
+    const entryPath = join(directory, entry.name);
+    if (entry.isDirectory()) {
+        return visitDirectory(entry, directory, root);
+    }
+    if (!isConftestFile(entry)) {
+        return [];
+    }
+    return [relative(root, entryPath) || CONFTEST_FILENAME];
+};
+const findConftestFiles = (directory, root) => readdirSync(directory, { withFileTypes: true })
+    .flatMap((entry) => visitEntry(entry, directory, root))
+    .toSorted();
+const hasNamespace = (content) => {
+    const namespaceArray = content.match(/^\s*namespace\s*=\s*\[([\s\S]*?)\]/m)?.[1] || "";
+    const namespaceString = content.match(/^\s*namespace\s*=\s*["'][^"']+["']/m);
+    return /["'][^"']+["']/.test(namespaceArray) || namespaceString !== null;
+};
+const validateConftestNamespaces = (root) => {
+    const invalidFiles = findConftestFiles(root, root).filter((file) => !hasNamespace(readFileSync(join(root, file), "utf8")));
+    if (invalidFiles.length === 0) {
+        return "";
+    }
+    return `Policy integrity check failed: every conftest.toml must declare at least one namespace; missing in ${invalidFiles.join(", ")}`;
+};
+module.exports = { validateConftestNamespaces };
 
 
 /***/ }),
@@ -188,6 +243,13 @@ module.exports = require("node:crypto");
 /***/ ((module) => {
 
 module.exports = require("node:fs");
+
+/***/ }),
+
+/***/ 760:
+/***/ ((module) => {
+
+module.exports = require("node:path");
 
 /***/ })
 

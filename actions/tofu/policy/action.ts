@@ -5,9 +5,11 @@
 
 const { execCapture } = require("../../../lib/exec.ts");
 const { resolveOutputWriter } = require("../../../lib/github-output.ts");
+const { validateConftestNamespaces } = require("./conftest-integrity.ts");
 
 interface RunArgs {
   planJson: string;
+  cwd?: string;
 }
 
 interface PolicyResult {
@@ -67,7 +69,16 @@ const runPolicyTest = (planJson: string, exec: ExecFn): PolicyResult => {
   }
 };
 
-const run = ({ planJson }: RunArgs, exec: ExecFn = execCapture): PolicyResult => {
+const run = ({ planJson, cwd = process.cwd() }: RunArgs, exec: ExecFn = execCapture): PolicyResult => {
+  const namespaceIntegrityFailure = validateConftestNamespaces(cwd);
+  if (namespaceIntegrityFailure) {
+    return {
+      hasViolations: true,
+      policyIntegrityFailed: true,
+      policyViolations: namespaceIntegrityFailure,
+    };
+  }
+
   try {
     exec("conftest", ["pull", POLICY_REPOSITORY]);
   } catch (error: unknown) {
