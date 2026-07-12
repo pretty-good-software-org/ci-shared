@@ -83,3 +83,13 @@ honesty = "ledger: not enforceable"
 tests = "length-only"
 generated = "length-only"
 vendored = "length-only"
+
+[changie]
+# Changelog tooling standard for released repositories (apps, libraries,
+# modules, policy sets). Config lives in .changie.yaml with 2-space list
+# indentation; the tool is pinned in the mise [tools] table. Presence is
+# provided by the class templates; the guard (check j) enforces correctness
+# only when .changie.yaml is present, so non-released repos (infrastructure
+# roots) that legitimately omit changie are unaffected.
+tool_version = "1.24.0"
+list_indent = 2
