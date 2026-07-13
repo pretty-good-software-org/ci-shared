@@ -51,6 +51,19 @@ const configureChangieIndentViolation = (root: string): void => {
   });
 };
 
+const configureConcurrencyDeadlock = (root: string): void => {
+  writeFixtureFile(
+    root,
+    ".github/workflows/plan.yml",
+    "name: Plan\non:\n  workflow_call:\nconcurrency:\n  group: tofu-state\n  cancel-in-progress: false\njobs:\n  plan:\n    runs-on: [self-hosted, Linux, ARM64]\n    steps:\n      - run: echo plan\n",
+  );
+  writeFixtureFile(
+    root,
+    ".github/workflows/drift.yml",
+    "name: Drift\non:\n  schedule:\n    - cron: '0 0 * * *'\nconcurrency:\n  group: tofu-state\n  cancel-in-progress: false\njobs:\n  detect:\n    uses: ./.github/workflows/plan.yml\n",
+  );
+};
+
 const scenarios: Scenario[] = [
   { configure: () => {}, name: "compliant repo without caller lint standards" },
   {
@@ -82,6 +95,10 @@ const scenarios: Scenario[] = [
   { configure: configureCallerStandards, name: "caller-local lint standards override" },
   { configure: configureArchivedRepository, name: "archived empty repository with explicit waivers" },
   { configure: configureChangieIndentViolation, name: "changie config 4-space indent violation" },
+  {
+    configure: configureConcurrencyDeadlock,
+    name: "drift caller shares its plan callee concurrency group",
+  },
 ];
 
 module.exports = { scenarios };

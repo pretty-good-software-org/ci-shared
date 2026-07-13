@@ -348,6 +348,48 @@ check_j() {
   fi
 }
 
+concurrency_group() {
+  awk '
+    /^concurrency:/ { in_block = 1; next }
+    in_block && /^[^[:space:]#]/ { in_block = 0 }
+    in_block && /^[[:space:]]+group:/ {
+      sub(/^[[:space:]]+group:[[:space:]]*/, "")
+      print
+      exit
+    }
+  ' "$1"
+}
+
+check_k() {
+  # A workflow that CALLS a local reusable workflow must not share a static
+  # concurrency group with it: the caller holds the group while the callee
+  # requests the same one, and GitHub deadlock-kills the workflow_call at
+  # startup (the 2026-07-13 fleet drift-detection outage). Dynamic groups
+  # (${{ ... }}) resolve per-context and are exempt.
+  local dir=.github/workflows
+  [[ -d "$dir" ]] || return 0
+  local violations=() caller caller_group callee callee_path callee_group
+  for caller in "$dir"/*.yml "$dir"/*.yaml; do
+    [[ -f "$caller" ]] || continue
+    caller_group="$(concurrency_group "$caller")"
+    caller_group="${caller_group%\"}"
+    caller_group="${caller_group#\"}"
+    [[ -n "$caller_group" ]] || continue
+    [[ "$caller_group" == *'${{'* ]] && continue
+    while IFS= read -r callee; do
+      callee_path="${callee#./}"
+      [[ -f "$callee_path" ]] || continue
+      callee_group="$(concurrency_group "$callee_path")"
+      callee_group="${callee_group%\"}"
+      callee_group="${callee_group#\"}"
+      if [[ "$caller_group" == "$callee_group" ]]; then
+        violations+=("$(basename "$caller") holds concurrency group ${caller_group} while calling reusable $(basename "$callee_path"), which requests the same group")
+      fi
+    done < <(grep -oE 'uses:[[:space:]]*\./\.github/workflows/[A-Za-z0-9._-]+\.ya?ml' "$caller" | sed -E 's/^uses:[[:space:]]*//')
+  done
+  ((${#violations[@]} == 0)) || { printf '  %s\n' "${violations[@]}" >&2; return 1; }
+}
+
 run_check a 'required base-template files exist' check_a
 run_check b 'forbidden legacy files are absent' check_b
 run_check c 'lefthook.yml extends explicit base modules without globs' check_c
@@ -358,6 +400,7 @@ run_check g 'lint workflow uses shared mise setup, concurrency, and lint task' c
 run_check h "lint workflow runner policy is ${GUARD_LINT_RUNNER}" check_h
 run_check i 'repo lint config matches lint-standards.toml and lint tasks do not swallow failures' check_i
 run_check j 'changie config, when present, is pinned to the standard and 2-space' check_j
+run_check k 'reusable-workflow callers do not share a callee concurrency group' check_k
 
 if ((failures > 0)); then
   printf 'template guard failed with %d failure(s)\n' "$failures" >&2
