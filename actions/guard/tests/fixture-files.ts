@@ -62,9 +62,9 @@ max-returns = 6
 `;
 
 const exactToolPin = '[tools]\nnode = "22.22.1"\n';
+const setupMiseSHA = "1ab91760d0b1a9cf368ecda69db5e4795c592b7c";
 const fixtureContents: Record<string, string> = {
-  ".github/workflows/lint.yml":
-    "concurrency:\n  group: lint\njobs:\n  lint:\n    runs-on: [self-hosted, Linux, ARM64]\n    steps:\n      - uses: pretty-good-software-org/ci-shared/actions/setup/mise@v1\n      - run: mise run lint:default\n",
+  ".github/workflows/lint.yml": `concurrency:\n  group: lint\njobs:\n  lint:\n    runs-on: [self-hosted, Linux, ARM64]\n    steps:\n      - uses: pretty-good-software-org/ci-shared/actions/setup/mise@${setupMiseSHA} # v1\n      - run: mise run lint:default\n`,
   ".golangci.yml": goConfig,
   ".mise.ci.toml": exactToolPin,
   ".mise.development.toml": exactToolPin,
