@@ -47,7 +47,7 @@ const configureChangieIndentViolation = (root: string): void => {
   replace(root, {
     from: "[tools]",
     path: ".mise.toml",
-    to: '[tools]\n"github:miniscruff/changie" = "1.24.0"',
+    to: '[tools]\n"github:miniscruff/changie" = "1.25.0"',
   });
 };
 
