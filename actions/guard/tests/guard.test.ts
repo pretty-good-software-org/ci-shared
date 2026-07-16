@@ -87,10 +87,11 @@ describe("template guard action wiring", () => {
     const workflow = readFileSync(".github/workflows/template-guard.yml", "utf8");
     const expectedSequence = [
       "runs-on: [self-hosted, Linux, ARM64]",
-      "uses: actions/checkout@v4",
+      "uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5",
       "uses: pretty-good-software-org/ci-shared/actions/guard@",
     ];
     assertWorkflowSequence(workflow, expectedSequence);
+    assert.match(workflow, /uses: actions\/checkout@[0-9a-f]{40}\b/);
     // Supply-chain: the guard action must be pinned to an immutable commit SHA.
     // Never a mutable ref such as @main.
     assert.match(workflow, /uses: pretty-good-software-org\/ci-shared\/actions\/guard@[0-9a-f]{40}\b/);

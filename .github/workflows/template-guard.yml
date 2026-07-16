@@ -13,8 +13,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Check out caller repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 
-      # PIN: replace @main with this PR's immutable squash-merge SHA before callers migrate.
       - name: Run template guard
-        uses: pretty-good-software-org/ci-shared/actions/guard@0b328e7f5b8da9d55fa3211e5a4225f2db777148
+        uses: pretty-good-software-org/ci-shared/actions/guard@d5b476182db31b83864c22c440f2ee504592dd7b

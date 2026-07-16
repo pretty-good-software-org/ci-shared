@@ -11,4 +11,5 @@ Thumbs.db
 
 # Node
 node_modules/
+pnpm-lock.yaml
 .claude/
