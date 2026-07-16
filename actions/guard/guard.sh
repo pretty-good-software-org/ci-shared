@@ -147,7 +147,7 @@ check_g() {
   [[ -f "$workflow" ]] || return 1
   grep -Fq 'mise run lint:default' "$workflow" || return 1
   grep -Eq '^concurrency:[[:space:]]*$' "$workflow" || return 1
-  grep -Fq 'pretty-good-software-org/ci-shared/actions/setup/mise@v1' "$workflow" || return 1
+  grep -Eq 'pretty-good-software-org/ci-shared/actions/setup/mise@[0-9a-f]{40}([[:space:]]+# v1)?[[:space:]]*$' "$workflow" || return 1
 }
 
 check_h() {
@@ -396,7 +396,7 @@ run_check c 'lefthook.yml extends explicit base modules without globs' check_c
 run_check d 'lint default depends on actionlint, yamllint, markdownlint' check_d
 run_check e 'mise tool versions use exact Style-A semver pins' check_e
 run_check f 'old org name is absent' check_f
-run_check g 'lint workflow uses shared mise setup, concurrency, and lint task' check_g
+run_check g 'lint workflow uses SHA-pinned shared mise setup, concurrency, and lint task' check_g
 run_check h "lint workflow runner policy is ${GUARD_LINT_RUNNER}" check_h
 run_check i 'repo lint config matches lint-standards.toml and lint tasks do not swallow failures' check_i
 run_check j 'changie config, when present, is pinned to the standard and 2-space' check_j

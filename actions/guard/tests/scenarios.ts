@@ -51,6 +51,14 @@ const configureChangieIndentViolation = (root: string): void => {
   });
 };
 
+const configureFloatingMiseAction = (root: string): void => {
+  replace(root, {
+    from: "actions/setup/mise@1ab91760d0b1a9cf368ecda69db5e4795c592b7c # v1",
+    path: ".github/workflows/lint.yml",
+    to: "actions/setup/mise@v1",
+  });
+};
+
 const configureConcurrencyDeadlock = (root: string): void => {
   writeFixtureFile(
     root,
@@ -95,6 +103,7 @@ const scenarios: Scenario[] = [
   { configure: configureCallerStandards, name: "caller-local lint standards override" },
   { configure: configureArchivedRepository, name: "archived empty repository with explicit waivers" },
   { configure: configureChangieIndentViolation, name: "changie config 4-space indent violation" },
+  { configure: configureFloatingMiseAction, name: "floating shared mise action ref" },
   {
     configure: configureConcurrencyDeadlock,
     name: "drift caller shares its plan callee concurrency group",
