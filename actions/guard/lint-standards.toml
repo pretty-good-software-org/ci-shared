@@ -91,5 +91,5 @@ vendored = "length-only"
 # provided by the class templates; the guard (check j) enforces correctness
 # only when .changie.yaml is present, so non-released repos (infrastructure
 # roots) that legitimately omit changie are unaffected.
-tool_version = "1.24.0"
+tool_version = "1.25.0"
 list_indent = 2
