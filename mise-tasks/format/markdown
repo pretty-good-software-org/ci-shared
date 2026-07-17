@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Format repository Markdown with mdformat"
+set -euo pipefail
+
+source "scripts/without-node-modules.sh"
+mdformat .

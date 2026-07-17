@@ -1,10 +1,4 @@
 #!/usr/bin/env bash
 #MISE description="Run all linters"
+#MISE depends=["check:markdown-format", "lint:actions", "lint:yaml", "lint:markdown", "lint:ts", "lint:typecheck", "lint:format:check"]
 set -euo pipefail
-
-mise run lint:actions
-mise run lint:yaml
-mise run lint:markdown
-mise run lint:ts
-mise run lint:typecheck
-mise run lint:format:check

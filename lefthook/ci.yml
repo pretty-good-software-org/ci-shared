@@ -8,8 +8,12 @@ pre-commit:
       glob: "*.{yaml,yml}"
       run: mise run lint:yaml
       fail_text: "yamllint found issues"
+    markdown-format:
+      glob: "**/*.md"
+      run: mdformat --check {staged_files}
+      fail_text: "mdformat found formatting issues"
     markdownlint:
-      glob: "*.md"
+      glob: "**/*.md"
       run: mise run lint:markdown
       fail_text: "markdownlint found issues"
     oxlint:
