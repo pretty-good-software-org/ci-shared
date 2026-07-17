@@ -52,6 +52,19 @@ const assertWorkflowSequence = (workflow: string, expectedSequence: string[]): v
   }
 };
 
+const assertLintTaskOrdersReadOnlyBeforeFormatter = (): void => {
+  const lintTask = readFileSync("mise-tasks/lint/_default", "utf8");
+  const readOnlyLintTasks =
+    "mise run lint:actions ::: lint:yaml ::: lint:markdown ::: lint:ts ::: lint:typecheck ::: lint:format:check";
+  const readOnlyIndex = lintTask.indexOf(readOnlyLintTasks);
+  const formatterCheckIndex = lintTask.indexOf("mise run check:markdown-format");
+  assert.notEqual(readOnlyIndex, -1, "lint task must run all read-only linters concurrently");
+  assert.ok(
+    formatterCheckIndex > readOnlyIndex,
+    "lint task must run the formatter check after read-only linters complete",
+  );
+};
+
 afterEach(() => {
   for (const directory of temporaryDirectories.splice(0)) {
     rmSync(directory, { force: true, recursive: true });
@@ -83,7 +96,7 @@ describe("template guard action wiring", () => {
     assert.doesNotMatch(action, /\.\.\/\.\.\//);
   });
 
-  it("keeps the reusable workflow runner and action wiring explicit", () => {
+  it("keeps workflow wiring explicit and orders read-only lint before formatting", () => {
     const workflow = readFileSync(".github/workflows/template-guard.yml", "utf8");
     const expectedSequence = [
       "runs-on: [self-hosted, Linux, ARM64]",
@@ -95,5 +108,7 @@ describe("template guard action wiring", () => {
     // Supply-chain: the guard action must be pinned to an immutable commit SHA.
     // Never a mutable ref such as @main.
     assert.match(workflow, /uses: pretty-good-software-org\/ci-shared\/actions\/guard@[0-9a-f]{40}\b/);
+
+    assertLintTaskOrdersReadOnlyBeforeFormatter();
   });
 });
