@@ -3,5 +3,5 @@
 set -euo pipefail
 
 while IFS= read -r action_file; do
-  npx ncc build "${action_file}" -o "$(dirname "${action_file}")/dist"
+  ./node_modules/.bin/ncc build "${action_file}" -o "$(dirname "${action_file}")/dist"
 done < <(find actions -name 'action.ts' -not -path '*/tests/*' -not -path '*/dist/*')

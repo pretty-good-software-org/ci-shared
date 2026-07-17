@@ -14,19 +14,18 @@ Checkout repository and install tools via mise.
     mise-env: ci
 ```
 
-| Input | Description | Default |
-|-------|-------------|---------|
+| Input      | Description                 | Default                                          |
+| ---------- | --------------------------- | ------------------------------------------------ |
 | `mise-env` | MISE_ENV value (e.g., `ci`) | `''` (falls back to the caller's `MISE_ENV` env) |
 
 ### setup/npm-auth
 
-Authenticate npm/bun installs against GitHub Packages using a GitHub App installation token, instead of the
-per-repo "Actions access" grant configured in each private package's Settings UI. Those grants are unreproducible
-state — there is no API to manage them, and the 2026-07-05 org rename silently dropped most of them and took org
-CI down. This action mints a short-lived token the same way `org-aws-infrastructure/.github/workflows/plan.yml`
-already does for private policy fetching, writes `~/.npmrc` to route the configured scope to
-`npm.pkg.github.com`, and exports `NODE_AUTH_TOKEN` for install steps that read the token from the environment
-instead.
+Authenticate npm/bun installs against GitHub Packages using a GitHub App installation token, instead of the per-repo
+"Actions access" grant configured in each private package's Settings UI. Those grants are unreproducible state — there
+is no API to manage them, and the 2026-07-05 org rename silently dropped most of them and took org CI down. This action
+mints a short-lived token the same way `org-aws-infrastructure/.github/workflows/plan.yml` already does for private
+policy fetching, writes `~/.npmrc` to route the configured scope to `npm.pkg.github.com`, and exports `NODE_AUTH_TOKEN`
+for install steps that read the token from the environment instead.
 
 ```yaml
 - uses: pretty-good-software-org/ci-shared/actions/setup/npm-auth@v1
@@ -35,17 +34,17 @@ instead.
     private-key: ${{ secrets.CI_PRIVATE_CONTENT_PRIVATE_KEY }}
 ```
 
-| Input | Description | Default |
-|-------|-------------|---------|
-| `app-id` | GitHub App ID | (required) |
-| `private-key` | GitHub App private key | (required) |
-| `scope` | npm scope to route to GitHub Packages | `@pretty-good-software-org` |
+| Input         | Description                           | Default                     |
+| ------------- | ------------------------------------- | --------------------------- |
+| `app-id`      | GitHub App ID                         | (required)                  |
+| `private-key` | GitHub App private key                | (required)                  |
+| `scope`       | npm scope to route to GitHub Packages | `@pretty-good-software-org` |
 
-The App backing `CI_PRIVATE_CONTENT_APP_ID` needs the `packages: read` permission. That permission is granted in
-the GitHub App settings UI by an org admin — it is not something this action or its workflow can configure.
+The App backing `CI_PRIVATE_CONTENT_APP_ID` needs the `packages: read` permission. That permission is granted in the
+GitHub App settings UI by an org admin — it is not something this action or its workflow can configure.
 
-**Migrating a consumer workflow**, replacing the `GITHUB_TOKEN` env var on a bun/npm install step with a minted
-App token:
+**Migrating a consumer workflow**, replacing the `GITHUB_TOKEN` env var on a bun/npm install step with a minted App
+token:
 
 ```diff
 +      - uses: pretty-good-software-org/ci-shared/actions/setup/npm-auth@v1
@@ -69,9 +68,9 @@ Check OpenTofu formatting.
 - uses: pretty-good-software-org/ci-shared/actions/tofu/fmt-check@v1
 ```
 
-| Input | Description | Default |
-|-------|-------------|---------|
-| `working-directory` | Directory containing OpenTofu configuration | `tofu` |
+| Input               | Description                                 | Default |
+| ------------------- | ------------------------------------------- | ------- |
+| `working-directory` | Directory containing OpenTofu configuration | `tofu`  |
 
 ### tofu/init
 
@@ -83,10 +82,10 @@ Initialize OpenTofu configuration.
     backend: 'false'
 ```
 
-| Input | Description | Default |
-|-------|-------------|---------|
-| `working-directory` | Directory containing OpenTofu configuration | `tofu` |
-| `backend` | Enable backend initialization (`true`/`false`) | `true` |
+| Input               | Description                                    | Default |
+| ------------------- | ---------------------------------------------- | ------- |
+| `working-directory` | Directory containing OpenTofu configuration    | `tofu`  |
+| `backend`           | Enable backend initialization (`true`/`false`) | `true`  |
 
 ### tofu/validate
 
@@ -96,9 +95,9 @@ Validate OpenTofu configuration.
 - uses: pretty-good-software-org/ci-shared/actions/tofu/validate@v1
 ```
 
-| Input | Description | Default |
-|-------|-------------|---------|
-| `working-directory` | Directory containing OpenTofu configuration | `tofu` |
+| Input               | Description                                 | Default |
+| ------------------- | ------------------------------------------- | ------- |
+| `working-directory` | Directory containing OpenTofu configuration | `tofu`  |
 
 ### tofu/plan
 
@@ -109,15 +108,15 @@ Create OpenTofu plan and capture outputs.
   id: plan
 ```
 
-| Input | Description | Default |
-|-------|-------------|---------|
-| `working-directory` | Directory containing OpenTofu configuration | `tofu` |
+| Input               | Description                                 | Default |
+| ------------------- | ------------------------------------------- | ------- |
+| `working-directory` | Directory containing OpenTofu configuration | `tofu`  |
 
-| Output | Description |
-|--------|-------------|
-| `plan` | Plan text (truncated to 60k chars) |
-| `plan-file` | Path to binary plan file |
-| `plan-json` | Path to JSON plan file |
+| Output      | Description                        |
+| ----------- | ---------------------------------- |
+| `plan`      | Plan text (truncated to 60k chars) |
+| `plan-file` | Path to binary plan file           |
+| `plan-json` | Path to JSON plan file             |
 
 ### tofu/apply
 
@@ -129,10 +128,10 @@ Apply an OpenTofu plan.
     plan-file: ${{ steps.plan.outputs.plan-file }}
 ```
 
-| Input | Description | Default |
-|-------|-------------|---------|
-| `working-directory` | Directory containing OpenTofu configuration | `tofu` |
-| `plan-file` | Path to the plan file (relative to working directory) | `plan.tfplan` |
+| Input               | Description                                           | Default       |
+| ------------------- | ----------------------------------------------------- | ------------- |
+| `working-directory` | Directory containing OpenTofu configuration           | `tofu`        |
+| `plan-file`         | Path to the plan file (relative to working directory) | `plan.tfplan` |
 
 ### tofu/policy
 
@@ -144,17 +143,17 @@ Run Conftest policy checks against an OpenTofu plan.
     plan-json: ${{ steps.plan.outputs.plan-json }}
 ```
 
-| Input | Description | Default |
-|-------|-------------|---------|
-| `plan-json` | Path to the JSON plan file | `tofu/plan.json` |
-| `client-id` | GitHub App client ID for cross-repo policy fetching | `''` |
-| `private-key` | GitHub App private key for cross-repo policy fetching | `''` |
-| `app-id` | Deprecated GitHub App ID for cross-repo policy fetching | `''` |
+| Input         | Description                                             | Default          |
+| ------------- | ------------------------------------------------------- | ---------------- |
+| `plan-json`   | Path to the JSON plan file                              | `tofu/plan.json` |
+| `client-id`   | GitHub App client ID for cross-repo policy fetching     | `''`             |
+| `private-key` | GitHub App private key for cross-repo policy fetching   | `''`             |
+| `app-id`      | Deprecated GitHub App ID for cross-repo policy fetching | `''`             |
 
-| Output | Description |
-|--------|-------------|
-| `has_violations` | Whether policy violations were found (`true`/`false`) |
-| `policy_violations` | Violation details (empty if none) |
+| Output              | Description                                           |
+| ------------------- | ----------------------------------------------------- |
+| `has_violations`    | Whether policy violations were found (`true`/`false`) |
+| `policy_violations` | Violation details (empty if none)                     |
 
 ### tofu/build-plan-details
 
@@ -167,12 +166,12 @@ Builds OpenTofu plan output as a collapsible markdown fragment.
     plan: ${{ steps.plan.outputs.plan }}
 ```
 
-| Input | Description |
-|-------|-------------|
+| Input  | Description               |
+| ------ | ------------------------- |
 | `plan` | OpenTofu plan output text |
 
-| Output | Description |
-|--------|-------------|
+| Output         | Description                                         |
+| -------------- | --------------------------------------------------- |
 | `plan-details` | Collapsible details block with terraform code fence |
 
 ### github/comment
@@ -186,9 +185,9 @@ Create or update a PR comment identified by a marker string.
     comment-identifier: '### OpenTofu Plan Results'
 ```
 
-| Input | Description |
-|-------|-------------|
-| `comment-body` | Full markdown body of the comment |
+| Input                | Description                                                       |
+| -------------------- | ----------------------------------------------------------------- |
+| `comment-body`       | Full markdown body of the comment                                 |
 | `comment-identifier` | String used to match an existing comment (matched via startsWith) |
 
 ### aws/cleanup-s3
@@ -201,10 +200,10 @@ Delete S3 buckets matching a prefix. Handles versioned buckets.
     prefix: my-test-bucket-
 ```
 
-| Input | Description | Default |
-|-------|-------------|---------|
-| `prefix` | Bucket name prefix to match | (required) |
-| `region` | AWS region | `us-east-1` |
+| Input    | Description                 | Default     |
+| -------- | --------------------------- | ----------- |
+| `prefix` | Bucket name prefix to match | (required)  |
+| `region` | AWS region                  | `us-east-1` |
 
 ### aws/cleanup-dynamodb
 
@@ -216,10 +215,10 @@ Delete DynamoDB tables matching a prefix.
     prefix: my-test-table-
 ```
 
-| Input | Description | Default |
-|-------|-------------|---------|
-| `prefix` | Table name prefix to match | (required) |
-| `region` | AWS region | `us-east-1` |
+| Input    | Description                | Default     |
+| -------- | -------------------------- | ----------- |
+| `prefix` | Table name prefix to match | (required)  |
+| `region` | AWS region                 | `us-east-1` |
 
 ## Development
 
@@ -244,6 +243,13 @@ mise run changie
 # Run full CI validation locally (build + lint + test)
 mise run ci:validate
 ```
+
+### Markdown policy
+
+Markdown formatting follows the organization policy from `template-base` PR #23 and `org-evaluation-harnesses`.
+`.mdformat.toml`, the hashed requirements lock, Mise tasks, and Lefthook are the authoritative implementation.
+`mise run format:markdown` runs `mdformat .`; `mise run check:markdown-format` runs `mdformat --check .`. The formatter
+check is included in `mise run lint` and the pre-commit hook. YAML frontmatter must retain its semantics.
 
 ## Adding a New Action
 

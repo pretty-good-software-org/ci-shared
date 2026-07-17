@@ -7,7 +7,8 @@ project_type: github-actions
 
 ## Repository Overview
 
-Shared composite actions for CI/CD across the organization. Each action is a self-contained directory under `actions/` with its own `action.yml`, TypeScript implementation, bundled JS, and tests.
+Shared composite actions for CI/CD across the organization. Each action is a self-contained directory under `actions/`
+with its own `action.yml`, TypeScript implementation, bundled JS, and tests.
 
 ## Repository Structure
 
@@ -123,7 +124,8 @@ lefthook/
 mise run setup
 ```
 
-This runs `mise install` (node 22, actionlint, yamllint, markdownlint-cli2, oxlint, oxfmt, lefthook), configures git hooks via lefthook, and installs npm dependencies (commitlint, typescript, @types/node, @vercel/ncc).
+This runs `mise install` (node 22, uv, mdformat, actionlint, yamllint, markdownlint-cli2, oxlint, oxfmt, lefthook),
+configures git hooks via lefthook, and installs npm dependencies (commitlint, typescript, @types/node, @vercel/ncc).
 
 ## Available Commands
 
@@ -146,7 +148,8 @@ task release:release    # Create a release (usage: task release:release VERSION=
 
 ## Testing
 
-Tests use Node built-in test runner (`node:test` + `node:assert`) with `--experimental-strip-types` to run TypeScript directly.
+Tests use Node built-in test runner (`node:test` + `node:assert`) with `--experimental-strip-types` to run TypeScript
+directly.
 
 ```bash
 mise run test

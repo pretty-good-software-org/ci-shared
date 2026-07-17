@@ -2,7 +2,8 @@
 
 ## How It Works
 
-Consumers reference actions by a floating major tag (e.g., `@v1`). Each release creates an immutable semver tag (`v1.2.3`) and moves the floating major tag (`v1`) forward to point at it.
+Consumers reference actions by a floating major tag (e.g., `@v1`). Each release creates an immutable semver tag
+(`v1.2.3`) and moves the floating major tag (`v1`) forward to point at it.
 
 ```text
 v1.0.0  v1.1.0  v1.2.0
@@ -14,22 +15,24 @@ v1.0.0  v1.1.0  v1.2.0
                   v1 (floating)
 ```
 
-Consumers pinned to `@v1` automatically get minor and patch updates. They only need to change their ref when a new major version is released.
+Consumers pinned to `@v1` automatically get minor and patch updates. They only need to change their ref when a new major
+version is released.
 
 ## Version Numbering
 
-| Change | Bump | Example |
-|--------|------|---------|
-| New action added | Minor | `v1.1.0` → `v1.2.0` |
-| New optional input on existing action | Minor | `v1.2.0` → `v1.3.0` |
-| Bug fix | Patch | `v1.2.0` → `v1.2.1` |
-| Breaking input/output change | **Major** | `v1.x.x` → `v2.0.0` |
-| Removed action | **Major** | `v1.x.x` → `v2.0.0` |
+| Change                                  | Bump      | Example             |
+| --------------------------------------- | --------- | ------------------- |
+| New action added                        | Minor     | `v1.1.0` → `v1.2.0` |
+| New optional input on existing action   | Minor     | `v1.2.0` → `v1.3.0` |
+| Bug fix                                 | Patch     | `v1.2.0` → `v1.2.1` |
+| Breaking input/output change            | **Major** | `v1.x.x` → `v2.0.0` |
+| Removed action                          | **Major** | `v1.x.x` → `v2.0.0` |
 | Required input added to existing action | **Major** | `v1.x.x` → `v2.0.0` |
 
 ## When to Release
 
-After a PR is squash-merged to `main` and CI passes. Not every merge needs a release — batch related changes if it makes sense.
+After a PR is squash-merged to `main` and CI passes. Not every merge needs a release — batch related changes if it makes
+sense.
 
 ## Release Steps
 
@@ -45,7 +48,8 @@ After a PR is squash-merged to `main` and CI passes. Not every merge needs a rel
    mise run release:changelog
    ```
 
-   Review the generated `CHANGELOG.md` to confirm the changes are correct. The file is a local preview only — it is not committed (`main` is protected; release notes live on the GitHub Release).
+   Review the generated `CHANGELOG.md` to confirm the changes are correct. The file is a local preview only — it is not
+   committed (`main` is protected; release notes live on the GitHub Release).
 
 3. Pick the next version number based on the table above.
 
@@ -56,6 +60,7 @@ After a PR is squash-merged to `main` and CI passes. Not every merge needs a rel
    ```
 
    This will:
+
    - Create an annotated semver tag (`v1.2.0`)
    - Move the floating major tag (`v1`) forward
    - Push tags to origin

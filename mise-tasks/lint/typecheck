@@ -2,4 +2,4 @@
 #MISE description="Type-check TypeScript files"
 set -euo pipefail
 
-npx tsc --noEmit
+./node_modules/.bin/tsc --noEmit
