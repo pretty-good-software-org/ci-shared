@@ -34,11 +34,26 @@ const assertJobBootstrap = (job: string): void => {
   assert.ok(miseEnvironmentIndex > localSetupIndex, `${job} job must configure setup/mise with mise-env ci`);
 };
 
+const assertHostedArmRunners = (): void => {
+  for (const job of jobs) {
+    const block = jobBlock(job);
+    assert.match(block, /^    runs-on: ubuntu-24\.04-arm$/m, `${job} job must use the hosted ARM runner`);
+    assert.doesNotMatch(block, /self-hosted|Linux|ARM64/, `${job} job must not use self-hosted labels`);
+  }
+
+  assert.doesNotMatch(
+    workflow,
+    /^\s+runs-on:.*self-hosted/im,
+    "the repository-owned CI workflow must not target self-hosted runners",
+  );
+};
+
 describe("CI self-test bootstrap", () => {
   it("checks out the PR before the local setup action in every CI job", () => {
     for (const job of jobs) {
       assertJobBootstrap(job);
     }
+    assertHostedArmRunners();
 
     assert.equal(
       workflow.split(checkoutStep).length - 1,
@@ -60,7 +75,7 @@ describe("CI self-test bootstrap", () => {
   it("documents the two checkouts once for the three self-test jobs", () => {
     const explanation =
       "# Each job first checks out the PR so the PR-local composite is available; setup/mise\n" +
-      "      # then checks out again to verify its checkout contract on symlinked runners.";
+      "      # then checks out again to verify its checkout contract.";
 
     assert.equal(workflow.split(explanation).length - 1, 1, "the self-test checkout explanation must appear once");
   });

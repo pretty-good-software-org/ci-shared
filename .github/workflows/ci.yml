@@ -14,14 +14,22 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# ROAD SIGN: ci-shared is public, so these jobs use GitHub-hosted ARM runners.
+# The organization self-hosted runner group intentionally denies public repositories
+# to prevent fork PR code from reaching internal runners. Authority is GitHub repository
+# settings (https://github.com/pretty-good-software-org/ci-shared/settings) and org
+# Actions runner-group settings:
+# https://github.com/organizations/pretty-good-software-org/settings/actions/runner-groups.
+# Verify visibility with `gh repo view pretty-good-software-org/ci-shared --json visibility`
+# and verify the runner-group repository allowlist in the org Actions settings.
 jobs:
   test:
     name: Test
-    runs-on: [self-hosted, Linux, ARM64]
+    runs-on: ubuntu-24.04-arm
     timeout-minutes: 5
     steps:
       # Each job first checks out the PR so the PR-local composite is available; setup/mise
-      # then checks out again to verify its checkout contract on symlinked runners.
+      # then checks out again to verify its checkout contract.
       - name: Checkout PR-local action
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
       - name: Setup
@@ -35,7 +43,7 @@ jobs:
 
   lint:
     name: Lint
-    runs-on: [self-hosted, Linux, ARM64]
+    runs-on: ubuntu-24.04-arm
     timeout-minutes: 5
     steps:
       - name: Checkout PR-local action
@@ -51,7 +59,7 @@ jobs:
 
   build:
     name: Build
-    runs-on: [self-hosted, Linux, ARM64]
+    runs-on: ubuntu-24.04-arm
     timeout-minutes: 5
     steps:
       - name: Checkout PR-local action
