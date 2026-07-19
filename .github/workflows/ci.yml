@@ -20,8 +20,12 @@ jobs:
     runs-on: [self-hosted, Linux, ARM64]
     timeout-minutes: 5
     steps:
+      # Each job first checks out the PR so the PR-local composite is available; setup/mise
+      # then checks out again to verify its checkout contract on symlinked runners.
+      - name: Checkout PR-local action
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
       - name: Setup
-        uses: pretty-good-software-org/ci-shared/actions/setup/mise@v1
+        uses: ./actions/setup/mise
         with:
           mise-env: ci
       - name: Install npm dependencies
@@ -34,8 +38,10 @@ jobs:
     runs-on: [self-hosted, Linux, ARM64]
     timeout-minutes: 5
     steps:
+      - name: Checkout PR-local action
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
       - name: Setup
-        uses: pretty-good-software-org/ci-shared/actions/setup/mise@v1
+        uses: ./actions/setup/mise
         with:
           mise-env: ci
       - name: Install npm dependencies
@@ -48,8 +54,10 @@ jobs:
     runs-on: [self-hosted, Linux, ARM64]
     timeout-minutes: 5
     steps:
+      - name: Checkout PR-local action
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
       - name: Setup
-        uses: pretty-good-software-org/ci-shared/actions/setup/mise@v1
+        uses: ./actions/setup/mise
         with:
           mise-env: ci
       - name: Install npm dependencies
