@@ -16,7 +16,15 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - uses: actions/checkout@v7
+    # Compatibility pin (2026-07-19): this is a documented-baseline deviation from
+    # checkout v7 because runner 2.335.1 maps logical GITHUB_WORKSPACE
+    # /home/admin/.github-runner to physical gitdir /home/admin/actions-runner.
+    # v7's credential includeIf follows only the logical path, so fetch fails with
+    # "could not read Username"; v5 writes repository-local http.extraheader and
+    # succeeds. Prefer that upstream behavior over bespoke credential handling.
+    # Exit path: return to v7 when logical and physical workspace paths are
+    # identical or upstream supports symlinked gitdirs.
+    - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
       with:
         fetch-depth: ${{ inputs.fetch-depth }}
     - uses: jdx/mise-action@v4
