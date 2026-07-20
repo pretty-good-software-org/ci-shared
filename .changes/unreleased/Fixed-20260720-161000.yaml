@@ -1,0 +1,3 @@
+kind: Fixed
+body: Resolve locked Python before multi-tool installs on self-hosted Linux runners.
+time: 2026-07-20T16:10:00+02:00
