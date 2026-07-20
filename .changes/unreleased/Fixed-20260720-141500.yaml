@@ -1,0 +1,3 @@
+kind: Fixed
+body: Restore locked Python installs on self-hosted Linux ARM64 runners.
+time: 2026-07-20T14:15:00+02:00

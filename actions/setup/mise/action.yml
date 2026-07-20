@@ -31,9 +31,11 @@ runs:
       env:
         MISE_ENV: ${{ inputs.mise-env || env.MISE_ENV }}
       with:
-        # Exact pin: 2026.7.7 resolves Python constraints during locked,
-        # multi-tool installs and handles URL-less npm/pipx lock entries.
-        version: 2026.7.7
+        # Compatibility pin (2026-07-20): 2026.7.7 rejects valid core Python
+        # lock entries on the self-hosted Linux ARM64 runner. Version 2026.7.1
+        # handles those entries and URL-less npm/pipx locks. Upgrade only after
+        # validating the replacement on the actual self-hosted runner.
+        version: 2026.7.1
         # mise-action force-adds --locked whenever a mise.lock exists but does NOT
         # enable the lockfile setting, so its own install fails with "locked mode
         # requires lockfile to be enabled". Skip it and run the install below with
