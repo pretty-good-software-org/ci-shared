@@ -1,0 +1,3 @@
+kind: Fixed
+body: Upgrade mise to fix locked Python resolution during multi-tool installs.
+time: 2026-07-20T12:40:00+02:00

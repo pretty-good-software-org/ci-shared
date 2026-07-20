@@ -13,6 +13,14 @@ if (checkoutStart === -1 || miseStart === -1) {
   throw new Error("setup/mise must define checkout before mise-action");
 }
 
+describe("setup/mise version pin", () => {
+  it("uses the locked multi-tool resolution release", () => {
+    assert.match(action, /^        version: 2026\.7\.7$/m, "mise must use the validated 2026.7.7 release");
+    assert.match(action, /resolves Python constraints/, "the pin must document the Python lock-resolution fix");
+    assert.match(action, /URL-less npm\/pipx lock entries/, "the pin must document URL-less backend compatibility");
+  });
+});
+
 describe("setup/mise checkout pin", () => {
   it("uses the exact v5 compatibility SHA", () => {
     assert.match(
