@@ -63,8 +63,7 @@ const runInstallerWithPython = (fixture: WorkspaceFixture) => {
     PATH: `${fixture.fakeBin}:${process.env.PATH ?? ""}`,
     PYTHON_VERSION: "3.14.3",
   };
-  const options = { encoding: "utf8", env: environment };
-  return spawnSync("bash", [installScript], options);
+  return spawnSync("bash", [installScript], { encoding: "utf8", env: environment });
 };
 
 const runInstallerWithoutPython = (fixture: WorkspaceFixture) => {
@@ -75,8 +74,7 @@ const runInstallerWithoutPython = (fixture: WorkspaceFixture) => {
     PATH: `${fixture.fakeBin}:${process.env.PATH ?? ""}`,
     PYTHON_VERSION: "",
   };
-  const options = { encoding: "utf8", env: environment };
-  return spawnSync("bash", [installScript], options);
+  return spawnSync("bash", [installScript], { encoding: "utf8", env: environment });
 };
 
 const assertCanonicalWorkspaceInstall = (): void => {
