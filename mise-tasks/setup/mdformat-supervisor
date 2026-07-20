@@ -136,13 +136,16 @@ class Supervisor:
             raise SetupError(f"cache path is not owned by the current UID: {path}")
 
     @classmethod
-    def _assert_directory(cls, path: Path) -> None:
-        metadata = cls._lstat(path)
+    def _assert_directory_metadata(cls, path: Path, metadata: os.stat_result) -> None:
         cls._assert_owner(path, metadata)
         if not stat.S_ISDIR(metadata.st_mode) or stat.S_ISLNK(metadata.st_mode):
             raise SetupError(f"cache path is not a real directory: {path}")
         if stat.S_IMODE(metadata.st_mode) != 0o700:
             raise SetupError(f"cache directory permissions must be 0700: {path}")
+
+    @classmethod
+    def _assert_directory(cls, path: Path) -> None:
+        cls._assert_directory_metadata(path, cls._lstat(path))
 
     @classmethod
     def _assert_file(cls, path: Path, executable: bool | None = None) -> os.stat_result:
@@ -268,10 +271,6 @@ class Supervisor:
                 return True
         return False
 
-    def _lock_age(self) -> int:
-        metadata = self._lstat(self.lock_dir)
-        return max(0, int(time.time() - metadata.st_mtime))
-
     def _owner_record(self) -> dict[str, object]:
         started = self._process_start_identity(os.getpid())
         if not started:
@@ -287,15 +286,25 @@ class Supervisor:
 
     def _read_record_if_present(self, name: str) -> dict[str, object] | None:
         path = self.lock_dir / name
-        if not path.exists():
+        try:
+            metadata = path.lstat()
+        except FileNotFoundError:
             return None
-        metadata = self._lstat(path)
+        except OSError as error:
+            raise SetupError(f"inspect cache record {path}: {error}") from error
         self._assert_owner(path, metadata)
         if not stat.S_ISREG(metadata.st_mode):
             raise SetupError(f"cache record is not a regular file: {path}")
-        os.chmod(path, 0o600)
-        self._assert_file(path, executable=False)
-        return self._read_json(path)
+        try:
+            os.chmod(path, 0o600)
+            value = json.loads(path.read_text(encoding="utf-8"))
+        except FileNotFoundError:
+            return None
+        except (OSError, ValueError) as error:
+            raise SetupError(f"read cache record {path}: {error}") from error
+        if not isinstance(value, dict):
+            raise SetupError(f"cache record is not an object: {path}")
+        return value
 
     def _terminate_recorded_worker(self, record: dict[str, object]) -> None:
         pid = record.get("pid")
@@ -358,12 +367,19 @@ class Supervisor:
         # started the installer. Reclaiming here cannot overlap installation.
 
     def _recover_stale_lock(self) -> bool:
-        if not self.lock_dir.exists():
+        try:
+            lock_metadata = self.lock_dir.lstat()
+        except FileNotFoundError:
             return True
-        self._assert_directory(self.lock_dir)
+        except OSError as error:
+            raise SetupError(f"inspect setup lock {self.lock_dir}: {error}") from error
+        self._assert_directory_metadata(self.lock_dir, lock_metadata)
         owner = self._read_record_if_present(OWNER_RECORD)
         if owner is None:
-            if self._lock_age() > STALE_LOCK_SECONDS:
+            if not self.lock_dir.exists():
+                return True
+            lock_age = max(0, int(time.time() - lock_metadata.st_mtime))
+            if lock_age > STALE_LOCK_SECONDS:
                 return self._move_stale_lock()
             return False
         owner_pid = owner.get("pid")

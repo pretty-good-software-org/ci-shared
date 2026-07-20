@@ -75,6 +75,44 @@ assert_no_artifacts() {
 
 XDG_CACHE_HOME="$cache_home" bash "$setup_task" >/dev/null
 
+"$python_bin" - "$project_root/mise-tasks/setup/mdformat-supervisor" <<'PY'
+from importlib.machinery import SourceFileLoader
+from pathlib import Path
+from unittest import TestCase, main
+from unittest.mock import patch
+import sys
+import types
+
+supervisor_path = sys.argv[1]
+module = types.ModuleType("mdformat_supervisor")
+SourceFileLoader(module.__name__, supervisor_path).exec_module(module)
+
+
+class DisappearingLockTests(TestCase):
+    def setUp(self) -> None:
+        self.supervisor = object.__new__(module.Supervisor)
+        self.supervisor.lock_dir = Path("/cache/active.lock")
+
+    def test_record_disappearing_after_presence_check_is_absent(self) -> None:
+        with (
+            patch.object(Path, "exists", return_value=True),
+            patch.object(Path, "lstat", side_effect=FileNotFoundError),
+        ):
+            actual = self.supervisor._read_record_if_present(module.OWNER_RECORD)
+        self.assertIsNone(actual, "a concurrently removed lock record must be treated as absent")
+
+    def test_lock_disappearing_before_inspection_retries_acquisition(self) -> None:
+        with (
+            patch.object(Path, "exists", return_value=True),
+            patch.object(Path, "lstat", side_effect=FileNotFoundError),
+        ):
+            actual = self.supervisor._recover_stale_lock()
+        self.assertTrue(actual, "a concurrently removed lock directory must retry acquisition")
+
+
+main(argv=["mdformat-supervisor-race-test"])
+PY
+
 portable_worker_copy="${test_root}/portable-worker"
 portable_worker_cache="${test_root}/portable-worker-cache"
 copy_setup_scripts "$portable_worker_copy"
