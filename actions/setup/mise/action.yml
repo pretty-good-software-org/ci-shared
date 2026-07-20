@@ -31,10 +31,9 @@ runs:
       env:
         MISE_ENV: ${{ inputs.mise-env || env.MISE_ENV }}
       with:
-        # PIN — mise 2026.7.2 (2026-07-07) panics instead of erroring on url-less
-        # lockfile entries (npm/pipx backends have no single-asset URL). Keep the
-        # pin until that panic is fixed upstream; 2026.7.1 handles them cleanly.
-        version: 2026.7.1
+        # Exact pin: 2026.7.7 resolves Python constraints during locked,
+        # multi-tool installs and handles URL-less npm/pipx lock entries.
+        version: 2026.7.7
         # mise-action force-adds --locked whenever a mise.lock exists but does NOT
         # enable the lockfile setting, so its own install fails with "locked mode
         # requires lockfile to be enabled". Skip it and run the install below with
