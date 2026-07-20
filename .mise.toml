@@ -1,15 +1,29 @@
+# Base tool versions — shared across all environments
+# Domain-specific tools are kept here because ci-shared owns its complete CI toolchain.
 [settings]
 experimental = true
 
+# Lock entries resolve python-build-standalone artifacts, so every platform
+# must select that backend instead of falling back to an unlocked source build.
+[settings.python]
+compile = false
+
 [tools]
-actionlint = "1.7.11"
 cocogitto = "6.5.0"
-"github:miniscruff/changie" = "1.25.0"
-git-cliff = "2.12.0"
+actionlint = "1.7.11"
+yamllint = "1.38.0"
 markdownlint-cli2 = "0.22.0"
 node = "22.22.1"
 "npm:oxfmt" = "0.41.0"
 "npm:oxlint" = "1.56.0"
+"github:miniscruff/changie" = "1.25.0"
+git-cliff = "2.12.0"
+python = "3.10.18"
 uv = "0.11.26"
-"pipx:mdformat" = { version = "1.0.0", uvx_args = "--with-requirements mdformat-requirements.lock" }
-yamllint = "1.38.0"
+
+# mdformat and its plugins are installed from mdformat-requirements.lock by
+# setup:mdformat. The environment is outside the repository so `mdformat .`
+# never traverses installed package Markdown. The sourced task derives its
+# repository and lock-specific path and activates that path in PATH.
+[env]
+_.source = "mise-tasks/setup/mdformat-env"

@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
-#MISE description="Install dev tools and git hooks"
+#MISE description="Install tools and configure git hooks"
 set -euo pipefail
 
-MISE_ENV=development mise install
+mise install --locked
+mise run setup:mdformat
+MISE_ENV=development mise install --locked
 MISE_ENV=development mise exec -- lefthook install
 npm install

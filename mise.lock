@@ -7,30 +7,38 @@ backend = "aqua:rhysd/actionlint"
 [tools.actionlint."platforms.linux-arm64"]
 checksum = "sha256:21bc0dfb57a913fe175298c2a9e906ee630f747cb66d0a934d0d4b69f4ee1235"
 url = "https://github.com/rhysd/actionlint/releases/download/v1.7.11/actionlint_1.7.11_linux_arm64.tar.gz"
+url_api = "https://api.github.com/repos/rhysd/actionlint/releases/assets/355827685"
+provenance = "github-attestations"
 
 [tools.actionlint."platforms.linux-arm64-musl"]
 checksum = "sha256:21bc0dfb57a913fe175298c2a9e906ee630f747cb66d0a934d0d4b69f4ee1235"
 url = "https://github.com/rhysd/actionlint/releases/download/v1.7.11/actionlint_1.7.11_linux_arm64.tar.gz"
+url_api = "https://api.github.com/repos/rhysd/actionlint/releases/assets/355827685"
+provenance = "github-attestations"
 
 [tools.actionlint."platforms.linux-x64"]
 checksum = "sha256:900919a84f2229bac68ca9cd4103ea297abc35e9689ebb842c6e34a3d1b01b0a"
 url = "https://github.com/rhysd/actionlint/releases/download/v1.7.11/actionlint_1.7.11_linux_amd64.tar.gz"
+url_api = "https://api.github.com/repos/rhysd/actionlint/releases/assets/355827683"
+provenance = "github-attestations"
 
 [tools.actionlint."platforms.linux-x64-musl"]
 checksum = "sha256:900919a84f2229bac68ca9cd4103ea297abc35e9689ebb842c6e34a3d1b01b0a"
 url = "https://github.com/rhysd/actionlint/releases/download/v1.7.11/actionlint_1.7.11_linux_amd64.tar.gz"
+url_api = "https://api.github.com/repos/rhysd/actionlint/releases/assets/355827683"
+provenance = "github-attestations"
 
 [tools.actionlint."platforms.macos-arm64"]
 checksum = "sha256:a21ba7366d8329e7223faee0ed69eb13da27fe8acabb356bb7eb0b7f1e1cb6d8"
 url = "https://github.com/rhysd/actionlint/releases/download/v1.7.11/actionlint_1.7.11_darwin_arm64.tar.gz"
+url_api = "https://api.github.com/repos/rhysd/actionlint/releases/assets/355827684"
+provenance = "github-attestations"
 
 [tools.actionlint."platforms.macos-x64"]
 checksum = "sha256:17ffc17fed8f0258ef6ad4aed932d3272464c7ef7d64e1cb0d65aa97c9752107"
 url = "https://github.com/rhysd/actionlint/releases/download/v1.7.11/actionlint_1.7.11_darwin_amd64.tar.gz"
-
-[tools.actionlint."platforms.windows-x64"]
-checksum = "sha256:5414b7124a91f4b5abee62e5c9d84802237734f8d15b9b7032732a32c3ebffa3"
-url = "https://github.com/rhysd/actionlint/releases/download/v1.7.11/actionlint_1.7.11_windows_amd64.zip"
+url_api = "https://api.github.com/repos/rhysd/actionlint/releases/assets/355827686"
+provenance = "github-attestations"
 
 [[tools.cocogitto]]
 version = "6.5.0"
@@ -39,6 +47,7 @@ backend = "aqua:cocogitto/cocogitto"
 [tools.cocogitto."platforms.linux-arm64"]
 checksum = "sha256:8f05394d82cfbba1e393cef4b822cddb6e903817478c29a03200815daed7d9f1"
 url = "https://github.com/cocogitto/cocogitto/releases/download/6.5.0/cocogitto-6.5.0-aarch64-unknown-linux-gnu.tar.gz"
+url_api = "https://api.github.com/repos/cocogitto/cocogitto/releases/assets/311583374"
 
 [tools.cocogitto."platforms.linux-arm64-musl"]
 checksum = "sha256:8f05394d82cfbba1e393cef4b822cddb6e903817478c29a03200815daed7d9f1"
@@ -47,22 +56,22 @@ url = "https://github.com/cocogitto/cocogitto/releases/download/6.5.0/cocogitto-
 [tools.cocogitto."platforms.linux-x64"]
 checksum = "sha256:9de1086c8b6521a8a01abbd62c562d6d355990f542e3082b49ec4a597f925646"
 url = "https://github.com/cocogitto/cocogitto/releases/download/6.5.0/cocogitto-6.5.0-x86_64-unknown-linux-musl.tar.gz"
+url_api = "https://api.github.com/repos/cocogitto/cocogitto/releases/assets/311583368"
 
 [tools.cocogitto."platforms.linux-x64-musl"]
 checksum = "sha256:9de1086c8b6521a8a01abbd62c562d6d355990f542e3082b49ec4a597f925646"
 url = "https://github.com/cocogitto/cocogitto/releases/download/6.5.0/cocogitto-6.5.0-x86_64-unknown-linux-musl.tar.gz"
+url_api = "https://api.github.com/repos/cocogitto/cocogitto/releases/assets/311583368"
 
 [tools.cocogitto."platforms.macos-arm64"]
 checksum = "sha256:26385586e71e10c03faa3842a87444efd76c21a91f2dfac28873c230dfeb2138"
 url = "https://github.com/cocogitto/cocogitto/releases/download/6.5.0/cocogitto-6.5.0-aarch64-apple-darwin.tar.gz"
+url_api = "https://api.github.com/repos/cocogitto/cocogitto/releases/assets/311583380"
 
 [tools.cocogitto."platforms.macos-x64"]
 checksum = "sha256:ddad1e62028e328db6e373232ff9166f21dfeadfe2c8784f327e88f46081fab4"
 url = "https://github.com/cocogitto/cocogitto/releases/download/6.5.0/cocogitto-6.5.0-x86_64-apple-darwin.tar.gz"
-
-[tools.cocogitto."platforms.windows-x64"]
-checksum = "sha256:ee4570d25e31393b88518af570f54e97f89e07346d545809e0c7404e8d076245"
-url = "https://github.com/cocogitto/cocogitto/releases/download/6.5.0/cocogitto-6.5.0-x86_64-pc-windows-msvc.tar.gz"
+url_api = "https://api.github.com/repos/cocogitto/cocogitto/releases/assets/311583378"
 
 [[tools.git-cliff]]
 version = "2.12.0"
@@ -71,30 +80,32 @@ backend = "aqua:orhun/git-cliff"
 [tools.git-cliff."platforms.linux-arm64"]
 checksum = "sha256:a2d262b389aed349e0564aaaa38a44015c98a951048923b086d6cf732f6dbbaf"
 url = "https://github.com/orhun/git-cliff/releases/download/v2.12.0/git-cliff-2.12.0-aarch64-unknown-linux-musl.tar.gz"
+url_api = "https://api.github.com/repos/orhun/git-cliff/releases/assets/343378026"
 
 [tools.git-cliff."platforms.linux-arm64-musl"]
 checksum = "sha256:a2d262b389aed349e0564aaaa38a44015c98a951048923b086d6cf732f6dbbaf"
 url = "https://github.com/orhun/git-cliff/releases/download/v2.12.0/git-cliff-2.12.0-aarch64-unknown-linux-musl.tar.gz"
+url_api = "https://api.github.com/repos/orhun/git-cliff/releases/assets/343378026"
 
 [tools.git-cliff."platforms.linux-x64"]
 checksum = "sha256:c89a7bc55f3c51f391938aa3fa560125109695c1930d927879daea68dd786420"
 url = "https://github.com/orhun/git-cliff/releases/download/v2.12.0/git-cliff-2.12.0-x86_64-unknown-linux-musl.tar.gz"
+url_api = "https://api.github.com/repos/orhun/git-cliff/releases/assets/343378176"
 
 [tools.git-cliff."platforms.linux-x64-musl"]
 checksum = "sha256:c89a7bc55f3c51f391938aa3fa560125109695c1930d927879daea68dd786420"
 url = "https://github.com/orhun/git-cliff/releases/download/v2.12.0/git-cliff-2.12.0-x86_64-unknown-linux-musl.tar.gz"
+url_api = "https://api.github.com/repos/orhun/git-cliff/releases/assets/343378176"
 
 [tools.git-cliff."platforms.macos-arm64"]
 checksum = "sha256:2ae72a0061bee98d0e375f2ea8e0f4b23b4915ac2e37fa45a705066de49b43a0"
 url = "https://github.com/orhun/git-cliff/releases/download/v2.12.0/git-cliff-2.12.0-aarch64-apple-darwin.tar.gz"
+url_api = "https://api.github.com/repos/orhun/git-cliff/releases/assets/343378832"
 
 [tools.git-cliff."platforms.macos-x64"]
 checksum = "sha256:fd4bce35ea8a6f3af6ac4891073781ca24c654c36c83c865bc30bab332c05a14"
 url = "https://github.com/orhun/git-cliff/releases/download/v2.12.0/git-cliff-2.12.0-x86_64-apple-darwin.tar.gz"
-
-[tools.git-cliff."platforms.windows-x64"]
-checksum = "sha256:f2b8c692d9488c3313d7786e2099976151c10fd8f76580b12d045bb9683a8379"
-url = "https://github.com/orhun/git-cliff/releases/download/v2.12.0/git-cliff-2.12.0-x86_64-pc-windows-msvc.zip"
+url_api = "https://api.github.com/repos/orhun/git-cliff/releases/assets/343379425"
 
 [[tools."github:miniscruff/changie"]]
 version = "1.25.0"
@@ -130,11 +141,6 @@ checksum = "sha256:e9a0931d1850200c647ea5721d4a1289ae2bb7c03e1995770cabf10c94324
 url = "https://github.com/miniscruff/changie/releases/download/v1.25.0/changie_1.25.0_darwin_amd64.tar.gz"
 url_api = "https://api.github.com/repos/miniscruff/changie/releases/assets/460473308"
 
-[tools."github:miniscruff/changie"."platforms.windows-x64"]
-checksum = "sha256:504958fd7ece0303a2ef876ecc3bd60903f0e4f8cda008117683b8ed4ff97d38"
-url = "https://github.com/miniscruff/changie/releases/download/v1.25.0/changie_1.25.0_windows_amd64.zip"
-url_api = "https://api.github.com/repos/miniscruff/changie/releases/assets/460473305"
-
 [[tools.markdownlint-cli2]]
 version = "0.22.0"
 backend = "npm:markdownlint-cli2"
@@ -148,16 +154,16 @@ checksum = "sha256:1d1690e9aba47e887a275abc6d8f7317e571a0700deaef493f768377e9915
 url = "https://nodejs.org/dist/v22.22.1/node-v22.22.1-linux-arm64.tar.gz"
 
 [tools.node."platforms.linux-arm64-musl"]
-checksum = "sha256:1d1690e9aba47e887a275abc6d8f7317e571a0700deaef493f768377e99155f5"
-url = "https://nodejs.org/dist/v22.22.1/node-v22.22.1-linux-arm64.tar.gz"
+checksum = "sha256:0fe88d506894b64a17053ac54bf5942d3cf326e4fea806e6194ed261fefd47fe"
+url = "https://unofficial-builds.nodejs.org/download/release/v22.22.1/node-v22.22.1-linux-arm64-musl.tar.gz"
 
 [tools.node."platforms.linux-x64"]
 checksum = "sha256:07c8aafa60644fb81adefa1ee7da860eb1920851ffdc9a37020ab0be47fbc10e"
 url = "https://nodejs.org/dist/v22.22.1/node-v22.22.1-linux-x64.tar.gz"
 
 [tools.node."platforms.linux-x64-musl"]
-checksum = "sha256:07c8aafa60644fb81adefa1ee7da860eb1920851ffdc9a37020ab0be47fbc10e"
-url = "https://nodejs.org/dist/v22.22.1/node-v22.22.1-linux-x64.tar.gz"
+checksum = "sha256:3cf9fa47e3937e62d54d3ec861df1c1f1599962a5d8365d4b86ce3f425b3326a"
+url = "https://unofficial-builds.nodejs.org/download/release/v22.22.1/node-v22.22.1-linux-x64-musl.tar.gz"
 
 [tools.node."platforms.macos-arm64"]
 checksum = "sha256:679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2"
@@ -167,10 +173,6 @@ url = "https://nodejs.org/dist/v22.22.1/node-v22.22.1-darwin-arm64.tar.gz"
 checksum = "sha256:07b13722d558790fca20bb1ecf61bde24b7a4863111f7be77fc57251a407359a"
 url = "https://nodejs.org/dist/v22.22.1/node-v22.22.1-darwin-x64.tar.gz"
 
-[tools.node."platforms.windows-x64"]
-checksum = "sha256:877cb93829e14fffbbc7903e7d8037336c9a79f3ea43c5d0b8c2379b79da56de"
-url = "https://nodejs.org/dist/v22.22.1/node-v22.22.1-win-x64.zip"
-
 [[tools."npm:oxfmt"]]
 version = "0.41.0"
 backend = "npm:oxfmt"
@@ -179,12 +181,39 @@ backend = "npm:oxfmt"
 version = "1.56.0"
 backend = "npm:oxlint"
 
-[[tools."pipx:mdformat"]]
-version = "1.0.0"
-backend = "pipx:mdformat"
+[[tools.python]]
+version = "3.10.18"
+backend = "core:python"
 
-[tools."pipx:mdformat".options]
-uvx_args = "--with-requirements mdformat-requirements.lock"
+[tools.python."platforms.linux-arm64"]
+checksum = "sha256:d8653909f2446651aacf24b0ea2b05dbcb2a3f4c49284efc5a3ab750f7c6181e"
+url = "https://github.com/astral-sh/python-build-standalone/releases/download/20251007/cpython-3.10.18+20251007-aarch64-unknown-linux-gnu-install_only_stripped.tar.gz"
+provenance = "github-attestations"
+
+[tools.python."platforms.linux-arm64-musl"]
+checksum = "sha256:50f68d1442b6cabd4861186cabc7c3dc0f1213d4bf8a69da59a33342152f5d32"
+url = "https://github.com/astral-sh/python-build-standalone/releases/download/20251007/cpython-3.10.18+20251007-aarch64-unknown-linux-musl-install_only_stripped.tar.gz"
+provenance = "github-attestations"
+
+[tools.python."platforms.linux-x64"]
+checksum = "sha256:7b1d02e28b0d36c4b0de044aaf8099cb0395ac3d6826c96ddd158241fcdc6f06"
+url = "https://github.com/astral-sh/python-build-standalone/releases/download/20251007/cpython-3.10.18+20251007-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz"
+provenance = "github-attestations"
+
+[tools.python."platforms.linux-x64-musl"]
+checksum = "sha256:c8da4c7bd01a4eb558e3167a1f66f88332e266abcc534a7ddac0b4927a25904a"
+url = "https://github.com/astral-sh/python-build-standalone/releases/download/20251007/cpython-3.10.18+20251007-x86_64-unknown-linux-musl-install_only_stripped.tar.gz"
+provenance = "github-attestations"
+
+[tools.python."platforms.macos-arm64"]
+checksum = "sha256:897ea4858f462ff6cc574e9e32d36e38e77b354d758ecb96e540a5732439c7b5"
+url = "https://github.com/astral-sh/python-build-standalone/releases/download/20251007/cpython-3.10.18+20251007-aarch64-apple-darwin-install_only_stripped.tar.gz"
+provenance = "github-attestations"
+
+[tools.python."platforms.macos-x64"]
+checksum = "sha256:4fc2d788345c5786ec79d478def38073871502e88746e31d31211fe0c0d282a6"
+url = "https://github.com/astral-sh/python-build-standalone/releases/download/20251007/cpython-3.10.18+20251007-x86_64-apple-darwin-install_only_stripped.tar.gz"
+provenance = "github-attestations"
 
 [[tools.uv]]
 version = "0.11.26"
@@ -193,30 +222,38 @@ backend = "aqua:astral-sh/uv"
 [tools.uv."platforms.linux-arm64"]
 checksum = "sha256:47418cfdb34b1ca42e503da72631ac8c475602e2411ac6c39aa84c2373fe6324"
 url = "https://github.com/astral-sh/uv/releases/download/0.11.26/uv-aarch64-unknown-linux-musl.tar.gz"
+url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/462248215"
+provenance = "github-attestations"
 
 [tools.uv."platforms.linux-arm64-musl"]
 checksum = "sha256:47418cfdb34b1ca42e503da72631ac8c475602e2411ac6c39aa84c2373fe6324"
 url = "https://github.com/astral-sh/uv/releases/download/0.11.26/uv-aarch64-unknown-linux-musl.tar.gz"
+url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/462248215"
+provenance = "github-attestations"
 
 [tools.uv."platforms.linux-x64"]
 checksum = "sha256:62bf1a53501adf4083224b69b33737450ac516935f5a5e483e9dfaf2665084de"
 url = "https://github.com/astral-sh/uv/releases/download/0.11.26/uv-x86_64-unknown-linux-musl.tar.gz"
+url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/462248297"
+provenance = "github-attestations"
 
 [tools.uv."platforms.linux-x64-musl"]
 checksum = "sha256:62bf1a53501adf4083224b69b33737450ac516935f5a5e483e9dfaf2665084de"
 url = "https://github.com/astral-sh/uv/releases/download/0.11.26/uv-x86_64-unknown-linux-musl.tar.gz"
+url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/462248297"
+provenance = "github-attestations"
 
 [tools.uv."platforms.macos-arm64"]
 checksum = "sha256:8f7fbf1708399b921857bce71e1d60f0d3ccf52a30caebc1c1a2f175dce13ab6"
 url = "https://github.com/astral-sh/uv/releases/download/0.11.26/uv-aarch64-apple-darwin.tar.gz"
+url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/462248188"
+provenance = "github-attestations"
 
 [tools.uv."platforms.macos-x64"]
 checksum = "sha256:922b460202707dd5f4ccacbadbe7f6a546cc46e82a99bf50ca99a7977a78eddd"
 url = "https://github.com/astral-sh/uv/releases/download/0.11.26/uv-x86_64-apple-darwin.tar.gz"
-
-[tools.uv."platforms.windows-x64"]
-checksum = "sha256:4e1278ede866be6c0bf32d2f466cc6de7a9fb399ecf20c9ce2d186e52424be47"
-url = "https://github.com/astral-sh/uv/releases/download/0.11.26/uv-x86_64-pc-windows-msvc.zip"
+url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/462248284"
+provenance = "github-attestations"
 
 [[tools.yamllint]]
 version = "1.38.0"
