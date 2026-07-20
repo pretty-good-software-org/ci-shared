@@ -6,10 +6,11 @@ on:
 env:
   MISE_ENV: ci
 
+# ROAD SIGN: Public-repository runner isolation is documented in ci.yml.
 jobs:
   guard:
     name: Template Guard
-    runs-on: [self-hosted, Linux, ARM64]
+    runs-on: ubuntu-24.04-arm
     timeout-minutes: 5
     steps:
       - name: Check out caller repository

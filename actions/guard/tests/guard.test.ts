@@ -99,7 +99,7 @@ describe("template guard action wiring", () => {
   it("keeps workflow wiring explicit and orders read-only lint before formatting", () => {
     const workflow = readFileSync(".github/workflows/template-guard.yml", "utf8");
     const expectedSequence = [
-      "runs-on: [self-hosted, Linux, ARM64]",
+      "runs-on: ubuntu-24.04-arm",
       "uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5",
       "uses: pretty-good-software-org/ci-shared/actions/guard@",
     ];
