@@ -16,8 +16,14 @@ const { join, resolve } = require("node:path");
 
 const executableMode = 0o755;
 const installScript = resolve("actions/setup/mise/install.sh");
-const fakeMiseScript =
-  '#!/usr/bin/env bash\nprintf "%s\\n%s\\n%s\\n" "$PWD" "$MISE_CONFIG_ROOT" "$*" > "$CAPTURE_PATH"\n';
+const fakeMiseScript = `#!/usr/bin/env bash
+if [[ "$1" == "config" ]]; then
+  [[ -n "\${PYTHON_VERSION:-}" ]] || exit 1
+  printf "%s" "$PYTHON_VERSION"
+  exit 0
+fi
+printf "%s\\n%s\\n%s\\n" "$PWD" "$MISE_CONFIG_ROOT" "$*" >> "$CAPTURE_PATH"
+`;
 
 interface WorkspaceFixture {
   capturePath: string;
@@ -49,12 +55,25 @@ const createWorkspaceFixture = (): WorkspaceFixture => {
   return fixture;
 };
 
-const runInstaller = (fixture: WorkspaceFixture) => {
+const runInstallerWithPython = (fixture: WorkspaceFixture) => {
   const environment = {
     ...process.env,
     CAPTURE_PATH: fixture.capturePath,
     GITHUB_WORKSPACE: fixture.logicalWorkspace,
     PATH: `${fixture.fakeBin}:${process.env.PATH ?? ""}`,
+    PYTHON_VERSION: "3.14.3",
+  };
+  const options = { encoding: "utf8", env: environment };
+  return spawnSync("bash", [installScript], options);
+};
+
+const runInstallerWithoutPython = (fixture: WorkspaceFixture) => {
+  const environment = {
+    ...process.env,
+    CAPTURE_PATH: fixture.capturePath,
+    GITHUB_WORKSPACE: fixture.logicalWorkspace,
+    PATH: `${fixture.fakeBin}:${process.env.PATH ?? ""}`,
+    PYTHON_VERSION: "",
   };
   const options = { encoding: "utf8", env: environment };
   return spawnSync("bash", [installScript], options);
@@ -63,14 +82,32 @@ const runInstaller = (fixture: WorkspaceFixture) => {
 const assertCanonicalWorkspaceInstall = (): void => {
   const fixture = createWorkspaceFixture();
   try {
-    const result = runInstaller(fixture);
+    const result = runInstallerWithPython(fixture);
+    assert.equal(result.status, 0, `install script failed: ${result.stderr}`);
+    const canonicalWorkspace = realpathSync(fixture.physicalWorkspace);
+    const invocation = `${canonicalWorkspace}\n${canonicalWorkspace}\n`;
+    const expected = `${invocation}install --locked --verbose python@3.14.3\n${invocation}install --locked --verbose\n`;
+    assert.equal(
+      readFileSync(fixture.capturePath, "utf8"),
+      expected,
+      "mise must resolve Python before installing all tools from one canonical workspace",
+    );
+  } finally {
+    rmSync(fixture.root, { force: true, recursive: true });
+  }
+};
+
+const assertInstallWithoutPython = (): void => {
+  const fixture = createWorkspaceFixture();
+  try {
+    const result = runInstallerWithoutPython(fixture);
     assert.equal(result.status, 0, `install script failed: ${result.stderr}`);
     const canonicalWorkspace = realpathSync(fixture.physicalWorkspace);
     const expected = `${canonicalWorkspace}\n${canonicalWorkspace}\ninstall --locked --verbose\n`;
     assert.equal(
       readFileSync(fixture.capturePath, "utf8"),
       expected,
-      "mise must receive one canonical workspace for its current directory and config root",
+      "mise must perform only the full install when Python is not configured",
     );
   } finally {
     rmSync(fixture.root, { force: true, recursive: true });
@@ -78,5 +115,6 @@ const assertCanonicalWorkspaceInstall = (): void => {
 };
 
 describe("setup/mise workspace identity", () => {
-  it("installs from one physical config and lockfile root", assertCanonicalWorkspaceInstall);
+  it("installs configured Python before all tools from one physical root", assertCanonicalWorkspaceInstall);
+  it("installs all tools directly when Python is not configured", assertInstallWithoutPython);
 });
