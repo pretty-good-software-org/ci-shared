@@ -43,7 +43,11 @@ runs:
         # entries carry url+checksum; npm/pipx carry neither and are tolerated).
         install: false
         github_token: ${{ inputs.github-token }}
-    - run: mise install --locked --verbose
+    # Resolve the runner workspace once before mise discovers config and locks.
+    # Legacy runners can expose GITHUB_WORKSPACE through ~/.github-runner while
+    # the checkout lives under ~/actions-runner; install.sh pins both lookups to
+    # the physical repository until RUNNER_ROOT is deployed fleet-wide.
+    - run: '"${{ github.action_path }}/install.sh"'
       shell: bash
       env:
         MISE_ENV: ${{ inputs.mise-env || env.MISE_ENV }}

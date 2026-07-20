@@ -62,3 +62,13 @@ describe("setup/mise checkout wiring", () => {
     );
   });
 });
+
+describe("setup/mise installer wiring", () => {
+  it("runs the tested installer from the composite action", () => {
+    assert.match(
+      action,
+      /- run: '"\$\{\{ github\.action_path \}\}\/install\.sh"'/,
+      "the composite action must invoke the canonical-workspace installer",
+    );
+  });
+});
