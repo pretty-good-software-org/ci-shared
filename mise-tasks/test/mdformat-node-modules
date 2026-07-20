@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+#MISE description="Test Markdown formatter dependency-tree restoration"
+set -euo pipefail
+
+readonly project_root="${MISE_PROJECT_ROOT:?MISE_PROJECT_ROOT must be set by mise}"
+readonly source_script="${project_root}/scripts/without-node-modules.sh"
+readonly test_root="$(mktemp -d "${TMPDIR:-/tmp}/mdformat-node-modules.XXXXXX")"
+
+cleanup() {
+  local status=$?
+  rm -rf "$test_root" || printf 'mdformat node_modules tests: failed to remove %s\n' "$test_root" >&2
+  exit "$status"
+}
+trap cleanup EXIT
+
+run_case() {
+  local name="$1" expected_status="$2"
+  local case_root="${test_root}/${name}" fake_bin="${test_root}/${name}-bin"
+  mkdir -p "${case_root}/node_modules" "${case_root}/tmp" "$fake_bin"
+  printf '%s\n' "$name" > "${case_root}/node_modules/sentinel"
+  cat > "${fake_bin}/mdformat" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+if [[ -d node_modules ]]; then
+  printf 'node_modules was visible during mdformat\n' >&2
+  exit 99
+fi
+printf 'node_modules absent during mdformat\n'
+exit "${MDFORMAT_TEST_STATUS:?MDFORMAT_TEST_STATUS must be set}"
+EOF
+  chmod +x "${fake_bin}/mdformat"
+
+  set +e
+  (
+    cd "$case_root"
+    PATH="${fake_bin}:${PATH}" TMPDIR="${case_root}/tmp" MDFORMAT_TEST_STATUS="$expected_status" \
+      bash -c 'source "$1"; mdformat .' _ "$source_script"
+  ) > "${case_root}/output" 2>&1
+  local actual_status=$?
+  set -e
+
+  [[ "$actual_status" == "$expected_status" ]] || {
+    printf 'mdformat node_modules tests: %s returned %s, expected %s\n' \
+      "$name" "$actual_status" "$expected_status" >&2
+    cat "${case_root}/output" >&2
+    exit 1
+  }
+  [[ -f "${case_root}/node_modules/sentinel" ]] || {
+    printf 'mdformat node_modules tests: %s did not restore node_modules\n' "$name" >&2
+    exit 1
+  }
+  grep -Fqx 'node_modules absent during mdformat' "${case_root}/output" || {
+    printf 'mdformat node_modules tests: %s exposed node_modules to mdformat\n' "$name" >&2
+    cat "${case_root}/output" >&2
+    exit 1
+  }
+  [[ -z "$(find "${case_root}/tmp" -mindepth 1 -print -quit)" ]] || {
+    printf 'mdformat node_modules tests: %s left its temporary backup behind\n' "$name" >&2
+    exit 1
+  }
+}
+
+run_case success 0
+run_case formatter-failure 23
+printf 'mdformat node_modules restoration tests passed\n'
