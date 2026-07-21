@@ -16,7 +16,10 @@ readonly requirements_lock="$4"
   exit 1
 }
 
-"$uv_bin" pip sync \
+# Nothing needs to run after the package sync. Replacing this shell with uv
+# makes the installer the launcher's direct child, even when a macOS shell
+# gives an external command a different process group or session.
+exec "$uv_bin" pip sync \
   --require-hashes \
   --python "$temporary_environment_dir/bin/python" \
   "$requirements_lock" || {
