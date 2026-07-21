@@ -22,6 +22,7 @@ from pathlib import Path
 
 STALE_LOCK_SECONDS = 60
 HANDSHAKE_WAIT_SECONDS = 5
+OWNER_EXIT_CONFIRMATION_ATTEMPTS = 3
 POLL_SECONDS = 0.1
 PROCESS_STOP_SECONDS = 5
 COMPLETION_MARKER = ".mdformat-complete"
@@ -75,7 +76,6 @@ class Supervisor:
         self.active_malformed = False
         self.worker_pid: int | None = None
         self.worker_started = ""
-        self.worker_pgid: int | None = None
         self.worker_read_fd: int | None = None
         self.stop_requested = False
         self.expected_packages = self._read_expected_packages()
@@ -255,22 +255,6 @@ class Supervisor:
             return False
         return bool(output) and not output.startswith("Z")
 
-    @classmethod
-    def _process_group_running(cls, pgid: int) -> bool:
-        try:
-            output = subprocess.check_output(
-                [cls._ps_path(), "-axo", "pid=,pgid=,stat="],
-                text=True,
-                stderr=subprocess.DEVNULL,
-            )
-        except (OSError, subprocess.CalledProcessError):
-            return False
-        for line in output.splitlines():
-            fields = line.split()
-            if len(fields) >= 3 and fields[1] == str(pgid) and not fields[2].startswith("Z"):
-                return True
-        return False
-
     def _owner_record(self) -> dict[str, object]:
         started = self._process_start_identity(os.getpid())
         if not started:
@@ -307,51 +291,47 @@ class Supervisor:
         return value
 
     def _terminate_recorded_worker(self, record: dict[str, object]) -> None:
+        """Stop the recorded launcher without ever acting on a reused PID.
+
+        The launcher is the only process recovered by another supervisor. It
+        owns the installer child, terminates the groups that child actually
+        joined, and waits for that child. A stale supervisor must therefore
+        signal only the launcher's PID after checking its start identity. A
+        numeric process-group ID is not an identity: after the launcher exits,
+        that number may belong to an unrelated process group.
+        """
         pid = record.get("pid")
         started = record.get("started")
-        pgid = record.get("pgid")
-        if not isinstance(pid, int) or not isinstance(started, str) or not isinstance(pgid, int):
-            raise SetupError("malformed installer worker record")
-        if pgid != pid:
-            raise SetupError("installer worker process group does not have the worker as leader")
+        if not isinstance(pid, int) or not isinstance(started, str):
+            raise SetupError("malformed installer launcher record")
 
         if self._process_matches(pid, started):
-            if self._process_group_running(pgid):
-                try:
-                    os.killpg(pgid, signal.SIGTERM)
-                except ProcessLookupError:
-                    pass
-                except OSError as error:
-                    raise SetupError(f"terminate installer process group {pgid}: {error}") from error
-            else:
-                try:
-                    os.kill(pid, signal.SIGTERM)
-                except ProcessLookupError:
-                    pass
-                except OSError as error:
-                    raise SetupError(f"terminate installer process {pid}: {error}") from error
-
-            deadline = time.monotonic() + PROCESS_STOP_SECONDS
-            while time.monotonic() < deadline:
-                if not self._process_matches(pid, started) and not self._process_group_running(pgid):
-                    return
-                time.sleep(POLL_SECONDS)
             try:
-                if self._process_group_running(pgid):
-                    os.killpg(pgid, signal.SIGKILL)
-                elif self._process_matches(pid, started):
-                    os.kill(pid, signal.SIGKILL)
+                os.kill(pid, signal.SIGTERM)
             except ProcessLookupError:
                 pass
             except OSError as error:
-                raise SetupError(f"kill installer process group {pgid}: {error}") from error
+                raise SetupError(f"terminate installer launcher {pid}: {error}") from error
 
         deadline = time.monotonic() + PROCESS_STOP_SECONDS
         while time.monotonic() < deadline:
-            if not self._process_matches(pid, started) and not self._process_group_running(pgid):
+            if not self._process_matches(pid, started):
                 return
             time.sleep(POLL_SECONDS)
-        raise SetupError(f"installer process group did not stop: {pgid}")
+        if self._process_matches(pid, started):
+            try:
+                os.kill(pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            except OSError as error:
+                raise SetupError(f"kill installer launcher {pid}: {error}") from error
+
+        deadline = time.monotonic() + PROCESS_STOP_SECONDS
+        while time.monotonic() < deadline:
+            if not self._process_matches(pid, started):
+                return
+            time.sleep(POLL_SECONDS)
+        raise SetupError(f"installer launcher did not stop: {pid}")
 
     def _wait_for_prelease_abort(self) -> None:
         deadline = time.monotonic() + HANDSHAKE_WAIT_SECONDS
@@ -366,6 +346,22 @@ class Supervisor:
         # The child is permitted to exist only behind the pipe and cannot have
         # started the installer. Reclaiming here cannot overlap installation.
 
+    @staticmethod
+    def ownerless_lock_is_reclaimable(lock_age: int) -> bool:
+        return lock_age > STALE_LOCK_SECONDS
+
+    def owner_is_confirmed_dead(self, pid: int, started: str) -> bool:
+        # `ps` can fail transiently under load. Require consecutive misses so
+        # one failed lookup cannot steal a live owner's lock and delete its
+        # staging generation. A genuinely dead owner is recovered in under a
+        # second, preserving crash-resume behavior.
+        for attempt in range(OWNER_EXIT_CONFIRMATION_ATTEMPTS):
+            if self._process_matches(pid, started):
+                return False
+            if attempt + 1 < OWNER_EXIT_CONFIRMATION_ATTEMPTS:
+                time.sleep(POLL_SECONDS)
+        return True
+
     def _recover_stale_lock(self) -> bool:
         try:
             lock_metadata = self.lock_dir.lstat()
@@ -374,19 +370,19 @@ class Supervisor:
         except OSError as error:
             raise SetupError(f"inspect setup lock {self.lock_dir}: {error}") from error
         self._assert_directory_metadata(self.lock_dir, lock_metadata)
+        lock_age = max(0, int(time.time() - lock_metadata.st_mtime))
         owner = self._read_record_if_present(OWNER_RECORD)
         if owner is None:
             if not self.lock_dir.exists():
                 return True
-            lock_age = max(0, int(time.time() - lock_metadata.st_mtime))
-            if lock_age > STALE_LOCK_SECONDS:
+            if self.ownerless_lock_is_reclaimable(lock_age):
                 return self._move_stale_lock()
             return False
         owner_pid = owner.get("pid")
         owner_started = owner.get("started")
         if not isinstance(owner_pid, int) or not isinstance(owner_started, str):
             raise SetupError(f"malformed setup lock owner: {self.lock_dir / OWNER_RECORD}")
-        if self._process_matches(owner_pid, owner_started):
+        if not self.owner_is_confirmed_dead(owner_pid, owner_started):
             return False
 
         worker = self._read_record_if_present(WORKER_RECORD)
@@ -671,6 +667,137 @@ class Supervisor:
         self.staging = staging
         return staging
 
+    def _run_worker_launcher(self, read_fd: int, staging: Path) -> None:
+        """Run and reap the installer while retaining process ownership.
+
+        The supervisor can be killed without notice, so the launcher must stay
+        alive independently. It is the session and process-group owner. On
+        termination it signals its own group, also signals the installer's
+        current group for shells that create one on macOS, and waits for the
+        direct child. Recovery only has to identify and signal this launcher;
+        it never guesses from a global process listing or a recycled PGID.
+        """
+        os.setsid()
+        stopping = False
+
+        def request_stop(_signum: int, _frame: object) -> None:
+            nonlocal stopping
+            stopping = True
+
+        signal.signal(signal.SIGTERM, request_stop)
+        signal.signal(signal.SIGINT, request_stop)
+        signal.siginterrupt(signal.SIGTERM, True)
+        signal.siginterrupt(signal.SIGINT, True)
+
+        try:
+            while True:
+                try:
+                    release = os.read(read_fd, 1)
+                    break
+                except InterruptedError:
+                    if stopping:
+                        release = b""
+                        break
+            os.close(read_fd)
+            if release != b"1" or stopping:
+                self._write_json(
+                    self.lock_dir / WORKER_ABORTED,
+                    {"pid": os.getpid(), "reason": "supervisor exited before worker release"},
+                )
+                os._exit(0)
+
+            worker_pid = os.fork()
+            if worker_pid == 0:
+                try:
+                    os.execv(
+                        str(self.bash_bin),
+                        [
+                            str(self.bash_bin),
+                            str(self.worker_script),
+                            str(self.uv_bin),
+                            str(staging),
+                            str(self.python_bin),
+                            str(self.requirements_lock),
+                        ],
+                    )
+                except BaseException:
+                    os._exit(127)
+
+            def signal_owned_groups(signum: int) -> None:
+                groups: set[int] = {os.getpgrp()}
+                try:
+                    groups.add(os.getpgid(worker_pid))
+                except ProcessLookupError:
+                    pass
+                for pgid in groups:
+                    try:
+                        os.killpg(pgid, signum)
+                    except ProcessLookupError:
+                        pass
+
+            def signal_worker_directly(signum: int) -> None:
+                try:
+                    # Direct signalling covers a shell that has moved the
+                    # installer into a different session before its group was
+                    # observable by the launcher.
+                    os.kill(worker_pid, signum)
+                except ProcessLookupError:
+                    pass
+
+            def kill_worker_group(signum: int) -> None:
+                launcher_pgid = os.getpgrp()
+                try:
+                    worker_pgid = os.getpgid(worker_pid)
+                except ProcessLookupError:
+                    worker_pgid = None
+                if worker_pgid is not None and worker_pgid != launcher_pgid:
+                    try:
+                        os.killpg(worker_pgid, signum)
+                    except ProcessLookupError:
+                        pass
+                signal_worker_directly(signum)
+
+            def reap_worker(nonblocking: bool) -> int | None:
+                options = os.WNOHANG if nonblocking else 0
+                while True:
+                    try:
+                        waited_pid, status = os.waitpid(worker_pid, options)
+                        break
+                    except InterruptedError:
+                        continue
+                if waited_pid == 0:
+                    return None
+                if os.WIFEXITED(status):
+                    return os.WEXITSTATUS(status)
+                if os.WIFSIGNALED(status):
+                    return 128 + os.WTERMSIG(status)
+                return 1
+
+            while True:
+                if stopping:
+                    # Do not let the group signal terminate the launcher
+                    # before it has reaped its child.
+                    signal.signal(signal.SIGTERM, signal.SIG_IGN)
+                    signal.signal(signal.SIGINT, signal.SIG_IGN)
+                    signal_owned_groups(signal.SIGTERM)
+                    signal_worker_directly(signal.SIGTERM)
+                    deadline = time.monotonic() + PROCESS_STOP_SECONDS
+                    while time.monotonic() < deadline:
+                        status = reap_worker(nonblocking=True)
+                        if status is not None:
+                            os._exit(status)
+                        time.sleep(POLL_SECONDS)
+                    kill_worker_group(signal.SIGKILL)
+                    status = reap_worker(nonblocking=False)
+                    os._exit(status if status is not None else 1)
+
+                status = reap_worker(nonblocking=True)
+                if status is not None:
+                    os._exit(status)
+                time.sleep(POLL_SECONDS)
+        except BaseException:
+            os._exit(127)
+
     def _launch_worker(self, staging: Path) -> int:
         intent = {
             "owner_pid": os.getpid(),
@@ -683,40 +810,19 @@ class Supervisor:
         pid = os.fork()
         if pid == 0:
             os.close(write_fd)
-            try:
-                release = os.read(read_fd, 1)
-                if release != b"1":
-                    self._write_json(
-                        self.lock_dir / WORKER_ABORTED,
-                        {"pid": os.getpid(), "reason": "supervisor exited before worker release"},
-                    )
-                    os._exit(0)
-                os.setsid()
-                os.execv(
-                    str(self.bash_bin),
-                    [
-                        str(self.bash_bin),
-                        str(self.worker_script),
-                        str(self.uv_bin),
-                        str(staging),
-                        str(self.python_bin),
-                        str(self.requirements_lock),
-                    ],
-                )
-            except BaseException:
-                os._exit(127)
+            self._run_worker_launcher(read_fd, staging)
+            os._exit(127)
         os.close(read_fd)
         self.worker_read_fd = write_fd
         started = self._process_start_identity(pid)
         if not started:
             os.close(write_fd)
-            raise SetupError(f"identify installer worker process {pid}")
+            raise SetupError(f"identify installer launcher process {pid}")
         self.worker_pid = pid
         self.worker_started = started
-        self.worker_pgid = pid
         self._write_json(
             self.lock_dir / WORKER_RECORD,
-            {"pid": pid, "started": started, "pgid": pid, "staging": str(staging)},
+            {"pid": pid, "started": started, "staging": str(staging)},
         )
         self._write_json(
             self.lock_dir / WORKER_INTENT,
@@ -730,9 +836,7 @@ class Supervisor:
     def _wait_worker(self, pid: int) -> int:
         while True:
             if self.stop_requested:
-                self._terminate_recorded_worker(
-                    {"pid": pid, "started": self.worker_started, "pgid": self.worker_pgid}
-                )
+                self._terminate_recorded_worker({"pid": pid, "started": self.worker_started})
             try:
                 waited_pid, status = os.waitpid(pid, os.WNOHANG)
             except InterruptedError:
@@ -757,7 +861,7 @@ class Supervisor:
         if self.worker_pid is not None and self.worker_started:
             try:
                 self._terminate_recorded_worker(
-                    {"pid": self.worker_pid, "started": self.worker_started, "pgid": self.worker_pgid}
+                    {"pid": self.worker_pid, "started": self.worker_started}
                 )
             except SetupError as error:
                 failures.append(str(error))
