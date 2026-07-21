@@ -247,9 +247,11 @@ mise run ci:validate
 ### Markdown policy
 
 Markdown formatting follows the organization policy from `template-base` PR #23 and `org-evaluation-harnesses`.
-`.mdformat.toml`, the hashed requirements lock, Mise tasks, and Lefthook are the authoritative implementation.
-`mise run format:markdown` runs `mdformat .`; `mise run check:markdown-format` runs `mdformat --check .`. The formatter
-check is included in `mise run lint` and the pre-commit hook. YAML frontmatter must retain its semantics.
+`.rumdl.toml`, Mise tasks, and Lefthook are the authoritative implementation. The native rumdl v0.2.38 binary is
+pinned by Mise, and `mise.lock` records checksums and GitHub artifact provenance for Linux ARM64, Linux x64 with glibc
+and musl, macOS ARM64, and macOS x64. Windows is unsupported. `mise run format:markdown` formats tracked Markdown;
+`mise run check:markdown-format` verifies it. The formatter check is included in `mise run lint:default` and the
+pre-commit hook. YAML frontmatter must retain its semantics.
 
 ## Adding a New Action
 

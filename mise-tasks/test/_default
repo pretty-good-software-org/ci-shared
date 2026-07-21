@@ -2,5 +2,4 @@
 #MISE description="Run all tests"
 set -euo pipefail
 
-mise run test:mdformat-node-modules
 node --experimental-strip-types --test actions/*/*/tests/*.test.ts actions/guard/tests/*.test.ts

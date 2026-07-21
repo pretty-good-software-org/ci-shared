@@ -2,5 +2,4 @@
 #MISE description="Run all linters"
 set -euo pipefail
 
-# Markdown formatting runs before dependency installation in CI because mdformat scans the repository tree.
 mise run lint:actions ::: lint:yaml ::: lint:markdown ::: lint:ts ::: lint:typecheck ::: lint:format:check

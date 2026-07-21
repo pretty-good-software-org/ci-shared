@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-#MISE description="Format repository Markdown with mdformat"
-#MISE depends=["setup:mdformat"]
+#MISE description="Format tracked Markdown with rumdl"
 set -euo pipefail
 
-# Recompute the content-addressed path instead of trusting an inherited export.
-source "${MISE_PROJECT_ROOT:?MISE_PROJECT_ROOT must be set by mise}/mise-tasks/setup/mdformat-env"
-mdformat .
+readonly project_root="${MISE_PROJECT_ROOT:?MISE_PROJECT_ROOT must be set by mise}"
+
+cd "$project_root"
+git ls-files -z -- '*.md' | xargs -0 rumdl fmt --silent --
