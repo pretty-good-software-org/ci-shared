@@ -13,6 +13,8 @@ readonly python_bin="$(mise which python)"
 readonly uv_bin="$(mise which uv)"
 readonly real_mise="$(command -v mise)"
 
+"$python_bin" -m unittest discover -s "${project_root}/test" -p 'test_mdformat_supervisor.py'
+
 fake_mise_for_uv() {
   local bin="$1" fake_uv="$2"
   cat > "${bin}/mise" <<EOF
@@ -88,6 +90,21 @@ module = types.ModuleType("mdformat_supervisor")
 SourceFileLoader(module.__name__, supervisor_path).exec_module(module)
 
 
+class LauncherOwnershipTests(TestCase):
+    def setUp(self) -> None:
+        self.supervisor = object.__new__(module.Supervisor)
+
+    def test_reused_launcher_pid_is_never_signalled(self) -> None:
+        with (
+            patch.object(module.Supervisor, "_process_matches", return_value=False),
+            patch.object(module.os, "kill") as kill,
+        ):
+            self.supervisor._terminate_recorded_worker(
+                {"pid": 1234, "started": "recorded-before-pid-reuse"}
+            )
+        kill.assert_not_called()
+
+
 class DisappearingLockTests(TestCase):
     def setUp(self) -> None:
         self.supervisor = object.__new__(module.Supervisor)
@@ -135,6 +152,20 @@ portable_worker_environment="$(XDG_CACHE_HOME="$portable_worker_cache" MISE_PROJ
 linux_lib_copy="${test_root}/linux-lib-worker"
 linux_lib_cache="${test_root}/linux-lib-cache"
 copy_setup_scripts "$linux_lib_copy"
+# This fixture intentionally keeps a shell after uv so it can add the Linux
+# venv compatibility link. The production worker execs the final command so
+# the installer remains the launcher's direct child.
+"$python_bin" - "$linux_lib_copy/mdformat-worker" <<'PY'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+text = path.read_text()
+needle = 'exec "$uv_bin" pip sync \\\n'
+if needle not in text:
+    raise SystemExit("Linux lib fixture could not find the final worker exec")
+path.write_text(text.replace(needle, '"$uv_bin" pip sync \\\n', 1))
+PY
 cat >> "$linux_lib_copy/mdformat-worker" <<'EOF'
 if [[ ! -L "$temporary_environment_dir/lib64" ]]; then
   ln -s lib "$temporary_environment_dir/lib64"
@@ -677,20 +708,40 @@ sigkill_second_started="${test_root}/sigkill-second-started"
 sigkill_release="${test_root}/sigkill-release"
 mkdir -p "$sigkill_bin"
 cat > "${sigkill_bin}/uv" <<EOF
-#!/usr/bin/env bash
-set -euo pipefail
-if [[ "\${1:-}" == pip && "\${2:-}" == sync ]]; then
-  if [[ ! -e "$sigkill_started" ]]; then
-    : > "$sigkill_started"
-    trap ' : > "$sigkill_ended"; exit 143' TERM INT
-    while [[ ! -e "$sigkill_release" ]]; do
-      sleep 0.05
-    done
-  else
-    : > "$sigkill_second_started"
-  fi
-fi
-exec "$uv_bin" "\$@"
+#!$python_bin
+import os
+import signal
+import sys
+import time
+
+started = "$sigkill_started"
+ended = "$sigkill_ended"
+second_started = "$sigkill_second_started"
+release = "$sigkill_release"
+real_uv = "$uv_bin"
+command = sys.argv[1:]
+if command[:2] == ["pip", "sync"]:
+    if not os.path.exists(started):
+        # os.setsid() models the macOS shell boundary without relying on a
+        # platform-specific setsid executable. The launcher must still own
+        # and reap this direct child after the supervisor is SIGKILLed.
+        os.setsid()
+        open(started, "w").close()
+
+        def stop(_signum, _frame):
+            open(ended, "w").close()
+            os._exit(143)
+
+        signal.signal(signal.SIGTERM, stop)
+        signal.signal(signal.SIGINT, stop)
+        while not os.path.exists(release):
+            time.sleep(0.05)
+    else:
+        open(second_started, "w").close()
+        if not os.path.exists(ended):
+            print("OVERLAP", file=sys.stderr)
+            raise SystemExit(1)
+os.execv(real_uv, [real_uv, *command])
 EOF
 chmod +x "${sigkill_bin}/uv"
 fake_mise_for_uv "$sigkill_bin" "${sigkill_bin}/uv"
