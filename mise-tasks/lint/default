@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+#MISE description="Run all linters"
+#MISE depends=["check:markdown-format"]
+set -euo pipefail

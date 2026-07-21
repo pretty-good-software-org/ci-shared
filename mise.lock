@@ -214,7 +214,6 @@ provenance = "github-attestations"
 checksum = "sha256:4fc2d788345c5786ec79d478def38073871502e88746e31d31211fe0c0d282a6"
 url = "https://github.com/astral-sh/python-build-standalone/releases/download/20251007/cpython-3.10.18+20251007-x86_64-apple-darwin-install_only_stripped.tar.gz"
 provenance = "github-attestations"
-
 [[tools.uv]]
 version = "0.11.26"
 backend = "aqua:astral-sh/uv"
@@ -254,7 +253,6 @@ checksum = "sha256:922b460202707dd5f4ccacbadbe7f6a546cc46e82a99bf50ca99a7977a78e
 url = "https://github.com/astral-sh/uv/releases/download/0.11.26/uv-x86_64-apple-darwin.tar.gz"
 url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/462248284"
 provenance = "github-attestations"
-
 [[tools.yamllint]]
 version = "1.38.0"
 backend = "pipx:yamllint"

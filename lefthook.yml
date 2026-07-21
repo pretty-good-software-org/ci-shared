@@ -1,2 +1,6 @@
 extends:
-  - lefthook/*.yml
+  - lefthook/lint.yml
+  - lefthook/ci.yml
+  - lefthook/commit-msg.yml
+  - lefthook/general.yml
+  - lefthook/secrets.yml
