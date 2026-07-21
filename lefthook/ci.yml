@@ -10,10 +10,8 @@ pre-commit:
       fail_text: "yamllint found issues"
     markdown-format:
       glob: "**/*.md"
-      run: >-
-        bash -c 'source mise-tasks/setup/mdformat-env && mise run setup:mdformat &&
-        "$MISE_MDFORMAT_ENV_DIR/bin/mdformat" --check "$@"' -- {staged_files}
-      fail_text: "mdformat found formatting issues"
+      run: rumdl fmt --check -- {staged_files}
+      fail_text: "rumdl found formatting issues"
     markdownlint:
       glob: "**/*.md"
       run: mise run lint:markdown

@@ -124,7 +124,7 @@ lefthook/
 mise run setup
 ```
 
-This runs `mise install` (node 22, uv, mdformat, actionlint, yamllint, markdownlint-cli2, oxlint, oxfmt, lefthook),
+This runs `mise install` (node 22, rumdl, uv, actionlint, yamllint, markdownlint-cli2, oxlint, oxfmt, lefthook),
 configures git hooks via lefthook, and installs npm dependencies (commitlint, typescript, @types/node, @vercel/ncc).
 
 ## Available Commands
@@ -161,7 +161,7 @@ Tests are auto-discovered via the glob `actions/*/*/tests/*.test.ts`. No additio
 
 Tools are managed via [mise](https://mise.jdx.dev/):
 
-- `.mise.toml` — base tools (node 22, actionlint, yamllint, markdownlint-cli2, oxlint, oxfmt)
+- `.mise.toml` — base tools (node 22, rumdl, actionlint, yamllint, markdownlint-cli2, oxlint, oxfmt)
 - `.mise.development.toml` — local dev extras (lefthook)
 - `.mise.ci.toml` — CI profile (empty, uses base tools only)
 
@@ -179,7 +179,7 @@ Managed via [lefthook](https://github.com/evilmartians/lefthook). Hooks are spli
 
 - **commit-msg** — enforces conventional commits via commitlint
 - **pre-commit (general)** — trailing whitespace, EOF newline, YAML syntax, large files, merge conflicts
-- **pre-commit (ci)** — actionlint, yamllint, markdownlint, oxlint, oxfmt, typecheck
+- **pre-commit (ci)** — actionlint, yamllint, rumdl, markdownlint, oxlint, oxfmt, typecheck
 
 ## Adding a New Action
 
