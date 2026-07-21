@@ -5,5 +5,4 @@ set -euo pipefail
 
 # Recompute the content-addressed path instead of trusting an inherited export.
 source "${MISE_PROJECT_ROOT:?MISE_PROJECT_ROOT must be set by mise}/mise-tasks/setup/mdformat-env"
-source "${MISE_PROJECT_ROOT:?MISE_PROJECT_ROOT must be set by mise}/scripts/without-node-modules.sh"
 mdformat --check .

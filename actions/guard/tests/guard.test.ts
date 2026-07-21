@@ -52,16 +52,15 @@ const assertWorkflowSequence = (workflow: string, expectedSequence: string[]): v
   }
 };
 
-const assertLintTaskOrdersReadOnlyBeforeFormatter = (): void => {
+const assertLintTaskKeepsFormatterOutsideDependencyBackedLint = (): void => {
   const lintTask = readFileSync("mise-tasks/lint/_default", "utf8");
   const readOnlyLintTasks =
     "mise run lint:actions ::: lint:yaml ::: lint:markdown ::: lint:ts ::: lint:typecheck ::: lint:format:check";
-  const readOnlyIndex = lintTask.indexOf(readOnlyLintTasks);
-  const formatterCheckIndex = lintTask.indexOf("mise run check:markdown-format");
-  assert.notEqual(readOnlyIndex, -1, "lint task must run all read-only linters concurrently");
-  assert.ok(
-    formatterCheckIndex > readOnlyIndex,
-    "lint task must run the formatter check after read-only linters complete",
+  assert.ok(lintTask.includes(readOnlyLintTasks), "lint task must run every read-only linter");
+  assert.doesNotMatch(
+    lintTask,
+    /check:markdown-format/,
+    "Markdown formatting must run before dependency installation, outside the lint task",
   );
 };
 
@@ -109,6 +108,6 @@ describe("template guard action wiring", () => {
     // Never a mutable ref such as @main.
     assert.match(workflow, /uses: pretty-good-software-org\/ci-shared\/actions\/guard@[0-9a-f]{40}\b/);
 
-    assertLintTaskOrdersReadOnlyBeforeFormatter();
+    assertLintTaskKeepsFormatterOutsideDependencyBackedLint();
   });
 });
