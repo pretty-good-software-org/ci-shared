@@ -3,6 +3,8 @@ pre-commit:
   commands:
     trailing-whitespace:
       glob: "*.{js,ts,yaml,yml,md,json}"
+      exclude:
+        - actions/**/dist/index.js
       run: |
         if grep -Hn '[[:blank:]]$' {staged_files} 2>/dev/null; then
           echo "Trailing whitespace found"
@@ -12,6 +14,8 @@ pre-commit:
 
     end-of-file:
       glob: "*.{js,ts,yaml,yml,md,json}"
+      exclude:
+        - actions/**/dist/index.js
       run: |
         for f in {staged_files}; do
           if [ -s "$f" ] && [ -n "$(tail -c 1 "$f")" ]; then
