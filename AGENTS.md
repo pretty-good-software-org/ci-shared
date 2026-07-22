@@ -1,5 +1,5 @@
 ---
-last_validated: 2026-02-10T00:00:00Z
+last_validated: 2026-07-22T08:53:45Z
 project_type: github-actions
 ---
 
@@ -13,97 +13,83 @@ with its own `action.yml`, TypeScript implementation, bundled JS, and tests.
 ## Repository Structure
 
 ```text
-lib/
-├── exec.ts                         # Shared execution helpers (execCapture, execStream, execStreamWithEnv)
-├── github-output.ts                # GitHub Actions output writer (writeGitHubOutput, resolveOutputWriter)
-└── test-helpers.ts                 # Shared test mocks (mockExec, captureCommands, captureOutputs, etc.)
-actions/
-├── aws/
-│   ├── cleanup-dynamodb/           # Delete DynamoDB tables by prefix
-│   │   ├── action.yml
-│   │   ├── action.ts
-│   │   ├── dist/index.js
-│   │   └── tests/cleanup-dynamodb.test.ts
-│   └── cleanup-s3/                 # Delete S3 buckets by prefix (versioned)
-│       ├── action.yml
-│       ├── action.ts
-│       ├── dist/index.js
-│       └── tests/cleanup-s3.test.ts
-├── setup/
-│   └── mise/                       # Checkout + mise install
-│       ├── action.yml
-│       ├── action.ts
-│       ├── dist/index.js
-│       └── tests/mise.test.ts
-├── github/
-│   └── comment/            # Create or update PR comment by identifier
-│       ├── action.yml
-│       ├── action.ts
-│       ├── dist/index.js
-│       └── tests/comment.test.ts
-└── tofu/
-    ├── analyze-drift/              # Detect infrastructure drift from plan JSON
-    │   ├── action.yml
-    │   ├── action.ts
-    │   ├── dist/index.js
-    │   └── tests/analyze-drift.test.ts
-    ├── apply/                      # Apply plan
-    │   ├── action.yml
-    │   ├── action.ts
-    │   ├── dist/index.js
-    │   └── tests/apply.test.ts
-    ├── build-plan-details/          # Build plan output as collapsible details block
-    │   ├── action.yml
-    │   ├── action.ts
-    │   ├── dist/index.js
-    │   └── tests/build-plan-details.test.ts
-    ├── build-policy-summary/        # Build policy check result markdown fragment
-    │   ├── action.yml
-    │   ├── action.ts
-    │   ├── dist/index.js
-    │   └── tests/build-policy-summary.test.ts
-    ├── build-step-summary/          # Build step outcomes markdown fragment
-    │   ├── action.yml
-    │   ├── action.ts
-    │   ├── dist/index.js
-    │   └── tests/build-step-summary.test.ts
-    ├── fmt-check/                  # Check formatting
-    │   ├── action.yml
-    │   ├── action.ts
-    │   ├── dist/index.js
-    │   └── tests/fmt-check.test.ts
-    ├── init/                       # Initialize configuration
-    │   ├── action.yml
-    │   ├── action.ts
-    │   ├── dist/index.js
-    │   └── tests/init.test.ts
-    ├── plan/                       # Create plan + capture outputs
-    │   ├── action.yml
-    │   ├── action.ts
-    │   ├── dist/index.js
-    │   └── tests/plan.test.ts
-    ├── policy/                     # Conftest policy check
-    │   ├── action.yml
-    │   ├── action.ts
-    │   ├── dist/index.js
-    │   └── tests/policy.test.ts
-    └── validate/                   # Validate configuration
-        ├── action.yml
-        ├── action.ts
-        ├── dist/index.js
-        └── tests/validate.test.ts
-taskfiles/
-├── setup.yml                       # Dev tools, git hooks, npm deps
-├── build.yml                       # ncc build
-├── lint.yml                        # All linters (actionlint, yamllint, markdownlint, oxlint, oxfmt, typecheck)
-├── test.yml                        # Node test runner
-└── release.yml                     # Changelog generation and release flow
-.github/workflows/
-└── ci.yml                          # Self-CI: tests + linting + build via mise + task
-lefthook/
-├── ci.yml                          # actionlint, yamllint, markdownlint, oxlint, oxfmt, typecheck hooks
-├── commit-msg.yml                  # commitlint hook
-└── general.yml                     # whitespace, EOF, merge conflict, large file hooks
+ci-shared
+├── actions
+│   ├── aws
+│   │   ├── cleanup-dynamodb
+│   │   └── cleanup-s3
+│   ├── github
+│   │   └── comment
+│   ├── guard
+│   │   ├── action.yml
+│   │   ├── guard.sh
+│   │   ├── lint-standards.toml
+│   │   └── tests
+│   ├── setup
+│   │   ├── mise
+│   │   ├── npm-auth
+│   │   └── org-lint-config
+│   └── tofu
+│       ├── analyze-drift
+│       ├── apply
+│       ├── build-plan-details
+│       ├── build-policy-summary
+│       ├── build-step-summary
+│       ├── fmt-check
+│       ├── init
+│       ├── plan
+│       ├── policy
+│       └── validate
+├── AGENTS.md
+├── bun.lock
+├── CHANGELOG.md
+├── CLAUDE.md
+├── cliff.toml
+├── cog.toml
+├── lefthook
+│   ├── ci.yml
+│   ├── commit-msg.yml
+│   ├── general.yml
+│   ├── lint.yml
+│   └── secrets.yml
+├── lefthook.yml
+├── lib
+│   ├── exec.ts
+│   ├── github-output.ts
+│   └── test-helpers.ts
+├── mise-tasks
+│   ├── changie
+│   ├── check
+│   │   └── markdown-format
+│   ├── ci
+│   │   └── validate
+│   ├── default
+│   ├── format
+│   │   └── markdown
+│   ├── lint
+│   │   ├── _default
+│   │   ├── actions
+│   │   ├── default
+│   │   ├── format
+│   │   ├── markdown
+│   │   ├── ts
+│   │   ├── typecheck
+│   │   └── yaml
+│   ├── release
+│   │   ├── changelog
+│   │   └── release
+│   ├── setup
+│   │   └── default
+│   └── test
+│       └── _default
+├── mise.development.lock
+├── mise.lock
+├── package-lock.json
+├── package.json
+├── pnpm-lock.yaml
+├── README.md
+├── RELEASING.md
+└── tsconfig.json
 ```
 
 ## Development Guidelines
