@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE description="Verify vendored org-lint-config files match their pinned SHA-256 (no network, no secrets; safe for public PR CI)"
+set -euo pipefail
+
+node --experimental-strip-types org-lint-config-sync/verify.ts

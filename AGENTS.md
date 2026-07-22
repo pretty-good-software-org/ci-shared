@@ -1,5 +1,5 @@
 ---
-last_validated: 2026-07-22T08:53:45Z
+last_validated: 2026-07-22T22:37:37Z
 project_type: github-actions
 ---
 
@@ -75,6 +75,9 @@ ci-shared
 │   │   ├── ts
 │   │   ├── typecheck
 │   │   └── yaml
+│   ├── org-lint-config
+│   │   ├── regenerate
+│   │   └── verify
 │   ├── release
 │   │   ├── changelog
 │   │   └── release
@@ -84,11 +87,23 @@ ci-shared
 │       └── _default
 ├── mise.development.lock
 ├── mise.lock
+├── org-lint-config-sync
+│   ├── pin-types.ts
+│   ├── pin.ts
+│   ├── regenerate.ts
+│   ├── regeneration-plan.ts
+│   ├── tests
+│   │   ├── fixture-helpers.ts
+│   │   ├── regenerate.test.ts
+│   │   ├── regeneration-plan.test.ts
+│   │   └── verify.test.ts
+│   └── verify.ts
 ├── package-lock.json
 ├── package.json
-├── pnpm-lock.yaml
 ├── README.md
 ├── RELEASING.md
+├── test
+│   └── markdown-format.test.ts
 └── tsconfig.json
 ```
 
@@ -102,6 +117,14 @@ ci-shared
 - Conventional commits enforced via commitlint
 - Entry point for each action is `action.ts` — other `.ts` files in the directory are helpers bundled via `require()`
 - Squash merge only
+- ROAD SIGN: `.lint/configs/yamllint.yml` is a byte-exact, checksum-pinned copy of the YAML standard published by the
+  private `pretty-good-software-org/org-lint-config` release `v1.0.0`. ci-shared is public, so its own pull-request CI
+  must not depend on the `CI_PRIVATE_CONTENT` GitHub App secret that `actions/setup/org-lint-config` uses for other
+  (private) consumer repos. `.org-lint-config.json` is the pin (archive and per-file SHA-256); `org-lint-config-sync/`
+  implements verification (`verify.ts`, no network, no secrets — runs in PR CI via `mise run org-lint-config:verify`)
+  and maintainer-only regeneration (`regenerate.ts`, requires `gh auth login` against that private repo, run via
+  `mise run org-lint-config:regenerate`, never wired into CI). Never hand-edit `.lint/configs/yamllint.yml` or
+  `.org-lint-config.json` — regenerate instead.
 
 ## Setup
 
@@ -127,6 +150,8 @@ task lint:ts            # Lint TypeScript files
 task lint:typecheck     # Type-check TypeScript files
 task lint:format        # Auto-format TypeScript files
 task lint:format:check  # Check TypeScript formatting
+task org-lint-config:verify      # Verify vendored org-lint-config files match their pinned SHA-256 (no network)
+task org-lint-config:regenerate  # Maintainer-only: refresh vendored files from the pinned private release
 task ci:validate        # Run full CI validation locally (build + lint + test)
 task release:changelog  # Generate CHANGELOG.md from commit history
 task release:release    # Create a release (usage: task release:release VERSION=x.y.z)
