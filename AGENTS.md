@@ -141,7 +141,7 @@ configures git hooks via lefthook, and installs npm dependencies (commitlint, ty
 ```bash
 task setup              # Install dev tools, git hooks, and npm deps
 task build              # Compile TypeScript to JavaScript via ncc
-task test               # Run all tests (auto-discovered via actions/*/*/tests/*.test.ts)
+task test               # Run all tests (auto-discovered, see mise-tasks/test/_default)
 task lint               # Run all linters (actionlint + yamllint + rumdl + oxlint + typecheck + oxfmt)
 task lint:actions       # Lint GitHub Actions workflows
 task lint:yaml          # Lint YAML files
@@ -166,7 +166,9 @@ directly.
 mise run test
 ```
 
-Tests are auto-discovered via the glob `actions/*/*/tests/*.test.ts`. No additional test dependencies are needed.
+Tests are auto-discovered via `actions/*/*/tests/*.test.ts`, `actions/guard/tests/*.test.ts`,
+`org-lint-config-sync/tests/*.test.ts`, and `test/*.test.ts` (see `mise-tasks/test/_default`). No additional test
+dependencies are needed.
 
 ## Tool Management
 
