@@ -1,0 +1,5 @@
+kind: Added
+body: >-
+  Vendor the private org-lint-config YAML standard as a checksum-pinned committed file
+  so public PR CI stays secret-free.
+time: 2026-07-23T00:30:36.676523+02:00

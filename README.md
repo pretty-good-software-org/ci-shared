@@ -287,6 +287,26 @@ and musl, macOS ARM64, and macOS x64. Windows is unsupported. `mise run format:m
 `mise run check:markdown-format` verifies it. The formatter check is included in `mise run lint:default` and the
 pre-commit hook. YAML frontmatter must retain its semantics.
 
+### YAML lint policy
+
+`.lint/configs/yamllint.yml` is vendored byte-for-byte from the private `pretty-good-software-org/org-lint-config`
+release `v1.0.0`; `.yamllint.yml` sources it via `extends: .lint/configs/yamllint.yml` and keeps its own local
+`ignore:` list. `.org-lint-config.json` is the pin — the release archive's SHA-256 and each vendored file's SHA-256 —
+checked in at the repository root.
+
+ci-shared is public, so its own pull-request CI must not depend on the `CI_PRIVATE_CONTENT` GitHub App secret that
+`setup/org-lint-config` (above) uses for other, private consumer repos. `mise run org-lint-config:verify`
+(`org-lint-config-sync/verify.ts`) recomputes the vendored file's SHA-256 and compares it to the pin — no network, no
+secrets — and is wired into `mise run lint`. `mise run org-lint-config:regenerate`
+(`org-lint-config-sync/regenerate.ts`) is maintainer-only: it requires `gh auth login` against the private
+`org-lint-config` repo, re-verifies both the archive and per-file hashes before writing, and is never run in CI.
+
+Never hand-edit `.lint/configs/yamllint.yml` — it must only ever be regeneration's byte-exact output.
+`.org-lint-config.json` is different: it is the trust anchor, so deliberately updating it to adopt a new release is
+expected, but only by hand, only by a maintainer, and only through the verified procedure in AGENTS.md ("Updating
+the Pinned org-lint-config Release"). Regeneration re-verifies and republishes an already-vetted pin; it must never
+be the thing that originates one.
+
 ## Adding a New Action
 
 1. Create `actions/<category>/<action-name>/action.yml` with composite action definition

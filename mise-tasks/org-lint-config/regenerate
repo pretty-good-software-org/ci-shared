@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE description="Maintainer-only: re-fetch the pinned org-lint-config release via gh and refresh vendored files (never run in CI)"
+set -euo pipefail
+
+node --experimental-strip-types org-lint-config-sync/regenerate.ts

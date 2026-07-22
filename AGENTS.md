@@ -1,5 +1,5 @@
 ---
-last_validated: 2026-07-22T08:53:45Z
+last_validated: 2026-07-22T22:59:21Z
 project_type: github-actions
 ---
 
@@ -75,6 +75,9 @@ ci-shared
 │   │   ├── ts
 │   │   ├── typecheck
 │   │   └── yaml
+│   ├── org-lint-config
+│   │   ├── regenerate
+│   │   └── verify
 │   ├── release
 │   │   ├── changelog
 │   │   └── release
@@ -84,11 +87,29 @@ ci-shared
 │       └── _default
 ├── mise.development.lock
 ├── mise.lock
+├── org-lint-config-sync
+│   ├── pin-schema.ts
+│   ├── pin-types.ts
+│   ├── pin.ts
+│   ├── publish.ts
+│   ├── regenerate.ts
+│   ├── regeneration-plan.ts
+│   ├── safe-path.ts
+│   ├── tests
+│   │   ├── fixture-helpers.ts
+│   │   ├── pin.test.ts
+│   │   ├── publish.test.ts
+│   │   ├── regenerate.test.ts
+│   │   ├── regeneration-plan.test.ts
+│   │   ├── safe-path.test.ts
+│   │   └── verify.test.ts
+│   └── verify.ts
 ├── package-lock.json
 ├── package.json
-├── pnpm-lock.yaml
 ├── README.md
 ├── RELEASING.md
+├── test
+│   └── markdown-format.test.ts
 └── tsconfig.json
 ```
 
@@ -102,6 +123,40 @@ ci-shared
 - Conventional commits enforced via commitlint
 - Entry point for each action is `action.ts` — other `.ts` files in the directory are helpers bundled via `require()`
 - Squash merge only
+- ROAD SIGN: `.lint/configs/yamllint.yml` is a byte-exact, checksum-pinned copy of the YAML standard published by the
+  private `pretty-good-software-org/org-lint-config` release `v1.0.0`. ci-shared is public, so its own pull-request CI
+  must not depend on the `CI_PRIVATE_CONTENT` GitHub App secret that `actions/setup/org-lint-config` uses for other
+  (private) consumer repos. `.org-lint-config.json` is the pin (archive and per-file SHA-256); `org-lint-config-sync/`
+  implements verification (`verify.ts`, no network, no secrets — runs in PR CI via `mise run org-lint-config:verify`)
+  and maintainer-only regeneration (`regenerate.ts`, requires `gh auth login` against that private repo, run via
+  `mise run org-lint-config:regenerate`, never wired into CI). Never hand-edit `.lint/configs/yamllint.yml` — it must
+  only ever be the byte-exact output of regeneration. `.org-lint-config.json` is different: it is the trust anchor,
+  so deliberately updating it (to adopt a new release) is expected — but only by hand, only by a maintainer, and only
+  through the verified procedure below. Regeneration re-verifies and republishes an already-vetted pin; it must never
+  be the thing that originates one, or a compromised or tampered release would get trusted automatically.
+
+## Updating the Pinned org-lint-config Release
+
+1. Identify the exact release tag: `gh release view v<X.Y.Z> --repo pretty-good-software-org/org-lint-config`.
+2. Download the archive and independently recompute its SHA-256, then cross-check the result against GitHub's own
+   reported asset digest — two independent sources must agree before the digest is trusted:
+
+   ```bash
+   gh release download v<X.Y.Z> --repo pretty-good-software-org/org-lint-config -D /tmp/org-lint-config-v<X.Y.Z>
+   shasum -a 256 /tmp/org-lint-config-v<X.Y.Z>/org-lint-config-v<X.Y.Z>.tar.gz
+   gh api repos/pretty-good-software-org/org-lint-config/releases/tags/v<X.Y.Z> --jq '.assets[] | {name, digest}'
+   ```
+
+3. Extract the archive and, for every file you intend to vendor, recompute its SHA-256 and cross-check it against
+   the archive's own `MANIFEST.json`/`SHA256SUMS`.
+4. Only once both checks pass, hand-edit `.org-lint-config.json`'s `version`, `archiveSha256`, and each
+   `vendoredFiles[...].sha256` to the newly verified values. This is the one legitimate hand-edit of this file —
+   copying an unverified digest here defeats the entire pin.
+5. Run `mise run org-lint-config:regenerate` — it re-fetches, re-verifies the archive and every per-file digest
+   against what you just entered, and atomically publishes the vendored files (or fails closed, changing nothing,
+   if anything doesn't match).
+6. Run `mise run org-lint-config:verify`, `mise run lint`, and `mise run test`, then review the diff before
+   committing.
 
 ## Setup
 
@@ -118,7 +173,7 @@ configures git hooks via lefthook, and installs npm dependencies (commitlint, ty
 ```bash
 task setup              # Install dev tools, git hooks, and npm deps
 task build              # Compile TypeScript to JavaScript via ncc
-task test               # Run all tests (auto-discovered via actions/*/*/tests/*.test.ts)
+task test               # Run all tests (auto-discovered, see mise-tasks/test/_default)
 task lint               # Run all linters (actionlint + yamllint + rumdl + oxlint + typecheck + oxfmt)
 task lint:actions       # Lint GitHub Actions workflows
 task lint:yaml          # Lint YAML files
@@ -127,6 +182,8 @@ task lint:ts            # Lint TypeScript files
 task lint:typecheck     # Type-check TypeScript files
 task lint:format        # Auto-format TypeScript files
 task lint:format:check  # Check TypeScript formatting
+task org-lint-config:verify      # Verify vendored org-lint-config files match their pinned SHA-256 (no network)
+task org-lint-config:regenerate  # Maintainer-only: refresh vendored files from the pinned private release
 task ci:validate        # Run full CI validation locally (build + lint + test)
 task release:changelog  # Generate CHANGELOG.md from commit history
 task release:release    # Create a release (usage: task release:release VERSION=x.y.z)
@@ -141,7 +198,9 @@ directly.
 mise run test
 ```
 
-Tests are auto-discovered via the glob `actions/*/*/tests/*.test.ts`. No additional test dependencies are needed.
+Tests are auto-discovered via `actions/*/*/tests/*.test.ts`, `actions/guard/tests/*.test.ts`,
+`org-lint-config-sync/tests/*.test.ts`, and `test/*.test.ts` (see `mise-tasks/test/_default`). No additional test
+dependencies are needed.
 
 ## Tool Management
 

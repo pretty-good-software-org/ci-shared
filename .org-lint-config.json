@@ -1,0 +1,10 @@
+{
+  "version": "v1.0.0",
+  "archiveSha256": "dab95cf648e13009bd6f90b74561ed22e4444912443461789a8906071fb1f7ee",
+  "vendoredFiles": {
+    ".lint/configs/yamllint.yml": {
+      "sourcePath": "configs/yamllint.yml",
+      "sha256": "e407c067f07166f71245d6f4fe3177e216b5c7a0ff7d7baa58b8ecc42c8fea42"
+    }
+  }
+}
