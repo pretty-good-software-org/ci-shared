@@ -60,6 +60,40 @@ token:
 
 > Consumer repos are not migrated by this change — see the PR description for the rollout plan.
 
+### setup/org-lint-config
+
+Install an exact private `org-lint-config` release using a repository-scoped GitHub App token. Pin this action to a full
+`ci-shared` commit SHA. The action downloads only the archive asset attached to the requested tag, verifies the literal
+consumer-provided digest before extraction, rejects unsafe archive entries, and publishes the output directory only
+after validation succeeds. It does not download or trust the release checksum sidecar.
+
+```yaml
+- uses: pretty-good-software-org/ci-shared/actions/setup/org-lint-config@<full-ci-shared-commit-sha>
+  id: org-lint-config
+  with:
+    app-id: ${{ secrets.CI_PRIVATE_CONTENT_APP_ID }}
+    private-key: ${{ secrets.CI_PRIVATE_CONTENT_PRIVATE_KEY }}
+    version: v1.0.0
+    sha256: dab95cf648e13009bd6f90b74561ed22e4444912443461789a8906071fb1f7ee
+    output-directory: ${{ runner.temp }}/org-lint-config-v1.0.0
+```
+
+| Input              | Description                                    | Default    |
+| ------------------ | ---------------------------------------------- | ---------- |
+| `app-id`           | GitHub App ID                                  | (required) |
+| `private-key`      | GitHub App private key                         | (required) |
+| `version`          | Exact release tag in `v1.0.0` form             | (required) |
+| `sha256`           | Literal 64-character lowercase archive SHA-256 | (required) |
+| `output-directory` | Directory for the verified extracted release   | (required) |
+
+| Output | Description                                                |
+| ------ | ---------------------------------------------------------- |
+| `path` | Absolute path to the installed `org-lint-config` directory |
+
+The GitHub App installation must include only `pretty-good-software-org/org-lint-config` and grant repository
+`contents: read`. The canonical implementation is `actions/setup/org-lint-config/action.yml`; its metadata and archive
+safety contract are verified by `actions/setup/org-lint-config/tests/`.
+
 ### tofu/fmt-check
 
 Check OpenTofu formatting.
