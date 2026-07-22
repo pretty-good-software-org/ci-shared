@@ -97,12 +97,15 @@ describe("template guard action wiring", () => {
 
   it("keeps workflow wiring explicit and orders read-only lint before formatting", () => {
     const workflow = readFileSync(".github/workflows/template-guard.yml", "utf8");
+    const guardJob = workflow.match(/\n  guard:\n([\s\S]*)$/)?.[0];
+    assert.ok(guardJob, "template-guard workflow must define jobs.guard");
+    const runnerExpression = ["$", "{{ fromJSON(inputs.runner) }}"].join("");
     const expectedSequence = [
-      "runs-on: ubuntu-24.04-arm",
+      `runs-on: ${runnerExpression}`,
       "uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5",
       "uses: pretty-good-software-org/ci-shared/actions/guard@",
     ];
-    assertWorkflowSequence(workflow, expectedSequence);
+    assertWorkflowSequence(guardJob, expectedSequence);
     assert.match(workflow, /uses: actions\/checkout@[0-9a-f]{40}\b/);
     // Supply-chain: the guard action must be pinned to an immutable commit SHA.
     // Never a mutable ref such as @main.

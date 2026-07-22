@@ -2,15 +2,23 @@ name: Template Guard
 
 on:
   workflow_call:
+    inputs:
+      runner:
+        description: JSON array of runner labels; private callers may select an approved self-hosted scale set
+        required: false
+        type: string
+        default: '["ubuntu-24.04-arm"]'
 
 env:
   MISE_ENV: ci
 
-# ROAD SIGN: Public-repository runner isolation is documented in ci.yml.
+# ROAD SIGN: The hosted ARM default keeps public fork code off internal runners.
+# Private callers may override it with an approved self-hosted label array; the
+# caller owns that trust decision and its repository runner-group restriction.
 jobs:
   guard:
     name: Template Guard
-    runs-on: ubuntu-24.04-arm
+    runs-on: ${{ fromJSON(inputs.runner) }}
     timeout-minutes: 5
     steps:
       - name: Check out caller repository
