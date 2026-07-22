@@ -299,8 +299,13 @@ ci-shared is public, so its own pull-request CI must not depend on the `CI_PRIVA
 (`org-lint-config-sync/verify.ts`) recomputes the vendored file's SHA-256 and compares it to the pin — no network, no
 secrets — and is wired into `mise run lint`. `mise run org-lint-config:regenerate`
 (`org-lint-config-sync/regenerate.ts`) is maintainer-only: it requires `gh auth login` against the private
-`org-lint-config` repo, re-verifies both the archive and per-file hashes before writing, and is never run in CI. Never
-hand-edit `.lint/configs/yamllint.yml` or `.org-lint-config.json` — regenerate instead.
+`org-lint-config` repo, re-verifies both the archive and per-file hashes before writing, and is never run in CI.
+
+Never hand-edit `.lint/configs/yamllint.yml` — it must only ever be regeneration's byte-exact output.
+`.org-lint-config.json` is different: it is the trust anchor, so deliberately updating it to adopt a new release is
+expected, but only by hand, only by a maintainer, and only through the verified procedure in AGENTS.md ("Updating
+the Pinned org-lint-config Release"). Regeneration re-verifies and republishes an already-vetted pin; it must never
+be the thing that originates one.
 
 ## Adding a New Action
 

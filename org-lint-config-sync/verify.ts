@@ -6,9 +6,12 @@
 // Public-repo PR CI secret-free regardless). This check verifies the
 // Committed files by literal SHA-256 only — no network, no secrets. The pin
 // Is `.org-lint-config.json`; the authoritative source is the private
-// Org-lint-config repo. To pull a new version, bump `.org-lint-config.json`
-// By hand and run `mise run org-lint-config:regenerate` (requires `gh auth
-// Login` against that repo).
+// Org-lint-config repo. To adopt a new release, follow the verified
+// Pin-update procedure in AGENTS.md ("Updating the Pinned org-lint-config
+// Release") before running `mise run org-lint-config:regenerate` (requires
+// `gh auth login` against that repo). Regeneration only re-verifies and
+// Republishes an already-vetted pin — it must never be trusted to
+// Originate one.
 
 const { createHash } = require("node:crypto");
 const { readFileSync } = require("node:fs");
@@ -74,8 +77,9 @@ const runCli = (): void => {
   console.error("org-lint-config: vendored file verification failed");
   failures.forEach((failure) => console.error(`  ${describeFailure(failure)}`));
   console.error(
-    "Hand-editing vendored org-lint-config files is prohibited — regenerate via " +
-      "'mise run org-lint-config:regenerate' after confirming the intended release.",
+    "If a vendored file was hand-edited, revert it — it must only ever be regeneration's output. If " +
+      ".org-lint-config.json was deliberately updated to a new release, run 'mise run org-lint-config:regenerate' " +
+      'to publish it (see AGENTS.md, "Updating the Pinned org-lint-config Release").',
   );
   process.exitCode = 1;
 };
