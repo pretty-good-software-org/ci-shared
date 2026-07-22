@@ -42,12 +42,17 @@ set -euo pipefail
 
 git ls-files -z -- '*.md' | xargs -0 rumdl check --deny-config-warnings --
 `;
+const directRumdlTask = `#!/usr/bin/env bash
+set -euo pipefail
+
+rumdl check --deny-config-warnings -- .
+`;
 
 const replace = (root: string, replacement: Replacement): void => {
   replaceInFixture({ ...replacement, root });
 };
 
-const configureRumdlRepository = (root: string): void => {
+const configureRumdlRepositoryBase = (root: string): void => {
   for (const path of [".markdownlint-cli2.jsonc", "mise-tasks/lint/markdownlint"]) {
     rmSync(join(root, path), { force: true });
   }
@@ -57,8 +62,21 @@ const configureRumdlRepository = (root: string): void => {
     to: "#MISE depends=[lint:actionlint, lint:yamllint, lint:rumdl]",
   });
   writeFixtureFile(root, ".rumdl.toml", rumdlConfig);
-  writeFixtureFile(root, "mise-tasks/lint/rumdl", rumdlTask);
+};
+
+const writeRumdlTask = (root: string, task: string): void => {
+  writeFixtureFile(root, "mise-tasks/lint/rumdl", task);
   chmodSync(join(root, "mise-tasks/lint/rumdl"), executableMode);
+};
+
+const configureRumdlRepository = (root: string): void => {
+  configureRumdlRepositoryBase(root);
+  writeRumdlTask(root, rumdlTask);
+};
+
+const configureDirectRumdlRepository = (root: string): void => {
+  configureRumdlRepositoryBase(root);
+  writeRumdlTask(root, directRumdlTask);
 };
 
 const findSectionBlock = (section: string): string => {
@@ -80,6 +98,7 @@ const mutateOption = (root: string, option: (typeof compatibilityOptions)[number
 module.exports = {
   compatibilityOptions,
   compatibilitySections,
+  configureDirectRumdlRepository,
   configureRumdlRepository,
   findSectionBlock,
   mutateOption,

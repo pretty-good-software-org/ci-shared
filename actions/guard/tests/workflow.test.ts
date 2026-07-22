@@ -42,3 +42,15 @@ describe("template guard reusable workflow runner policy", () => {
     );
   });
 });
+
+describe("template guard reusable workflow implementation", () => {
+  it("invokes the merged rumdl-capable guard implementation", () => {
+    const workflow = readWorkflow();
+
+    assert.match(
+      workflow,
+      /^        uses: pretty-good-software-org\/ci-shared\/actions\/guard@852a39af805f72d56d07da43efb9c0a8a559958d$/m,
+      "the reusable workflow must pin the merged guard implementation instead of a stale commit",
+    );
+  });
+});

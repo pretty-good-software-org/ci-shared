@@ -1,7 +1,7 @@
 const { chmodSync, rmSync } = require("node:fs");
 const { join } = require("node:path");
 const { replaceInFixture, writeFixtureFile } = require("./fixture.ts");
-const { configureRumdlRepository } = require("./contract-rumdl.ts");
+const { configureDirectRumdlRepository, configureRumdlRepository } = require("./contract-rumdl.ts");
 const { compatibilityBoundaryScenarios } = require("./contract-rumdl-boundaries.ts");
 
 interface ContractScenario {
@@ -44,21 +44,6 @@ const configureRumdlWithLegacyToolState = (root: string): void => {
 
 const configureCommentedOnlyFake = (root: string): void => {
   configureRumdlRepository(root);
-  writeFixtureFile(
-    root,
-    ".rumdl.toml",
-    `[global]
-fixable = [
-  # "MD007"
-  # "MD013"
-  # "MD029"
-  # "MD047"
-  # "MD060"
-  # "MD071"
-  # "MD076"
-]
-`,
-  );
   writeFixtureFile(root, "mise-tasks/lint/rumdl", "# rumdl check --deny-config-warnings\n");
   chmodSync(join(root, "mise-tasks/lint/rumdl"), executableMode);
 };
@@ -75,7 +60,16 @@ const configureMissingRumdlConfig = (root: string): void => {
 
 const contractScenarios: ContractScenario[] = [
   { configure: () => {}, expectedStatus: passingStatus, name: "legacy markdownlint contract pass" },
-  { configure: configureRumdlRepository, expectedStatus: passingStatus, name: "rumdl disable-style contract pass" },
+  {
+    configure: configureRumdlRepository,
+    expectedStatus: passingStatus,
+    name: "rumdl git/xargs command contract pass",
+  },
+  {
+    configure: configureDirectRumdlRepository,
+    expectedStatus: passingStatus,
+    name: "rumdl direct command contract pass",
+  },
   { configure: configureMixedLintContracts, expectedStatus: failingStatus, name: "partial mixed lint contract fail" },
   {
     configure: configureRumdlWithLegacyToolState,
@@ -85,7 +79,7 @@ const contractScenarios: ContractScenario[] = [
   {
     configure: configureCommentedOnlyFake,
     expectedStatus: failingStatus,
-    name: "commented-only rumdl contract fake fail",
+    name: "commented-only rumdl command fake fail",
   },
   { configure: configureMissingRumdlTask, expectedStatus: failingStatus, name: "missing rumdl task fail" },
   { configure: configureMissingRumdlConfig, expectedStatus: failingStatus, name: "missing rumdl config fail" },
