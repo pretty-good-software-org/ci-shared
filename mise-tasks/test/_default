@@ -2,4 +2,4 @@
 #MISE description="Run all tests"
 set -euo pipefail
 
-node --experimental-strip-types --test actions/*/*/tests/*.test.ts actions/guard/tests/*.test.ts
+node --experimental-strip-types --test actions/*/*/tests/*.test.ts actions/guard/tests/*.test.ts test/*.test.ts

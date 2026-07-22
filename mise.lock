@@ -141,10 +141,6 @@ checksum = "sha256:e9a0931d1850200c647ea5721d4a1289ae2bb7c03e1995770cabf10c94324
 url = "https://github.com/miniscruff/changie/releases/download/v1.25.0/changie_1.25.0_darwin_amd64.tar.gz"
 url_api = "https://api.github.com/repos/miniscruff/changie/releases/assets/460473308"
 
-[[tools.markdownlint-cli2]]
-version = "0.22.0"
-backend = "npm:markdownlint-cli2"
-
 [[tools.node]]
 version = "22.22.1"
 backend = "core:node"
