@@ -49,7 +49,7 @@ describe("template guard reusable workflow implementation", () => {
 
     assert.match(
       workflow,
-      /^        uses: pretty-good-software-org\/ci-shared\/actions\/guard@852a39af805f72d56d07da43efb9c0a8a559958d$/m,
+      /^        uses: pretty-good-software-org\/ci-shared\/actions\/guard@d25c4a9d3500d34f0157f46c727215d39cfc55d5$/m,
       "the reusable workflow must pin the merged guard implementation instead of a stale commit",
     );
   });
