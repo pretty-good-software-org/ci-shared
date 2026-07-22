@@ -110,7 +110,7 @@ ci-shared
 mise run setup
 ```
 
-This runs `mise install` (node 22, rumdl, uv, actionlint, yamllint, markdownlint-cli2, oxlint, oxfmt, lefthook),
+This runs `mise install` (node 22, rumdl, uv, actionlint, yamllint, oxlint, oxfmt, lefthook),
 configures git hooks via lefthook, and installs npm dependencies (commitlint, typescript, @types/node, @vercel/ncc).
 
 ## Available Commands
@@ -119,7 +119,7 @@ configures git hooks via lefthook, and installs npm dependencies (commitlint, ty
 task setup              # Install dev tools, git hooks, and npm deps
 task build              # Compile TypeScript to JavaScript via ncc
 task test               # Run all tests (auto-discovered via actions/*/*/tests/*.test.ts)
-task lint               # Run all linters (actionlint + yamllint + markdownlint + oxlint + typecheck + oxfmt)
+task lint               # Run all linters (actionlint + yamllint + rumdl + oxlint + typecheck + oxfmt)
 task lint:actions       # Lint GitHub Actions workflows
 task lint:yaml          # Lint YAML files
 task lint:markdown      # Lint Markdown files
@@ -147,7 +147,7 @@ Tests are auto-discovered via the glob `actions/*/*/tests/*.test.ts`. No additio
 
 Tools are managed via [mise](https://mise.jdx.dev/):
 
-- `.mise.toml` — base tools (node 22, rumdl, actionlint, yamllint, markdownlint-cli2, oxlint, oxfmt)
+- `.mise.toml` — base tools (node 22, rumdl, actionlint, yamllint, oxlint, oxfmt)
 - `.mise.development.toml` — local dev extras (lefthook)
 - `.mise.ci.toml` — CI profile (empty, uses base tools only)
 
@@ -165,7 +165,7 @@ Managed via [lefthook](https://github.com/evilmartians/lefthook). Hooks are spli
 
 - **commit-msg** — enforces conventional commits via commitlint
 - **pre-commit (general)** — trailing whitespace, EOF newline, YAML syntax, large files, merge conflicts
-- **pre-commit (ci)** — actionlint, yamllint, rumdl, markdownlint, oxlint, oxfmt, typecheck
+- **pre-commit (ci)** — actionlint, yamllint, rumdl, oxlint, oxfmt, typecheck
 
 ## Adding a New Action
 

@@ -4,5 +4,5 @@ pre-commit:
   commands:
     markdown-format:
       glob: "**/*.md"
-      run: rumdl fmt --check -- {staged_files}
+      run: rumdl fmt --extend-enable MD029,MD060 --config 'MD060.enabled = true' --check -- {staged_files}
       fail_text: "rumdl found formatting issues"
