@@ -52,14 +52,37 @@ const findArchiveAsset = (release: ReleaseResponse, version: string): ReleaseAss
 
 const declaredContentLength = (response: Response): number => Number(response.headers.get("content-length") || "0");
 
-const enforceCompleteArchive = (response: Response, archive: Buffer): void => {
+const enforceDeclaredArchiveSize = (response: Response): number => {
   const declaredLength = declaredContentLength(response);
-  if (declaredLength > MAX_ARCHIVE_BYTES || archive.byteLength > MAX_ARCHIVE_BYTES) {
+  if (declaredLength > MAX_ARCHIVE_BYTES) {
     throw new Error(`download private release archive: asset exceeds ${MAX_ARCHIVE_BYTES} bytes`);
   }
-  if (declaredLength && declaredLength !== archive.byteLength) {
+  return declaredLength;
+};
+
+const appendChunk = (chunks: Buffer[], byteLength: number, chunk: Uint8Array): number => {
+  const nextByteLength = byteLength + chunk.byteLength;
+  if (nextByteLength > MAX_ARCHIVE_BYTES) {
+    throw new Error(`download private release archive: asset exceeds ${MAX_ARCHIVE_BYTES} bytes`);
+  }
+  chunks.push(Buffer.from(chunk));
+  return nextByteLength;
+};
+
+const readArchiveBody = async (response: Response): Promise<Buffer> => {
+  const declaredLength = enforceDeclaredArchiveSize(response);
+  if (!response.body) {
+    throw new Error("download private release archive: response body is unavailable");
+  }
+  const chunks: Buffer[] = [];
+  let byteLength = 0;
+  for await (const chunk of response.body) {
+    byteLength = appendChunk(chunks, byteLength, chunk);
+  }
+  if (declaredLength && declaredLength !== byteLength) {
     throw new Error("download private release archive: response body is incomplete");
   }
+  return Buffer.concat(chunks, byteLength);
 };
 
 const downloadReleaseArchive = async (version: string, token: string, fetchFn: FetchFn = fetch): Promise<Buffer> => {
@@ -76,9 +99,7 @@ const downloadReleaseArchive = async (version: string, token: string, fetchFn: F
     redirect: "follow",
   });
   requireSuccessfulResponse(assetResponse, `download private release ${version}`);
-  const archive = Buffer.from(await assetResponse.arrayBuffer());
-  enforceCompleteArchive(assetResponse, archive);
-  return archive;
+  return readArchiveBody(assetResponse);
 };
 
 module.exports = { downloadReleaseArchive };

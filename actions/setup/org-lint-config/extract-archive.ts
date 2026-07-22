@@ -3,18 +3,13 @@ const path = require("node:path");
 const { gunzipSync } = require("node:zlib");
 const { DIRECTORY_TYPE, parseTar } = require("./tar-reader.ts");
 
+import type { TarEntry } from "./tar-reader.ts";
+
 const BYTES_PER_KIBIBYTE = 1024;
 const MAX_EXTRACTED_MEBIBYTES = 100;
 const MAX_EXTRACTED_BYTES = MAX_EXTRACTED_MEBIBYTES * BYTES_PER_KIBIBYTE * BYTES_PER_KIBIBYTE;
 const PERMISSION_MASK = 0o777;
 const DEFAULT_DIRECTORY_MODE = 0o755;
-
-interface TarEntry {
-  data: Buffer;
-  mode: number;
-  name: string;
-  type: string;
-}
 
 interface PreparedEntry extends TarEntry {
   relativePath: string;

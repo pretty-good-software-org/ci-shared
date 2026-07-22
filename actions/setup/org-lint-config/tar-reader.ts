@@ -18,7 +18,7 @@ const TYPE_END = 157;
 const PREFIX_START = 345;
 const PREFIX_END = 500;
 
-interface TarEntry {
+export interface TarEntry {
   data: Buffer;
   mode: number;
   name: string;

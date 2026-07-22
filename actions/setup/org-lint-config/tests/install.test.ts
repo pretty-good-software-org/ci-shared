@@ -21,6 +21,11 @@ const assertReleaseRequests = (requests: { headers: Headers; url: string }[]): v
     "Bearer secret-installation-token",
     "release metadata request must use the short-lived installation token",
   );
+  assert.strictEqual(
+    requests[1].headers.get("authorization"),
+    "Bearer secret-installation-token",
+    "archive download request must use the short-lived installation token",
+  );
 };
 
 const assertPublishedContents = (outputDirectory: string): void => {
