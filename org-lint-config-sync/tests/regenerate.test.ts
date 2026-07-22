@@ -8,6 +8,7 @@ const path = require("node:path");
 import type { TestContext } from "node:test";
 
 const { regenerate } = require("../regenerate.ts");
+const { atomicWrite } = require("../publish.ts");
 const { temporaryProjectRoot, writePin } = require("./fixture-helpers.ts");
 const { tarGzip } = require("../../actions/setup/org-lint-config/tests/tar-test-helpers.ts");
 
@@ -54,7 +55,7 @@ describe("org-lint-config regenerate: success", () => {
     const archive = buildArchive();
     writePin(projectRoot, pinFor(archive));
 
-    const written = regenerate(projectRoot, { exec: fakeGhAndRealTar(archive) });
+    const written = regenerate(projectRoot, fakeGhAndRealTar(archive), atomicWrite);
 
     assert.deepStrictEqual(written, [".lint/configs/yamllint.yml"]);
     assert.strictEqual(
@@ -74,7 +75,7 @@ describe("org-lint-config regenerate: archive verification failure", () => {
     writePin(projectRoot, pin);
 
     assert.throws(
-      () => regenerate(projectRoot, { exec: fakeGhAndRealTar(archive) }),
+      () => regenerate(projectRoot, fakeGhAndRealTar(archive), atomicWrite),
       /archive/,
       "an archive hash mismatch must abort before any vendored file is written",
     );
@@ -95,7 +96,7 @@ describe("org-lint-config regenerate: per-file verification failure", () => {
     writePin(projectRoot, pin);
 
     assert.throws(
-      () => regenerate(projectRoot, { exec: fakeGhAndRealTar(archive) }),
+      () => regenerate(projectRoot, fakeGhAndRealTar(archive), atomicWrite),
       /SHA-256 mismatch/,
       "a per-file hash mismatch must abort even though the archive itself matched",
     );

@@ -12,11 +12,11 @@
 
 const { createHash } = require("node:crypto");
 const { readFileSync } = require("node:fs");
-const path = require("node:path");
 
 import type { OrgLintConfigPin } from "./pin-types.ts";
 
 const { loadPin } = require("./pin.ts");
+const { resolveWithinRoot } = require("./safe-path.ts");
 
 export interface VerifyFailure {
   actualSha256?: string;
@@ -40,7 +40,7 @@ const verifyVendoredFile = (
   vendoredPath: string,
   expectedSha256: string,
 ): VerifyFailure | undefined => {
-  const filePath = path.join(projectRoot, vendoredPath);
+  const filePath = resolveWithinRoot("verify vendored file", projectRoot, vendoredPath);
   const actualSha256 = readActualSha256(filePath);
   if (actualSha256 === undefined) {
     return { expectedSha256, reason: "missing", vendoredPath };
