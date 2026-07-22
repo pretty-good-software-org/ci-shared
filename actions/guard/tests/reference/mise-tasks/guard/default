@@ -72,11 +72,9 @@ check_a() {
 
 check_b() {
   local forbidden=(
-    .markdownlint.yml
     lefthook/general.yml
     lefthook/pre-commit.yml
     mise-tasks/lint/actions
-    mise-tasks/lint/markdown
     mise-tasks/lint/yaml
     mise-tasks/lint/_default
   )
@@ -103,8 +101,7 @@ check_d() {
   local task=mise-tasks/lint/default
   [[ -f "$task" ]] || return 1
   grep -Eq '^#MISE[[:space:]]+depends=.*lint:actionlint' "$task" || return 1
-  grep -Eq '^#MISE[[:space:]]+depends=.*lint:yamllint' "$task" || return 1
-  check_lint_contract
+  grep -Eq '^#MISE[[:space:]]+depends=.*lint:yamllint' "$task"
 }
 
 check_e() {
@@ -184,141 +181,6 @@ toml_value() {
       exit
     }
   ' "$file"
-}
-
-# Targets own their enabled or disabled rule set; only the formatter set is shared.
-check_rumdl_rule_sets() {
-  python3 -c '
-import re
-from pathlib import Path
-
-content = Path(".rumdl.toml").read_text()
-
-def rule_list(key):
-    match = re.search(rf"(?ms)^[ \t]*{re.escape(key)}[ \t]*=[ \t]*\[(.*?)\]", content)
-    if match is None:
-        raise SystemExit(f"  .rumdl.toml: missing {key} rule list")
-    rules = re.sub(r"(?m)#.*$", "", match.group(1))
-    return re.findall(chr(34) + r"(MD[0-9]{3})" + chr(34), rules)
-
-expected_fixable = ["MD007", "MD013", "MD029", "MD047", "MD060", "MD071", "MD076"]
-actual = rule_list("fixable")
-if actual != expected_fixable:
-    raise SystemExit(f"  .rumdl.toml: fixable rules must be {expected_fixable}, got {actual}")
-'
-}
-
-check_rumdl_option() {
-  local section="$1" key="$2" expected="$3"
-  awk -v section="$section" -v key="$key" -v expected="$expected" '
-    function fail(message) {
-      printf "  .rumdl.toml: %s\n", message > "/dev/stderr"
-      failed = 1
-      exit 1
-    }
-    BEGIN {
-      expected_literal = (expected == "default") ? "\"default\"" : expected
-    }
-    /^[[:space:]]*(#|$)/ { next }
-    /^[[:space:]]*\[/ {
-      if ($0 ~ /^[[:space:]]*\[MD[0-9][0-9][0-9]\][[:space:]]*(#.*)?$/) {
-        header = $0
-        sub(/^[[:space:]]*\[/, "", header)
-        sub(/\].*$/, "", header)
-        if (header == section) {
-          section_count++
-          if (section_count > 1) fail("duplicate active [" section "] sections")
-          in_section = 1
-        } else {
-          in_section = 0
-        }
-      } else {
-        in_section = 0
-      }
-      next
-    }
-    in_section && $0 ~ ("^[[:space:]]*" key "[[:space:]]*=") {
-      option_count++
-      if (option_count > 1) fail("duplicate active [" section "] " key " options")
-      value = $0
-      sub(/^[^=]*=[[:space:]]*/, "", value)
-      sub(/[[:space:]]*(#.*)?$/, "", value)
-      sub(/^[[:space:]]+/, "", value)
-      sub(/[[:space:]]+$/, "", value)
-      if (value != expected_literal) {
-        fail("[" section "] " key " must be " expected_literal ", got " value)
-      }
-    }
-    END {
-      if (failed) exit 1
-      if (section_count == 0) fail("missing active [" section "] section")
-      if (option_count == 0) fail("missing active [" section "] " key " option")
-    }
-  ' .rumdl.toml
-}
-
-check_rumdl_compatibility() {
-  check_rumdl_option MD013 reflow-mode default || return 1
-  check_rumdl_option MD013 code-blocks false || return 1
-  check_rumdl_option MD013 code-spans false || return 1
-  check_rumdl_option MD013 headings false || return 1
-  check_rumdl_option MD013 tables false || return 1
-  check_rumdl_option MD010 code-blocks true || return 1
-  check_rumdl_option MD027 list-items true || return 1
-  check_rumdl_option MD051 ignore-case false || return 1
-}
-
-check_no_active_markdownlint_cli2() {
-  local forbidden=(
-    .markdownlint-cli2.jsonc
-    .markdownlint-cli2.yaml
-    .markdownlint-cli2.yml
-    .markdownlint.json
-    .markdownlint.yaml
-    .markdownlint.yml
-    mise-tasks/lint/markdownlint
-  )
-  local path
-  for path in "${forbidden[@]}"; do
-    [[ ! -e "$path" ]] || return 1
-  done
-  ! grep -REq '^[[:space:]]*[^#].*markdownlint-cli2' \
-    .mise.toml .mise.ci.toml .mise.development.toml mise.lock mise.development.lock \
-    package.json package-lock.json pnpm-lock.yaml bun.lock 2>/dev/null || return 1
-  ! grep -Eq '^#MISE[[:space:]]+depends=.*lint:markdownlint' mise-tasks/lint/default || return 1
-}
-
-legacy_lint_contract() {
-  [[ -f .markdownlint-cli2.jsonc && -e mise-tasks/lint/markdownlint ]] || return 1
-  grep -Eq '^#MISE[[:space:]]+depends=.*lint:markdownlint' mise-tasks/lint/default
-}
-
-rumdl_lint_artifacts_present() {
-  # A rumdl config may format Markdown during the legacy lint transition; the task or dependency marks rumdl lint.
-  [[ -e mise-tasks/lint/rumdl ]] || grep -Eq '^#MISE[[:space:]]+depends=.*lint:rumdl' mise-tasks/lint/default
-}
-
-rumdl_lint_contract() {
-  [[ -f .rumdl.toml ]] || return 1
-  check_rumdl_rule_sets || return 1
-  check_rumdl_compatibility || return 1
-  [[ -x mise-tasks/lint/rumdl ]] || return 1
-  grep -Eq '^#MISE[[:space:]]+depends=.*lint:rumdl' mise-tasks/lint/default || return 1
-  grep -Eq '^[[:space:]]*[^#].*rumdl check --deny-config-warnings' mise-tasks/lint/rumdl || return 1
-  check_no_active_markdownlint_cli2
-}
-
-check_lint_contract() {
-  if legacy_lint_contract; then
-    if rumdl_lint_artifacts_present; then
-      printf '  mixed markdownlint and rumdl lint contracts are not allowed\n' >&2
-      return 1
-    fi
-    return 0
-  fi
-  rumdl_lint_contract && return 0
-  printf '  expected one complete markdownlint or rumdl lint contract\n' >&2
-  return 1
 }
 
 yaml_number() {
@@ -526,7 +388,7 @@ check_k() {
 run_check a 'required base-template files exist' check_a
 run_check b 'forbidden legacy files are absent' check_b
 run_check c 'lefthook.yml extends explicit base modules without globs' check_c
-run_check d 'lint default depends on actionlint, yamllint, and one complete Markdown lint contract' check_d
+run_check d 'lint default depends on actionlint and yamllint' check_d
 run_check e 'mise tool versions use exact Style-A semver pins' check_e
 run_check f 'old org name is absent' check_f
 run_check g 'lint workflow uses SHA-pinned shared mise setup, concurrency, and lint task' check_g
