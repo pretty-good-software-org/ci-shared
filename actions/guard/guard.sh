@@ -298,13 +298,26 @@ rumdl_lint_artifacts_present() {
   [[ -e mise-tasks/lint/rumdl ]] || grep -Eq '^#MISE[[:space:]]+depends=.*lint:rumdl' mise-tasks/lint/default
 }
 
+rumdl_command_present() {
+  awk '
+    /^[[:space:]]*#/ || /^[[:space:]]*$/ { next }
+    {
+      sub(/[[:space:]]+#.*/, "")
+      if ($0 ~ /^[[:space:]]*rumdl[[:space:]]+check[[:space:]]+--deny-config-warnings([[:space:]]|$)/ || $0 ~ /^[[:space:]]*git[[:space:]].*[|][[:space:]]*xargs([[:space:]]+-[^[:space:]]+)*[[:space:]]+rumdl[[:space:]]+check[[:space:]]+--deny-config-warnings([[:space:]]|$)/) {
+        found = 1
+      }
+    }
+    END { exit(found ? 0 : 1) }
+  ' mise-tasks/lint/rumdl
+}
+
 rumdl_lint_contract() {
   [[ -f .rumdl.toml ]] || return 1
   check_rumdl_rule_sets || return 1
   check_rumdl_compatibility || return 1
   [[ -x mise-tasks/lint/rumdl ]] || return 1
   grep -Eq '^#MISE[[:space:]]+depends=.*lint:rumdl' mise-tasks/lint/default || return 1
-  grep -Eq '^[[:space:]]*[^#].*rumdl check --deny-config-warnings' mise-tasks/lint/rumdl || return 1
+  rumdl_command_present || return 1
   check_no_active_markdownlint_cli2
 }
 

@@ -25,4 +25,4 @@ jobs:
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 
       - name: Run template guard
-        uses: pretty-good-software-org/ci-shared/actions/guard@58d5fe26915db043dc8e114086a7b0df1e0539ad
+        uses: pretty-good-software-org/ci-shared/actions/guard@852a39af805f72d56d07da43efb9c0a8a559958d
