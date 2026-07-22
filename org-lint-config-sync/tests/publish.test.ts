@@ -45,6 +45,23 @@ const writeThatFailsOnCall = (failOnCallIndex: number) => {
 const noTempFilesRemain = (root: string): boolean =>
   readdirSync(path.join(root, ".lint/configs")).every((name: string) => !name.endsWith(".org-lint-config-sync.tmp"));
 
+describe("publishVendoredFiles: real read errors are not mistaken for absence", () => {
+  it("aborts without writing anything when an existing target cannot be read as a file", (context: TestContext) => {
+    const projectRoot = temporaryProjectRoot(context);
+    const extractedRoot = buildExtractedRoot(context, "new-a\n", "new-b\n");
+    mkdirSync(path.join(projectRoot, FIRST_VENDORED_PATH), { recursive: true });
+    const pin = buildPin();
+
+    assert.throws(
+      () => publishVendoredFiles(projectRoot, { extractedRoot, pin, write: atomicWrite }),
+      /read/,
+      "a directory where a file is expected must surface as an error, not as 'no original'",
+    );
+
+    assert.strictEqual(existsSync(path.join(projectRoot, SECOND_VENDORED_PATH)), false, "nothing may be written");
+  });
+});
+
 describe("publishVendoredFiles: fresh targets", () => {
   it("rolls back a first successful publish when the second file fails, leaving neither target on disk", (context: TestContext) => {
     const projectRoot = temporaryProjectRoot(context);

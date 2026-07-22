@@ -75,6 +75,9 @@ const performRegenerate = (projectRoot: string, session: RegenerateSession): str
   const { exec, pin, workdir, write } = session;
   const archivePath = downloadArchive(pin.version, workdir, exec);
   const archiveSha256 = sha256Of(archivePath);
+  // Reject before extraction, not after: a mismatched archive must never reach `tar`, since a
+  // Malicious or corrupted tar can traverse or write outside workdir during extraction itself.
+  rejectIfPlanFails(pin, archiveSha256, []);
   extractArchive(archivePath, workdir, exec);
   const extractedRoot = path.join(workdir, `org-lint-config-${pin.version}`);
   const extractedFiles = readExtractedFiles(pin, extractedRoot);

@@ -1,6 +1,8 @@
 const { describe, it } = require("node:test");
 const assert = require("node:assert/strict");
 const { createHash } = require("node:crypto");
+const { mkdirSync } = require("node:fs");
+const path = require("node:path");
 
 import type { TestContext } from "node:test";
 
@@ -85,6 +87,24 @@ describe("org-lint-config verify: missing vendored files", () => {
 
     assert.strictEqual(failures.length, 1, "a missing vendored file must be reported, not skipped");
     assert.strictEqual(failures[0].reason, "missing");
+  });
+});
+
+describe("org-lint-config verify: non-missing read errors", () => {
+  it("propagates a real read failure instead of reporting it as an ordinary missing file", (context: TestContext) => {
+    const projectRoot = temporaryProjectRoot(context);
+    writePin(projectRoot, {
+      archiveSha256: "a".repeat(SHA256_HEX_LENGTH),
+      vendoredFiles: { [VENDORED_PATH]: { sha256: sha256(CONTENTS), sourcePath: "configs/yamllint.yml" } },
+      version: "v1.0.0",
+    });
+    mkdirSync(path.join(projectRoot, VENDORED_PATH), { recursive: true });
+
+    assert.throws(
+      () => verify(projectRoot),
+      /read/,
+      "a directory where a file is expected must surface as an error, not as reason: 'missing'",
+    );
   });
 });
 

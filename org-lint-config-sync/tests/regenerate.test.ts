@@ -49,6 +49,19 @@ const fakeGhAndRealTar =
     execFileSync(bin, args, { stdio: "ignore" });
   };
 
+// Same fake, but records every invoked binary so a test can assert tar was never reached.
+const recordingGhAndRealTar = (archive: Buffer) => {
+  const calledBinaries: string[] = [];
+  const exec = fakeGhAndRealTar(archive);
+  return {
+    calledBinaries,
+    exec: (bin: string, args: string[]): void => {
+      calledBinaries.push(bin);
+      exec(bin, args);
+    },
+  };
+};
+
 describe("org-lint-config regenerate: success", () => {
   it("writes the vendored file when the archive and file hashes match their pins", (context: TestContext) => {
     const projectRoot = temporaryProjectRoot(context);
@@ -83,6 +96,25 @@ describe("org-lint-config regenerate: archive verification failure", () => {
       existsSync(path.join(projectRoot, ".lint/configs/yamllint.yml")),
       false,
       "no vendored file may be written when the archive fails verification",
+    );
+  });
+});
+
+describe("org-lint-config regenerate: extraction is gated on the archive digest", () => {
+  it("never invokes tar when the downloaded archive fails its SHA-256 pin", (context: TestContext) => {
+    const projectRoot = temporaryProjectRoot(context);
+    const archive = buildArchive();
+    const pin = pinFor(archive);
+    pin.archiveSha256 = "0".repeat(SHA256_HEX_LENGTH);
+    writePin(projectRoot, pin);
+    const { calledBinaries, exec } = recordingGhAndRealTar(archive);
+
+    assert.throws(() => regenerate(projectRoot, exec, atomicWrite), /archive/);
+
+    assert.ok(calledBinaries.includes("gh"), "the archive must still be downloaded for hashing");
+    assert.ok(
+      !calledBinaries.includes("tar"),
+      "tar must never run against an archive whose SHA-256 has not yet been verified",
     );
   });
 });

@@ -3,6 +3,7 @@ const path = require("node:path");
 
 import type { OrgLintConfigPin } from "./pin-types.ts";
 
+const { readIfExists } = require("./optional-read.ts");
 const { resolveWithinRoot } = require("./safe-path.ts");
 
 const TEMP_SUFFIX = ".org-lint-config-sync.tmp";
@@ -44,14 +45,6 @@ const atomicWrite: AtomicWrite = (targetPath, contents) => {
   }
 };
 
-const readExistingContents = (targetPath: string): Buffer | undefined => {
-  try {
-    return readFileSync(targetPath);
-  } catch {
-    return undefined;
-  }
-};
-
 const buildTargets = (projectRoot: string, extractedRoot: string, pin: OrgLintConfigPin): PublishTarget[] =>
   Object.entries(pin.vendoredFiles).map(([vendoredPath, entry]) => {
     const sourcePath = resolveWithinRoot("publish source", extractedRoot, entry.sourcePath);
@@ -74,7 +67,7 @@ const restoreOriginal = (write: AtomicWrite, targetPath: string, original: Buffe
 // All-or-nothing: every target is either published, or rolled back to exactly what it was
 // Before this call. A failure partway through never leaves a mix of old and new content.
 const publishTargets = (targets: PublishTarget[], write: AtomicWrite): void => {
-  const originals = targets.map((target) => readExistingContents(target.targetPath));
+  const originals = targets.map((target) => readIfExists(target.targetPath));
   const published: number[] = [];
   try {
     targets.forEach((target, index) => {

@@ -14,11 +14,11 @@
 // Originate one.
 
 const { createHash } = require("node:crypto");
-const { readFileSync } = require("node:fs");
 
 import type { OrgLintConfigPin } from "./pin-types.ts";
 
 const { loadPin } = require("./pin.ts");
+const { readIfExists } = require("./optional-read.ts");
 const { resolveWithinRoot } = require("./safe-path.ts");
 
 export interface VerifyFailure {
@@ -28,14 +28,12 @@ export interface VerifyFailure {
   vendoredPath: string;
 }
 
-const sha256Of = (filePath: string): string => createHash("sha256").update(readFileSync(filePath)).digest("hex");
-
 const readActualSha256 = (filePath: string): string | undefined => {
-  try {
-    return sha256Of(filePath);
-  } catch {
+  const contents = readIfExists(filePath);
+  if (contents === undefined) {
     return undefined;
   }
+  return createHash("sha256").update(contents).digest("hex");
 };
 
 const verifyVendoredFile = (
