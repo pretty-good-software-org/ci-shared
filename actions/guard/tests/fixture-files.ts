@@ -2,7 +2,6 @@ const requiredFiles = [
   ".actionlint.yml",
   ".coderabbit.yaml",
   ".github/workflows/lint.yml",
-  ".markdownlint-cli2.jsonc",
   ".mise.toml",
   ".mise.ci.toml",
   ".mise.development.toml",
@@ -19,7 +18,6 @@ const requiredFiles = [
   "lefthook/secrets.yml",
   "mise-tasks/lint/actionlint",
   "mise-tasks/lint/default",
-  "mise-tasks/lint/markdownlint",
   "mise-tasks/lint/yamllint",
   "mise-tasks/setup/default",
   "mise.lock",
@@ -75,7 +73,7 @@ const fixtureContents: Record<string, string> = {
   "go.mod": "module example.test/guard\n",
   "lefthook.yml":
     "extends:\n  - lefthook/files.yml\n  - lefthook/lint.yml\n  - lefthook/commit-msg.yml\n  - lefthook/secrets.yml\n",
-  "mise-tasks/lint/default": "#MISE depends=[lint:actionlint, lint:yamllint, lint:markdownlint]\n",
+  "mise-tasks/lint/default": "#MISE depends=[lint:actionlint, lint:yamllint]\n",
   "pyproject.toml": pythonConfig,
 };
 
