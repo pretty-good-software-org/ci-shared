@@ -13,9 +13,47 @@ inputs:
     description: 'Checkout fetch depth; set 0 for full history (needed by commit-range checks like cog check)'
     required: false
     default: '1'
+  app-id:
+    description: 'GitHub App ID for a private-release token (required with private-key/private-repositories)'
+    required: false
+    default: ''
+  private-key:
+    description: 'GitHub App private key for a private-release token (required with app-id/private-repositories)'
+    required: false
+    default: ''
+  private-repositories:
+    description: 'Repositories (comma/newline-separated) the minted token may access (required with app-id/private-key)'
+    required: false
+    default: ''
 runs:
   using: 'composite'
   steps:
+    # Fails before checkout/install so a partial App-input tuple never reaches a
+    # network call or masks itself behind an unrelated downstream error.
+    - name: Validate private release App inputs
+      shell: bash
+      env:
+        INPUT_APP_ID: ${{ inputs.app-id }}
+        INPUT_PRIVATE_KEY: ${{ inputs.private-key }}
+        INPUT_PRIVATE_REPOSITORIES: ${{ inputs.private-repositories }}
+      run: '"${{ github.action_path }}/validate-private-release-inputs.sh"'
+
+    # Minting is gated on app-id alone because the validation step above already
+    # rejects any partial tuple — app-id present here implies private-key and
+    # private-repositories are present too. owner and repositories are set
+    # explicitly (never left to default) so the token covers exactly the
+    # requested repositories, not the caller's own repository.
+    - name: Mint private release installation token
+      id: private-release-token
+      if: inputs.app-id != ''
+      uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+      with:
+        app-id: ${{ inputs.app-id }}
+        private-key: ${{ inputs.private-key }}
+        owner: ${{ github.repository_owner }}
+        repositories: ${{ inputs.private-repositories }}
+        permission-contents: read
+
     # Compatibility pin (2026-07-19): this is a documented-baseline deviation from
     # checkout v7 because runner 2.335.1 maps logical GITHUB_WORKSPACE
     # /home/admin/.github-runner to physical gitdir /home/admin/actions-runner.
@@ -42,7 +80,10 @@ runs:
         # committed checksums/attestations. Fleet locks are URL-complete (aqua
         # entries carry url+checksum; npm/pipx carry neither and are tolerated).
         install: false
-        github_token: ${{ inputs.github-token }}
+        # Falls back to the plain github-token input (default github.token) when no
+        # App inputs were supplied, so the private-release path never changes
+        # behavior for the common case.
+        github_token: ${{ steps.private-release-token.outputs.token || inputs.github-token }}
     # Resolve the runner workspace once before mise discovers config and locks.
     # Legacy runners can expose GITHUB_WORKSPACE through ~/.github-runner while
     # the checkout lives under ~/actions-runner; install.sh pins both lookups to

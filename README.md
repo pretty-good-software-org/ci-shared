@@ -6,7 +6,11 @@ Shared composite actions for CI/CD across the organization.
 
 ### setup/mise
 
-Checkout repository and install tools via mise.
+Checkout repository and install tools via mise. By default, tool installs authenticate with `github-token` (the
+caller's `github.token`), which cannot read private repositories. When mise needs to download a release asset from a
+*private* repository — e.g. a GitHub-backend tool pinned in `mise.lock` — pass `app-id`, `private-key`, and
+`private-repositories` together, and this action mints a short-lived installation token scoped to exactly those
+repositories instead.
 
 ```yaml
 - uses: pretty-good-software-org/ci-shared/actions/setup/mise@v1
@@ -14,9 +18,41 @@ Checkout repository and install tools via mise.
     mise-env: ci
 ```
 
-| Input      | Description                 | Default                                          |
-| ---------- | --------------------------- | ------------------------------------------------ |
+| Input | Description | Default |
+| ----------------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
 | `mise-env` | MISE_ENV value (e.g., `ci`) | `''` (falls back to the caller's `MISE_ENV` env) |
+| `github-token` | GitHub token for authenticated API requests during tool install | `${{ github.token }}` |
+| `fetch-depth` | Checkout fetch depth; `0` for full history (needed by commit-range checks) | `1` |
+| `app-id` | GitHub App ID for minting a private-release installation token | `''` (must be set together with `private-key` and `private-repositories`, or omitted) |
+| `private-key` | GitHub App private key for minting a private-release installation token | `''` (must be set together with `app-id` and `private-repositories`, or omitted) |
+| `private-repositories` | Comma or newline-separated repositories the minted token may access | `''` (must be set together with `app-id` and `private-key`, or omitted) |
+
+**Installing a private release asset**, e.g. an App installed only on `skillctl` so mise can download a private tool
+release referenced in `mise.lock`:
+
+```yaml
+- uses: pretty-good-software-org/ci-shared/actions/setup/mise@v1
+  with:
+    mise-env: ci
+    app-id: ${{ secrets.CI_PRIVATE_CONTENT_APP_ID }}
+    private-key: ${{ secrets.CI_PRIVATE_CONTENT_PRIVATE_KEY }}
+    private-repositories: skillctl
+```
+
+If only one or two of `app-id`, `private-key`, and `private-repositories` are set, the action fails before checkout or
+install with a `::error::` annotation instead of silently falling back to the default `github-token` path.
+
+> ROAD SIGN: the minted token is scoped to `owner: ${{ github.repository_owner }}` and exactly the repositories listed
+> in `private-repositories` — never the caller's own repository, never "all repositories" — requests only
+> `permission-contents: read`, and is revoked automatically when the job ends
+> (`actions/create-github-app-token`'s default `skip-token-revoke: false`). **Cost:** one extra composite step per run
+> (a few seconds to mint) and no standing secret to provision or rotate, versus a long-lived per-repo PAT that must be
+> manually rotated and audited. **Security:** replaces the unrepeatable per-repo "Actions access" grant (see
+> `setup/npm-auth` below) with a scoped, short-lived, automatically-revoked token, so a leaked token is worthless
+> after the job ends and cannot reach any repository outside the configured list. Authoritative implementation:
+> `actions/setup/mise/action.yml` and `actions/setup/mise/validate-private-release-inputs.sh`; verified by
+> `actions/setup/mise/tests/private-release-token.test.ts` and
+> `actions/setup/mise/tests/validate-private-release-inputs.test.ts`.
 
 ### setup/npm-auth
 
