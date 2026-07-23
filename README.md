@@ -42,9 +42,10 @@ release referenced in `mise.lock`:
 If only one or two of `app-id`, `private-key`, and `private-repositories` are set, the action fails before checkout or
 install with a `::error::` annotation instead of silently falling back to the default `github-token` path.
 
-> ROAD SIGN: the minted token is scoped to `owner: ${{ github.repository_owner }}` and exactly the repositories listed
-> in `private-repositories` — never the caller's own repository, never "all repositories" — requests only
-> `permission-contents: read`, and is revoked automatically when the job ends
+> ROAD SIGN: private GitHub tools remain checksum locked and GitHub-attestation verified. The minted token is scoped
+> to `owner: ${{ github.repository_owner }}` and exactly the repositories listed in `private-repositories` — never the
+> caller's own repository, never "all repositories" — and the App requires only `permission-contents: read` and
+> `permission-attestations: read`. It is revoked automatically when the job ends
 > (`actions/create-github-app-token`'s default `skip-token-revoke: false`). **Cost:** one extra composite step per run
 > (a few seconds to mint) and no standing secret to provision or rotate, versus a long-lived per-repo PAT that must be
 > manually rotated and audited. **Security:** replaces the unrepeatable per-repo "Actions access" grant (see

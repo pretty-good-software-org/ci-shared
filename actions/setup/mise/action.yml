@@ -53,6 +53,7 @@ runs:
         owner: ${{ github.repository_owner }}
         repositories: ${{ inputs.private-repositories }}
         permission-contents: read
+        permission-attestations: read
 
     # Compatibility pin (2026-07-19): this is a documented-baseline deviation from
     # checkout v7 because runner 2.335.1 maps logical GITHUB_WORKSPACE

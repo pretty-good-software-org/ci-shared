@@ -78,7 +78,12 @@ describe("setup/mise private release token scope", () => {
       /repositories: \$\{\{ inputs\.private-repositories \}\}/,
       "repositories must forward exactly the caller-requested list, never defaulted",
     );
-    assert.match(mintStep, /permission-contents: read/, "the token must be scoped to read-only contents access");
+    assert.match(mintStep, /^\s+permission-contents: read$/m, "the token must request exact read-only contents access");
+    assert.match(
+      mintStep,
+      /^\s+permission-attestations: read$/m,
+      "the token must request exact read-only attestations access",
+    );
     assert.doesNotMatch(mintStep, /permission-[a-z-]+: write/, "the token must not request any write permission");
   });
 });
