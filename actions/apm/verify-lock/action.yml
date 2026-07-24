@@ -1,0 +1,37 @@
+name: 'Verify APM lock'
+description: >-
+  Regenerates an agent-skills APM lock with a pinned APM binary and fails when
+  the committed lock differs.
+inputs:
+  candidate-path:
+    description: Path to the checked-out pull request candidate
+    required: true
+  github-token:
+    description: Contents-read token restricted to the approved private package repositories
+    required: true
+runs:
+  using: 'composite'
+  steps:
+    - name: Install pinned APM
+      id: install
+      shell: bash
+      run: bash "${GITHUB_ACTION_PATH}/install-apm.sh"
+
+    - name: Regenerate and compare APM lock
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: >-
+        bash "${GITHUB_ACTION_PATH}/verify-lock.sh"
+        "${{ inputs.candidate-path }}"
+        "${{ steps.install.outputs.apm-bin }}"
+
+    - name: Remove pinned APM
+      if: always()
+      shell: bash
+      env:
+        APM_ROOT: ${{ steps.install.outputs.apm-root }}
+      run: |
+        if [[ -n "$APM_ROOT" ]]; then
+          rm -rf -- "$APM_ROOT"
+        fi

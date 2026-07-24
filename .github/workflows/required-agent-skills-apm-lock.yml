@@ -1,0 +1,56 @@
+name: Required agent-skills APM lock
+
+on:
+  pull_request:
+  merge_group:
+
+permissions:
+  contents: read
+
+# ROAD SIGN: The organization ruleset in org-github-infrastructure requires
+# this workflow for agent-skills. The candidate is treated only as data: the
+# verifier and APM pin come from this workflow's protected ci-shared commit,
+# and no candidate script, action, Mise configuration, or Git hook is run.
+jobs:
+  verify:
+    name: Verify APM lock
+    if: github.repository == 'pretty-good-software-org/agent-skills'
+    runs-on: [self-hosted, Linux, ARM64]
+    timeout-minutes: 10
+    steps:
+      - name: Check out trusted verifier
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          repository: pretty-good-software-org/ci-shared
+          ref: ${{ github.workflow_sha }}
+          path: trusted-ci
+          persist-credentials: false
+
+      - name: Check out pull request candidate
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          path: candidate
+          persist-credentials: false
+
+      - name: Mint private package read token
+        id: private-packages
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ secrets.CI_PRIVATE_CONTENT_APP_ID }}
+          private-key: ${{ secrets.CI_PRIVATE_CONTENT_PRIVATE_KEY }}
+          owner: pretty-good-software-org
+          repositories: |
+            platform-doc-agents-md
+            platform-doc-readme
+            platform-doc-changelog
+            platform-doc-update-project
+            platform-adversarial-review
+            platform-skill-create
+            platform-skill-vendor
+          permission-contents: read
+
+      - name: Verify committed APM lock
+        uses: ./trusted-ci/actions/apm/verify-lock
+        with:
+          candidate-path: ${{ github.workspace }}/candidate
+          github-token: ${{ steps.private-packages.outputs.token }}
