@@ -75,14 +75,20 @@ runs:
 
         # Use GitHub App token (cross-repo) if available, fall back to
         # the checkout extraheader (GITHUB_TOKEN, same-repo only).
+        AUTH_HEADER_KEY='http.https://github.com/.extraheader'
         if [ -n "$APP_TOKEN" ]; then
-          HEADER=$(printf 'x-access-token:%s' "$APP_TOKEN" | base64)
-          git config --global --add http.https://github.com/.extraheader \
+          HEADER=$(printf 'x-access-token:%s' "$APP_TOKEN" | base64 | tr -d '\n')
+          git config --global --replace-all "$AUTH_HEADER_KEY" \
             "AUTHORIZATION: basic ${HEADER}"
         else
-          EXTRAHEADER=$(git config --local --get http.https://github.com/.extraheader 2>/dev/null || true)
+          EXTRAHEADER=$(git config --local --get-all "$AUTH_HEADER_KEY" 2>/dev/null || true)
           if [ -n "$EXTRAHEADER" ]; then
-            git config --global --add http.https://github.com/.extraheader "$EXTRAHEADER"
+            if [[ "$EXTRAHEADER" == *$'\n'* ]] || \
+              [[ ! "$EXTRAHEADER" =~ ^AUTHORIZATION:\ basic\ [A-Za-z0-9+/]+={0,2}$ ]]; then
+              printf '%s\n' 'Expected at most one well-formed checkout Basic Authorization header' >&2
+              exit 1
+            fi
+            git config --global --replace-all "$AUTH_HEADER_KEY" "$EXTRAHEADER"
           fi
         fi
 
