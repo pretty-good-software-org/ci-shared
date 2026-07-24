@@ -213,7 +213,8 @@ module.exports = { runPinnedPolicy };
 
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const { mkdtempSync, rmSync } = __nccwpck_require__(24);
+const fs = __nccwpck_require__(24);
+const { mkdtempSync } = fs;
 const { tmpdir } = __nccwpck_require__(161);
 const { join } = __nccwpck_require__(760);
 const { validateNamespaceNames, validateRequiredNamespaces } = __nccwpck_require__(108);
@@ -274,13 +275,13 @@ const errorMessage = (error) => {
 const removeCheckout = (checkoutRoot) => {
     try {
         const cleanupOptions = { force: true, recursive: true };
-        rmSync(checkoutRoot, cleanupOptions);
+        fs.rmSync(checkoutRoot, cleanupOptions);
     }
     catch (error) {
         throw new Error(`Policy checkout cleanup failed: ${errorMessage(error)}`, { cause: error });
     }
 };
-const removeCheckoutAfterFailure = (checkoutRoot) => {
+const removeCheckoutBestEffort = (checkoutRoot) => {
     try {
         removeCheckout(checkoutRoot);
     }
@@ -293,13 +294,10 @@ const withPinnedPolicy = (args) => {
     const checkoutRoot = mkdtempSync(join(tmpdir(), "ci-shared-opa-policies-"));
     const executionArgs = { ...args, checkoutRoot };
     try {
-        const result = executePinnedPolicy(executionArgs);
-        removeCheckout(checkoutRoot);
-        return result;
+        return executePinnedPolicy(executionArgs);
     }
-    catch (error) {
-        removeCheckoutAfterFailure(checkoutRoot);
-        throw error;
+    finally {
+        removeCheckoutBestEffort(checkoutRoot);
     }
 };
 module.exports = { withPinnedPolicy };

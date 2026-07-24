@@ -1,6 +1,7 @@
 import type { ExecFn } from "./policy-types";
 
-const { mkdtempSync, rmSync } = require("node:fs");
+const fs = require("node:fs");
+const { mkdtempSync } = fs;
 const { tmpdir } = require("node:os");
 const { join } = require("node:path");
 const { validateNamespaceNames, validateRequiredNamespaces } = require("./policy-namespace.ts");
@@ -82,13 +83,13 @@ const errorMessage = (error: unknown): string => {
 const removeCheckout = (checkoutRoot: string): void => {
   try {
     const cleanupOptions = { force: true, recursive: true };
-    rmSync(checkoutRoot, cleanupOptions);
+    fs.rmSync(checkoutRoot, cleanupOptions);
   } catch (error: unknown) {
     throw new Error(`Policy checkout cleanup failed: ${errorMessage(error)}`, { cause: error });
   }
 };
 
-const removeCheckoutAfterFailure = (checkoutRoot: string): void => {
+const removeCheckoutBestEffort = (checkoutRoot: string): void => {
   try {
     removeCheckout(checkoutRoot);
   } catch (error: unknown) {
@@ -101,12 +102,9 @@ const withPinnedPolicy = <Result>(args: PinnedPolicyArgs<Result>): Result => {
   const checkoutRoot = mkdtempSync(join(tmpdir(), "ci-shared-opa-policies-"));
   const executionArgs = { ...args, checkoutRoot };
   try {
-    const result = executePinnedPolicy(executionArgs);
-    removeCheckout(checkoutRoot);
-    return result;
-  } catch (error: unknown) {
-    removeCheckoutAfterFailure(checkoutRoot);
-    throw error;
+    return executePinnedPolicy(executionArgs);
+  } finally {
+    removeCheckoutBestEffort(checkoutRoot);
   }
 };
 
