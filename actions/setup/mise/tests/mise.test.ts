@@ -8,6 +8,9 @@ const checkoutStart = action.indexOf("    - uses: actions/checkout@");
 const miseStart = action.indexOf("    - uses: jdx/mise-action@");
 const checkoutStep = action.slice(checkoutStart, miseStart);
 const checkoutSha = "93cb6efe18208431cddfb8368fd83d5badbf9bfd";
+const miseActionSha = "f10502fc09dadecfefb962fff68ce77213930204";
+const dependencyLines = action.split("\n").filter((line: string) => /^\s+(?:-\s+)?uses:/.test(line));
+const immutableActionReference = /^\s+(?:-\s+)?uses:\s+[^@\s]+@[0-9a-f]{40}(?:\s+#\s+.+)?$/;
 
 if (checkoutStart === -1 || miseStart === -1) {
   throw new Error("setup/mise must define checkout before mise-action");
@@ -18,6 +21,28 @@ describe("setup/mise version pin", () => {
     assert.match(action, /^        version: 2026\.7\.7$/m, "mise must use the URL-less-lock-compatible release");
     assert.match(action, /resolves Python separately/, "the pin must document the locked Python workaround");
     assert.match(action, /URL-less npm\/pipx lock entries/, "the pin must document URL-less backend compatibility");
+  });
+});
+
+describe("setup/mise dependency pins", () => {
+  it("pins every action dependency to a full commit SHA", () => {
+    assert.ok(dependencyLines.length > 0, "setup/mise must declare at least one action dependency");
+
+    for (const dependencyLine of dependencyLines) {
+      assert.match(
+        dependencyLine,
+        immutableActionReference,
+        `action dependency must use a full 40-character lowercase commit SHA: ${dependencyLine.trim()}`,
+      );
+    }
+  });
+
+  it("uses the exact verified mise-action v4.2.2 SHA", () => {
+    assert.match(
+      action,
+      new RegExp(`^    - uses: jdx/mise-action@${miseActionSha} # v4\\.2\\.2$`, "m"),
+      "mise-action must use the exact verified v4.2.2 commit SHA",
+    );
   });
 });
 
