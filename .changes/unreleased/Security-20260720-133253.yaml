@@ -1,0 +1,3 @@
+kind: Security
+body: Add immutable OPA policy commit pinning and required namespace enforcement to the OpenTofu policy action.
+time: 2026-07-20T13:32:53.785261+02:00

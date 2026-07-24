@@ -1,107 +1,101 @@
 // Run Conftest policy checks against an OpenTofu plan.
-//
-// 1. Runs conftest test against the JSON plan file
-// 2. Sets has_violations and policy_violations outputs
+
+import type { ExecFn, PolicyResult } from "./policy-types";
 
 const { execCapture } = require("../../../lib/exec.ts");
 const { resolveOutputWriter } = require("../../../lib/github-output.ts");
 const { findFloorExemptReason, validateConftestIntegrity } = require("./conftest-integrity.ts");
+const { parseRequiredNamespaces } = require("./policy-namespace.ts");
+const { runPinnedPolicy } = require("./pinned-policy-runner.ts");
+const { evaluatePolicy, execErrorOutput } = require("./policy-result.ts");
 
 interface RunArgs {
   planJson: string;
   cwd?: string;
 }
 
-interface PolicyResult {
+interface PolicyConfiguration {
   floorExemptReason: string;
-  hasViolations: boolean;
-  policyViolations: string;
-  policyIntegrityFailed: boolean;
+  integrityFailure: string;
 }
 
-type ExecFn = typeof execCapture;
+interface PolicyInputs {
+  planJson: string;
+  policyRef: string;
+  requiredNamespaces: string[];
+}
 
-const MINIMUM_POLICY_TESTS = 5;
 const POLICY_REPOSITORY = "git::ssh://git@github.com/pretty-good-software-org/opa-policies.git//policy";
-const POLICY_SUMMARY_PATTERN = /(?:^|\n)\s*(\d+) tests?,/;
 
-const policyIntegrityFailure = (output: string, floorExemptReason = ""): string => {
-  const summary = output.match(POLICY_SUMMARY_PATTERN);
-  if (!summary) {
-    return "Policy integrity check failed: conftest did not report a loaded-test count; refusing to trust the policy result";
-  }
-
-  const loadedTestCount = Number(summary[1]);
-  if (!floorExemptReason && loadedTestCount < MINIMUM_POLICY_TESTS) {
-    return `Policy integrity check failed: conftest loaded ${loadedTestCount} tests; require at least ${MINIMUM_POLICY_TESTS}`;
-  }
-
-  return "";
-};
-
-const successfulPolicyResult = (output: string, floorExemptReason = ""): PolicyResult => {
-  const integrityFailure = policyIntegrityFailure(output, floorExemptReason);
+const inspectPolicyConfiguration = (cwd: string): PolicyConfiguration => {
+  const integrityFailure = validateConftestIntegrity(cwd);
   if (integrityFailure) {
-    return {
-      floorExemptReason,
-      hasViolations: true,
-      policyIntegrityFailed: true,
-      policyViolations: integrityFailure,
-    };
+    return { floorExemptReason: "", integrityFailure };
   }
-
-  return {
-    floorExemptReason,
-    hasViolations: false,
-    policyIntegrityFailed: false,
-    policyViolations: "",
-  };
+  return { floorExemptReason: findFloorExemptReason(cwd), integrityFailure: "" };
 };
 
-const execErrorOutput = (error: unknown): string => {
-  const execError = error as { message?: string; stdout?: string; stderr?: string };
-  return (execError.stdout || "") + (execError.stderr || "") || execError.message || "unknown error";
-};
+const configurationFailureResult = (configuration: PolicyConfiguration): PolicyResult => ({
+  floorExemptReason: configuration.floorExemptReason,
+  hasViolations: true,
+  policyIntegrityFailed: true,
+  policyViolations: configuration.integrityFailure,
+});
 
-const runPolicyTest = (planJson: string, exec: ExecFn, floorExemptReason = ""): PolicyResult => {
-  try {
-    const output = exec("conftest", ["test", "--quiet=false", planJson]);
-    return successfulPolicyResult(output, floorExemptReason);
-  } catch (error: unknown) {
-    return {
-      floorExemptReason,
-      hasViolations: true,
-      policyIntegrityFailed: false,
-      policyViolations: execErrorOutput(error),
-    };
-  }
+const runPolicyTest = (planJson: string, exec: ExecFn, floorExemptReason: string): PolicyResult => {
+  const commandArguments = ["test", "--quiet=false", planJson];
+  return evaluatePolicy(commandArguments, exec, floorExemptReason);
 };
 
 const run = ({ planJson, cwd = process.cwd() }: RunArgs, exec: ExecFn = execCapture): PolicyResult => {
-  const configIntegrityFailure = validateConftestIntegrity(cwd);
-  if (configIntegrityFailure) {
-    return {
-      floorExemptReason: "",
-      hasViolations: true,
-      policyIntegrityFailed: true,
-      policyViolations: configIntegrityFailure,
-    };
+  const configuration = inspectPolicyConfiguration(cwd);
+  if (configuration.integrityFailure) {
+    return configurationFailureResult(configuration);
   }
 
-  const floorExemptReason = findFloorExemptReason(cwd);
-
   try {
-    exec("conftest", ["pull", POLICY_REPOSITORY]);
+    const commandArguments = ["pull", POLICY_REPOSITORY];
+    exec("conftest", commandArguments);
   } catch (error: unknown) {
     return {
-      floorExemptReason,
+      floorExemptReason: configuration.floorExemptReason,
       hasViolations: true,
       policyIntegrityFailed: true,
       policyViolations: `Policy integrity check failed: conftest pull failed: ${execErrorOutput(error)}`,
     };
   }
 
-  return runPolicyTest(planJson, exec, floorExemptReason);
+  return runPolicyTest(planJson, exec, configuration.floorExemptReason);
+};
+
+const runPinned = (inputs: PolicyInputs, cwd: string | undefined, exec: ExecFn): PolicyResult => {
+  const configuration = inspectPolicyConfiguration(cwd || process.cwd());
+  if (configuration.integrityFailure) {
+    return configurationFailureResult(configuration);
+  }
+
+  const pinnedPolicyArgs = {
+    exec,
+    floorExemptReason: configuration.floorExemptReason,
+    planJson: inputs.planJson,
+    policyRef: inputs.policyRef,
+    requiredNamespaces: inputs.requiredNamespaces,
+  };
+  return runPinnedPolicy(pinnedPolicyArgs);
+};
+
+const resolvePolicyInputs = (env: NodeJS.ProcessEnv): PolicyInputs => ({
+  planJson: env.INPUT_PLAN_JSON || "tofu/plan.json",
+  policyRef: (env.INPUT_POLICY_REF || "").trim(),
+  requiredNamespaces: parseRequiredNamespaces(env.INPUT_REQUIRED_NAMESPACES || ""),
+});
+
+const runRequestedPolicy = (inputs: PolicyInputs, cwd: string | undefined, exec: ExecFn): PolicyResult => {
+  if (!inputs.policyRef && inputs.requiredNamespaces.length === 0) {
+    const runArgs = { cwd, planJson: inputs.planJson };
+    return run(runArgs, exec);
+  }
+  return runPinned(inputs, cwd, exec);
 };
 
 const enforcePolicyIntegrity = (result: PolicyResult): void => {
@@ -130,9 +124,8 @@ interface MainArgs {
 
 const main = async (args: MainArgs = {}): Promise<void> => {
   const { env = process.env, exec = execCapture } = args;
-  const planJson = env.INPUT_PLAN_JSON || "tofu/plan.json";
-  const result = run({ cwd: args.cwd, planJson }, exec);
-
+  const policyInputs = resolvePolicyInputs(env);
+  const result = runRequestedPolicy(policyInputs, args.cwd, exec);
   logFloorExemption(result.floorExemptReason, resolveWarningLogger(args.logWarning));
 
   const setOutput = resolveOutputWriter(args);
