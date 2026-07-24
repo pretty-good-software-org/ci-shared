@@ -2,7 +2,8 @@ const { afterEach, describe, it } = require("node:test");
 const assert = require("node:assert/strict");
 const { existsSync, readFileSync, rmSync, writeFileSync } = require("node:fs");
 const { resolve } = require("node:path");
-const { createFixture, run, temporaryDirectories } = require("./fixture.ts");
+const { spawnSync } = require("node:child_process");
+const { createFixture, temporaryDirectories } = require("./fixture.ts");
 
 const verifier = resolve("actions/apm/verify-lock/verify-lock.sh");
 
@@ -16,12 +17,12 @@ interface Fixture {
   state: string;
 }
 
-const verify = (fixture: Fixture, token = "read-only-test-token") =>
-  run({
-    args: [verifier, fixture.repository, fixture.fakeApm],
-    command: "bash",
+const verify = (fixture: Fixture, token = "read-only-test-token") => {
+  const result = spawnSync(verifier, [fixture.repository, fixture.fakeApm], {
     cwd: fixture.repository,
+    encoding: "utf8",
     env: {
+      ...process.env,
       FAKE_APM_FIRST_LOCK: fixture.firstLock,
       FAKE_APM_LOG: fixture.log,
       FAKE_APM_SECOND_LOCK: fixture.secondLock,
@@ -31,6 +32,8 @@ const verify = (fixture: Fixture, token = "read-only-test-token") =>
       RUNNER_TEMP: resolve(fixture.repository, ".."),
     },
   });
+  return { status: result.status, stderr: result.stderr, stdout: result.stdout };
+};
 
 const normalizedCommandLog = (path: string): string =>
   readFileSync(path, "utf8").replace(/marketplace add .*\/marketplace --name/g, "marketplace add <marketplace> --name");

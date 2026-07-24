@@ -24,19 +24,8 @@ interface Result {
   stdout: string;
 }
 
-interface RunRequest {
-  args: string[];
-  command: string;
-  cwd: string;
-  env?: Record<string, string>;
-}
-
-const run = ({ args, command, cwd, env = {} }: RunRequest): Result => {
-  const result = spawnSync(command, args, {
-    cwd,
-    encoding: "utf8",
-    env: { ...process.env, ...env },
-  });
+const runGit = (args: string[], cwd: string): Result => {
+  const result = spawnSync("git", args, { cwd, encoding: "utf8" });
   return { status: result.status, stderr: result.stderr, stdout: result.stdout };
 };
 
@@ -78,12 +67,12 @@ const writeCandidate = (fixture: Fixture, committedLock: string): void => {
 };
 
 const commitCandidate = (repository: string): void => {
-  const initialization = run({ args: ["init", "-q"], command: "git", cwd: repository });
+  const initialization = runGit(["init", "-q"], repository);
   assert.equal(initialization.status, 0, "fixture Git initialization must succeed");
-  const staging = run({ args: ["add", "."], command: "git", cwd: repository });
+  const staging = runGit(["add", "."], repository);
   assert.equal(staging.status, 0, "fixture files must be staged");
   const args = ["-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "-qm", "fixture"];
-  const commit = run({ args, command: "git", cwd: repository });
+  const commit = runGit(args, repository);
   assert.equal(commit.status, 0, `fixture commit must succeed: ${commit.stderr}`);
 };
 
@@ -107,4 +96,4 @@ const createFixture = (committedLock = stableLock): Fixture => {
   return fixture;
 };
 
-module.exports = { createFixture, run, temporaryDirectories };
+module.exports = { createFixture, temporaryDirectories };
