@@ -2,4 +2,4 @@
 #MISE description="Lint TypeScript files"
 set -euo pipefail
 
-oxlint actions/ lib/
+oxlint actions/ lib/ org-lint-config-sync/

@@ -2,18 +2,27 @@ name: Template Guard
 
 on:
   workflow_call:
+    inputs:
+      runner:
+        description: JSON array of runner labels; private callers may select an approved self-hosted scale set
+        required: false
+        type: string
+        default: '["ubuntu-24.04-arm"]'
 
 env:
   MISE_ENV: ci
 
+# ROAD SIGN: The hosted ARM default keeps public fork code off internal runners.
+# Private callers may override it with an approved self-hosted label array; the
+# caller owns that trust decision and its repository runner-group restriction.
 jobs:
   guard:
     name: Template Guard
-    runs-on: [self-hosted, Linux, ARM64]
+    runs-on: ${{ fromJSON(inputs.runner) }}
     timeout-minutes: 5
     steps:
       - name: Check out caller repository
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 
       - name: Run template guard
-        uses: pretty-good-software-org/ci-shared/actions/guard@58d5fe26915db043dc8e114086a7b0df1e0539ad
+        uses: pretty-good-software-org/ci-shared/actions/guard@7863388e75ba456da53e356c88497761a74bf960

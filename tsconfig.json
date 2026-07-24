@@ -8,6 +8,6 @@
     "skipLibCheck": true,
     "moduleDetection": "force"
   },
-  "include": ["actions/**/*.ts", "lib/**/*.ts"],
+  "include": ["actions/**/*.ts", "lib/**/*.ts", "org-lint-config-sync/**/*.ts"],
   "exclude": ["node_modules"]
 }

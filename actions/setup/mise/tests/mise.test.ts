@@ -14,9 +14,9 @@ if (checkoutStart === -1 || miseStart === -1) {
 }
 
 describe("setup/mise version pin", () => {
-  it("uses the locked multi-tool resolution release", () => {
-    assert.match(action, /^        version: 2026\.7\.7$/m, "mise must use the validated 2026.7.7 release");
-    assert.match(action, /resolves Python constraints/, "the pin must document the Python lock-resolution fix");
+  it("uses the URL-less-lock-compatible release", () => {
+    assert.match(action, /^        version: 2026\.7\.7$/m, "mise must use the URL-less-lock-compatible release");
+    assert.match(action, /resolves Python separately/, "the pin must document the locked Python workaround");
     assert.match(action, /URL-less npm\/pipx lock entries/, "the pin must document URL-less backend compatibility");
   });
 });

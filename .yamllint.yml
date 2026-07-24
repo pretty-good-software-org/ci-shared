@@ -1,17 +1,6 @@
-extends: default
+# Ruleset sourced from the vendored, checksum-pinned organization standard —
+# see .lint/configs/yamllint.yml and .org-lint-config.json.
+extends: .lint/configs/yamllint.yml
 ignore:
   - node_modules/
   - pnpm-lock.yaml
-rules:
-  line-length:
-    max: 120
-    level: error
-  indentation:
-    spaces: 2
-    indent-sequences: true
-  comments:
-    min-spaces-from-content: 1
-  truthy:
-    allowed-values: ['true', 'false', 'on', 'off']
-  document-start: disable
-  comments-indentation: disable

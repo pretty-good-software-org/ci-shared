@@ -41,7 +41,6 @@ check_a() {
     .actionlint.yml
     .coderabbit.yaml
     .github/workflows/lint.yml
-    .markdownlint-cli2.jsonc
     .mise.toml
     .mise.ci.toml
     .mise.development.toml
@@ -58,7 +57,6 @@ check_a() {
     lefthook/secrets.yml
     mise-tasks/lint/actionlint
     mise-tasks/lint/default
-    mise-tasks/lint/markdownlint
     mise-tasks/lint/yamllint
     mise-tasks/setup/default
     mise.lock
@@ -74,11 +72,9 @@ check_a() {
 
 check_b() {
   local forbidden=(
-    .markdownlint.yml
     lefthook/general.yml
     lefthook/pre-commit.yml
     mise-tasks/lint/actions
-    mise-tasks/lint/markdown
     mise-tasks/lint/yaml
     mise-tasks/lint/_default
   )
@@ -104,9 +100,8 @@ check_c() {
 check_d() {
   local task=mise-tasks/lint/default
   [[ -f "$task" ]] || return 1
-  grep -Eq '^#MISE depends=.*lint:actionlint' "$task" || return 1
-  grep -Eq '^#MISE depends=.*lint:yamllint' "$task" || return 1
-  grep -Eq '^#MISE depends=.*lint:markdownlint' "$task" || return 1
+  grep -Eq '^#MISE[[:space:]]+depends=.*lint:actionlint' "$task" || return 1
+  grep -Eq '^#MISE[[:space:]]+depends=.*lint:yamllint' "$task"
 }
 
 check_e() {
@@ -393,7 +388,7 @@ check_k() {
 run_check a 'required base-template files exist' check_a
 run_check b 'forbidden legacy files are absent' check_b
 run_check c 'lefthook.yml extends explicit base modules without globs' check_c
-run_check d 'lint default depends on actionlint, yamllint, markdownlint' check_d
+run_check d 'lint default depends on actionlint and yamllint' check_d
 run_check e 'mise tool versions use exact Style-A semver pins' check_e
 run_check f 'old org name is absent' check_f
 run_check g 'lint workflow uses SHA-pinned shared mise setup, concurrency, and lint task' check_g

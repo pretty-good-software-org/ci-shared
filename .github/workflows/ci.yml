@@ -54,6 +54,8 @@ jobs:
           mise-env: ci
       - name: Install npm dependencies
         run: mise exec -- npm ci
+      - name: Check Markdown formatting
+        run: mise run check:markdown-format
       - name: Run linters
         run: mise run lint
 

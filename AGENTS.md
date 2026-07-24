@@ -1,5 +1,5 @@
 ---
-last_validated: 2026-02-10T00:00:00Z
+last_validated: 2026-07-22T22:59:21Z
 project_type: github-actions
 ---
 
@@ -13,97 +13,104 @@ with its own `action.yml`, TypeScript implementation, bundled JS, and tests.
 ## Repository Structure
 
 ```text
-lib/
-├── exec.ts                         # Shared execution helpers (execCapture, execStream, execStreamWithEnv)
-├── github-output.ts                # GitHub Actions output writer (writeGitHubOutput, resolveOutputWriter)
-└── test-helpers.ts                 # Shared test mocks (mockExec, captureCommands, captureOutputs, etc.)
-actions/
-├── aws/
-│   ├── cleanup-dynamodb/           # Delete DynamoDB tables by prefix
-│   │   ├── action.yml
-│   │   ├── action.ts
-│   │   ├── dist/index.js
-│   │   └── tests/cleanup-dynamodb.test.ts
-│   └── cleanup-s3/                 # Delete S3 buckets by prefix (versioned)
-│       ├── action.yml
-│       ├── action.ts
-│       ├── dist/index.js
-│       └── tests/cleanup-s3.test.ts
-├── setup/
-│   └── mise/                       # Checkout + mise install
-│       ├── action.yml
-│       ├── action.ts
-│       ├── dist/index.js
-│       └── tests/mise.test.ts
-├── github/
-│   └── comment/            # Create or update PR comment by identifier
-│       ├── action.yml
-│       ├── action.ts
-│       ├── dist/index.js
-│       └── tests/comment.test.ts
-└── tofu/
-    ├── analyze-drift/              # Detect infrastructure drift from plan JSON
-    │   ├── action.yml
-    │   ├── action.ts
-    │   ├── dist/index.js
-    │   └── tests/analyze-drift.test.ts
-    ├── apply/                      # Apply plan
-    │   ├── action.yml
-    │   ├── action.ts
-    │   ├── dist/index.js
-    │   └── tests/apply.test.ts
-    ├── build-plan-details/          # Build plan output as collapsible details block
-    │   ├── action.yml
-    │   ├── action.ts
-    │   ├── dist/index.js
-    │   └── tests/build-plan-details.test.ts
-    ├── build-policy-summary/        # Build policy check result markdown fragment
-    │   ├── action.yml
-    │   ├── action.ts
-    │   ├── dist/index.js
-    │   └── tests/build-policy-summary.test.ts
-    ├── build-step-summary/          # Build step outcomes markdown fragment
-    │   ├── action.yml
-    │   ├── action.ts
-    │   ├── dist/index.js
-    │   └── tests/build-step-summary.test.ts
-    ├── fmt-check/                  # Check formatting
-    │   ├── action.yml
-    │   ├── action.ts
-    │   ├── dist/index.js
-    │   └── tests/fmt-check.test.ts
-    ├── init/                       # Initialize configuration
-    │   ├── action.yml
-    │   ├── action.ts
-    │   ├── dist/index.js
-    │   └── tests/init.test.ts
-    ├── plan/                       # Create plan + capture outputs
-    │   ├── action.yml
-    │   ├── action.ts
-    │   ├── dist/index.js
-    │   └── tests/plan.test.ts
-    ├── policy/                     # Conftest policy check
-    │   ├── action.yml
-    │   ├── action.ts
-    │   ├── dist/index.js
-    │   └── tests/policy.test.ts
-    └── validate/                   # Validate configuration
-        ├── action.yml
-        ├── action.ts
-        ├── dist/index.js
-        └── tests/validate.test.ts
-taskfiles/
-├── setup.yml                       # Dev tools, git hooks, npm deps
-├── build.yml                       # ncc build
-├── lint.yml                        # All linters (actionlint, yamllint, markdownlint, oxlint, oxfmt, typecheck)
-├── test.yml                        # Node test runner
-└── release.yml                     # Changelog generation and release flow
-.github/workflows/
-└── ci.yml                          # Self-CI: tests + linting + build via mise + task
-lefthook/
-├── ci.yml                          # actionlint, yamllint, markdownlint, oxlint, oxfmt, typecheck hooks
-├── commit-msg.yml                  # commitlint hook
-└── general.yml                     # whitespace, EOF, merge conflict, large file hooks
+ci-shared
+├── actions
+│   ├── aws
+│   │   ├── cleanup-dynamodb
+│   │   └── cleanup-s3
+│   ├── github
+│   │   └── comment
+│   ├── guard
+│   │   ├── action.yml
+│   │   ├── guard.sh
+│   │   ├── lint-standards.toml
+│   │   └── tests
+│   ├── setup
+│   │   ├── mise
+│   │   ├── npm-auth
+│   │   └── org-lint-config
+│   └── tofu
+│       ├── analyze-drift
+│       ├── apply
+│       ├── build-plan-details
+│       ├── build-policy-summary
+│       ├── build-step-summary
+│       ├── fmt-check
+│       ├── init
+│       ├── plan
+│       ├── policy
+│       └── validate
+├── AGENTS.md
+├── bun.lock
+├── CHANGELOG.md
+├── CLAUDE.md
+├── cliff.toml
+├── cog.toml
+├── lefthook
+│   ├── ci.yml
+│   ├── commit-msg.yml
+│   ├── general.yml
+│   ├── lint.yml
+│   └── secrets.yml
+├── lefthook.yml
+├── lib
+│   ├── exec.ts
+│   ├── github-output.ts
+│   └── test-helpers.ts
+├── mise-tasks
+│   ├── changie
+│   ├── check
+│   │   └── markdown-format
+│   ├── ci
+│   │   └── validate
+│   ├── default
+│   ├── format
+│   │   └── markdown
+│   ├── lint
+│   │   ├── _default
+│   │   ├── actions
+│   │   ├── default
+│   │   ├── format
+│   │   ├── markdown
+│   │   ├── ts
+│   │   ├── typecheck
+│   │   └── yaml
+│   ├── org-lint-config
+│   │   ├── regenerate
+│   │   └── verify
+│   ├── release
+│   │   ├── changelog
+│   │   └── release
+│   ├── setup
+│   │   └── default
+│   └── test
+│       └── _default
+├── mise.development.lock
+├── mise.lock
+├── org-lint-config-sync
+│   ├── pin-schema.ts
+│   ├── pin-types.ts
+│   ├── pin.ts
+│   ├── publish.ts
+│   ├── regenerate.ts
+│   ├── regeneration-plan.ts
+│   ├── safe-path.ts
+│   ├── tests
+│   │   ├── fixture-helpers.ts
+│   │   ├── pin.test.ts
+│   │   ├── publish.test.ts
+│   │   ├── regenerate.test.ts
+│   │   ├── regeneration-plan.test.ts
+│   │   ├── safe-path.test.ts
+│   │   └── verify.test.ts
+│   └── verify.ts
+├── package-lock.json
+├── package.json
+├── README.md
+├── RELEASING.md
+├── test
+│   └── markdown-format.test.ts
+└── tsconfig.json
 ```
 
 ## Development Guidelines
@@ -116,6 +123,40 @@ lefthook/
 - Conventional commits enforced via commitlint
 - Entry point for each action is `action.ts` — other `.ts` files in the directory are helpers bundled via `require()`
 - Squash merge only
+- ROAD SIGN: `.lint/configs/yamllint.yml` is a byte-exact, checksum-pinned copy of the YAML standard published by the
+  private `pretty-good-software-org/org-lint-config` release `v1.0.0`. ci-shared is public, so its own pull-request CI
+  must not depend on the `CI_PRIVATE_CONTENT` GitHub App secret that `actions/setup/org-lint-config` uses for other
+  (private) consumer repos. `.org-lint-config.json` is the pin (archive and per-file SHA-256); `org-lint-config-sync/`
+  implements verification (`verify.ts`, no network, no secrets — runs in PR CI via `mise run org-lint-config:verify`)
+  and maintainer-only regeneration (`regenerate.ts`, requires `gh auth login` against that private repo, run via
+  `mise run org-lint-config:regenerate`, never wired into CI). Never hand-edit `.lint/configs/yamllint.yml` — it must
+  only ever be the byte-exact output of regeneration. `.org-lint-config.json` is different: it is the trust anchor,
+  so deliberately updating it (to adopt a new release) is expected — but only by hand, only by a maintainer, and only
+  through the verified procedure below. Regeneration re-verifies and republishes an already-vetted pin; it must never
+  be the thing that originates one, or a compromised or tampered release would get trusted automatically.
+
+## Updating the Pinned org-lint-config Release
+
+1. Identify the exact release tag: `gh release view v<X.Y.Z> --repo pretty-good-software-org/org-lint-config`.
+2. Download the archive and independently recompute its SHA-256, then cross-check the result against GitHub's own
+   reported asset digest — two independent sources must agree before the digest is trusted:
+
+   ```bash
+   gh release download v<X.Y.Z> --repo pretty-good-software-org/org-lint-config -D /tmp/org-lint-config-v<X.Y.Z>
+   shasum -a 256 /tmp/org-lint-config-v<X.Y.Z>/org-lint-config-v<X.Y.Z>.tar.gz
+   gh api repos/pretty-good-software-org/org-lint-config/releases/tags/v<X.Y.Z> --jq '.assets[] | {name, digest}'
+   ```
+
+3. Extract the archive and, for every file you intend to vendor, recompute its SHA-256 and cross-check it against
+   the archive's own `MANIFEST.json`/`SHA256SUMS`.
+4. Only once both checks pass, hand-edit `.org-lint-config.json`'s `version`, `archiveSha256`, and each
+   `vendoredFiles[...].sha256` to the newly verified values. This is the one legitimate hand-edit of this file —
+   copying an unverified digest here defeats the entire pin.
+5. Run `mise run org-lint-config:regenerate` — it re-fetches, re-verifies the archive and every per-file digest
+   against what you just entered, and atomically publishes the vendored files (or fails closed, changing nothing,
+   if anything doesn't match).
+6. Run `mise run org-lint-config:verify`, `mise run lint`, and `mise run test`, then review the diff before
+   committing.
 
 ## Setup
 
@@ -124,7 +165,7 @@ lefthook/
 mise run setup
 ```
 
-This runs `mise install` (node 22, uv, mdformat, actionlint, yamllint, markdownlint-cli2, oxlint, oxfmt, lefthook),
+This runs `mise install` (node 22, rumdl, uv, actionlint, yamllint, oxlint, oxfmt, lefthook),
 configures git hooks via lefthook, and installs npm dependencies (commitlint, typescript, @types/node, @vercel/ncc).
 
 ## Available Commands
@@ -132,8 +173,8 @@ configures git hooks via lefthook, and installs npm dependencies (commitlint, ty
 ```bash
 task setup              # Install dev tools, git hooks, and npm deps
 task build              # Compile TypeScript to JavaScript via ncc
-task test               # Run all tests (auto-discovered via actions/*/*/tests/*.test.ts)
-task lint               # Run all linters (actionlint + yamllint + markdownlint + oxlint + typecheck + oxfmt)
+task test               # Run all tests (auto-discovered, see mise-tasks/test/_default)
+task lint               # Run all linters (actionlint + yamllint + rumdl + oxlint + typecheck + oxfmt)
 task lint:actions       # Lint GitHub Actions workflows
 task lint:yaml          # Lint YAML files
 task lint:markdown      # Lint Markdown files
@@ -141,6 +182,8 @@ task lint:ts            # Lint TypeScript files
 task lint:typecheck     # Type-check TypeScript files
 task lint:format        # Auto-format TypeScript files
 task lint:format:check  # Check TypeScript formatting
+task org-lint-config:verify      # Verify vendored org-lint-config files match their pinned SHA-256 (no network)
+task org-lint-config:regenerate  # Maintainer-only: refresh vendored files from the pinned private release
 task ci:validate        # Run full CI validation locally (build + lint + test)
 task release:changelog  # Generate CHANGELOG.md from commit history
 task release:release    # Create a release (usage: task release:release VERSION=x.y.z)
@@ -155,13 +198,15 @@ directly.
 mise run test
 ```
 
-Tests are auto-discovered via the glob `actions/*/*/tests/*.test.ts`. No additional test dependencies are needed.
+Tests are auto-discovered via `actions/*/*/tests/*.test.ts`, `actions/guard/tests/*.test.ts`,
+`org-lint-config-sync/tests/*.test.ts`, and `test/*.test.ts` (see `mise-tasks/test/_default`). No additional test
+dependencies are needed.
 
 ## Tool Management
 
 Tools are managed via [mise](https://mise.jdx.dev/):
 
-- `.mise.toml` — base tools (node 22, actionlint, yamllint, markdownlint-cli2, oxlint, oxfmt)
+- `.mise.toml` — base tools (node 22, rumdl, actionlint, yamllint, oxlint, oxfmt)
 - `.mise.development.toml` — local dev extras (lefthook)
 - `.mise.ci.toml` — CI profile (empty, uses base tools only)
 
@@ -179,7 +224,7 @@ Managed via [lefthook](https://github.com/evilmartians/lefthook). Hooks are spli
 
 - **commit-msg** — enforces conventional commits via commitlint
 - **pre-commit (general)** — trailing whitespace, EOF newline, YAML syntax, large files, merge conflicts
-- **pre-commit (ci)** — actionlint, yamllint, markdownlint, oxlint, oxfmt, typecheck
+- **pre-commit (ci)** — actionlint, yamllint, rumdl, oxlint, oxfmt, typecheck
 
 ## Adding a New Action
 

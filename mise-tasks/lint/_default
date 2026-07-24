@@ -2,6 +2,4 @@
 #MISE description="Run all linters"
 set -euo pipefail
 
-# Keep the formatter's temporary dependency-tree move after all read-only linters.
-mise run lint:actions ::: lint:yaml ::: lint:markdown ::: lint:ts ::: lint:typecheck ::: lint:format:check
-mise run check:markdown-format
+mise run lint:actions ::: lint:yaml ::: lint:markdown ::: lint:ts ::: lint:typecheck ::: lint:format:check ::: org-lint-config:verify

@@ -6,7 +6,11 @@ Shared composite actions for CI/CD across the organization.
 
 ### setup/mise
 
-Checkout repository and install tools via mise.
+Checkout repository and install tools via mise. By default, tool installs authenticate with `github-token` (the
+caller's `github.token`), which cannot read private repositories. When mise needs to download a release asset from a
+*private* repository — e.g. a GitHub-backend tool pinned in `mise.lock` — pass `app-id`, `private-key`, and
+`private-repositories` together, and this action mints a short-lived installation token scoped to exactly those
+repositories instead.
 
 ```yaml
 - uses: pretty-good-software-org/ci-shared/actions/setup/mise@v1
@@ -14,9 +18,42 @@ Checkout repository and install tools via mise.
     mise-env: ci
 ```
 
-| Input      | Description                 | Default                                          |
-| ---------- | --------------------------- | ------------------------------------------------ |
+| Input | Description | Default |
+| ----------------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
 | `mise-env` | MISE_ENV value (e.g., `ci`) | `''` (falls back to the caller's `MISE_ENV` env) |
+| `github-token` | GitHub token for authenticated API requests during tool install | `${{ github.token }}` |
+| `fetch-depth` | Checkout fetch depth; `0` for full history (needed by commit-range checks) | `1` |
+| `app-id` | GitHub App ID for minting a private-release installation token | `''` (must be set together with `private-key` and `private-repositories`, or omitted) |
+| `private-key` | GitHub App private key for minting a private-release installation token | `''` (must be set together with `app-id` and `private-repositories`, or omitted) |
+| `private-repositories` | Comma or newline-separated repositories the minted token may access | `''` (must be set together with `app-id` and `private-key`, or omitted) |
+
+**Installing a private release asset**, e.g. an App installed only on `skillctl` so mise can download a private tool
+release referenced in `mise.lock`:
+
+```yaml
+- uses: pretty-good-software-org/ci-shared/actions/setup/mise@v1
+  with:
+    mise-env: ci
+    app-id: ${{ secrets.CI_PRIVATE_CONTENT_APP_ID }}
+    private-key: ${{ secrets.CI_PRIVATE_CONTENT_PRIVATE_KEY }}
+    private-repositories: skillctl
+```
+
+If only one or two of `app-id`, `private-key`, and `private-repositories` are set, the action fails before checkout or
+install with a `::error::` annotation instead of silently falling back to the default `github-token` path.
+
+> ROAD SIGN: private GitHub tools remain checksum locked and GitHub-attestation verified. The minted token is scoped
+> to `owner: ${{ github.repository_owner }}` and exactly the repositories listed in `private-repositories` — never the
+> caller's own repository, never "all repositories" — and the App requires only `permission-contents: read` and
+> `permission-attestations: read`. It is revoked automatically when the job ends
+> (`actions/create-github-app-token`'s default `skip-token-revoke: false`). **Cost:** one extra composite step per run
+> (a few seconds to mint) and no standing secret to provision or rotate, versus a long-lived per-repo PAT that must be
+> manually rotated and audited. **Security:** replaces the unrepeatable per-repo "Actions access" grant (see
+> `setup/npm-auth` below) with a scoped, short-lived, automatically-revoked token, so a leaked token is worthless
+> after the job ends and cannot reach any repository outside the configured list. Authoritative implementation:
+> `actions/setup/mise/action.yml` and `actions/setup/mise/validate-private-release-inputs.sh`; verified by
+> `actions/setup/mise/tests/private-release-token.test.ts` and
+> `actions/setup/mise/tests/validate-private-release-inputs.test.ts`.
 
 ### setup/npm-auth
 
@@ -59,6 +96,40 @@ token:
 ```
 
 > Consumer repos are not migrated by this change — see the PR description for the rollout plan.
+
+### setup/org-lint-config
+
+Install an exact private `org-lint-config` release using a repository-scoped GitHub App token. Pin this action to a full
+`ci-shared` commit SHA. The action downloads only the archive asset attached to the requested tag, verifies the literal
+consumer-provided digest before extraction, rejects unsafe archive entries, and publishes the output directory only
+after validation succeeds. It does not download or trust the release checksum sidecar.
+
+```yaml
+- uses: pretty-good-software-org/ci-shared/actions/setup/org-lint-config@<full-ci-shared-commit-sha>
+  id: org-lint-config
+  with:
+    app-id: ${{ secrets.CI_PRIVATE_CONTENT_APP_ID }}
+    private-key: ${{ secrets.CI_PRIVATE_CONTENT_PRIVATE_KEY }}
+    version: v1.0.0
+    sha256: dab95cf648e13009bd6f90b74561ed22e4444912443461789a8906071fb1f7ee
+    output-directory: ${{ runner.temp }}/org-lint-config-v1.0.0
+```
+
+| Input              | Description                                    | Default    |
+| ------------------ | ---------------------------------------------- | ---------- |
+| `app-id`           | GitHub App ID                                  | (required) |
+| `private-key`      | GitHub App private key                         | (required) |
+| `version`          | Exact release tag in `v1.0.0` form             | (required) |
+| `sha256`           | Literal 64-character lowercase archive SHA-256 | (required) |
+| `output-directory` | Directory for the verified extracted release   | (required) |
+
+| Output | Description                                                |
+| ------ | ---------------------------------------------------------- |
+| `path` | Absolute path to the installed `org-lint-config` directory |
+
+The GitHub App installation must include only `pretty-good-software-org/org-lint-config` and grant repository
+`contents: read`. The canonical implementation is `actions/setup/org-lint-config/action.yml`; its metadata and archive
+safety contract are verified by `actions/setup/org-lint-config/tests/`.
 
 ### tofu/fmt-check
 
@@ -260,9 +331,31 @@ mise run ci:validate
 ### Markdown policy
 
 Markdown formatting follows the organization policy from `template-base` PR #23 and `org-evaluation-harnesses`.
-`.mdformat.toml`, the hashed requirements lock, Mise tasks, and Lefthook are the authoritative implementation.
-`mise run format:markdown` runs `mdformat .`; `mise run check:markdown-format` runs `mdformat --check .`. The formatter
-check is included in `mise run lint` and the pre-commit hook. YAML frontmatter must retain its semantics.
+`.rumdl.toml`, Mise tasks, and Lefthook are the authoritative implementation. The native rumdl v0.2.38 binary is
+pinned by Mise, and `mise.lock` records checksums and GitHub artifact provenance for Linux ARM64, Linux x64 with glibc
+and musl, macOS ARM64, and macOS x64. Windows is unsupported. `mise run format:markdown` formats tracked Markdown;
+`mise run check:markdown-format` verifies it. The formatter check is included in `mise run lint:default` and the
+pre-commit hook. YAML frontmatter must retain its semantics.
+
+### YAML lint policy
+
+`.lint/configs/yamllint.yml` is vendored byte-for-byte from the private `pretty-good-software-org/org-lint-config`
+release `v1.0.0`; `.yamllint.yml` sources it via `extends: .lint/configs/yamllint.yml` and keeps its own local
+`ignore:` list. `.org-lint-config.json` is the pin — the release archive's SHA-256 and each vendored file's SHA-256 —
+checked in at the repository root.
+
+ci-shared is public, so its own pull-request CI must not depend on the `CI_PRIVATE_CONTENT` GitHub App secret that
+`setup/org-lint-config` (above) uses for other, private consumer repos. `mise run org-lint-config:verify`
+(`org-lint-config-sync/verify.ts`) recomputes the vendored file's SHA-256 and compares it to the pin — no network, no
+secrets — and is wired into `mise run lint`. `mise run org-lint-config:regenerate`
+(`org-lint-config-sync/regenerate.ts`) is maintainer-only: it requires `gh auth login` against the private
+`org-lint-config` repo, re-verifies both the archive and per-file hashes before writing, and is never run in CI.
+
+Never hand-edit `.lint/configs/yamllint.yml` — it must only ever be regeneration's byte-exact output.
+`.org-lint-config.json` is different: it is the trust anchor, so deliberately updating it to adopt a new release is
+expected, but only by hand, only by a maintainer, and only through the verified procedure in AGENTS.md ("Updating
+the Pinned org-lint-config Release"). Regeneration re-verifies and republishes an already-vetted pin; it must never
+be the thing that originates one.
 
 ## Adding a New Action
 

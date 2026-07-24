@@ -1,0 +1,5 @@
+kind: Added
+body: >-
+  Allow private template-guard callers to select an approved self-hosted runner
+  while retaining the hosted ARM default.
+time: 2026-07-22T12:15:00Z

@@ -52,16 +52,15 @@ const assertWorkflowSequence = (workflow: string, expectedSequence: string[]): v
   }
 };
 
-const assertLintTaskOrdersReadOnlyBeforeFormatter = (): void => {
+const assertLintTaskKeepsFormatterOutsideDependencyBackedLint = (): void => {
   const lintTask = readFileSync("mise-tasks/lint/_default", "utf8");
   const readOnlyLintTasks =
     "mise run lint:actions ::: lint:yaml ::: lint:markdown ::: lint:ts ::: lint:typecheck ::: lint:format:check";
-  const readOnlyIndex = lintTask.indexOf(readOnlyLintTasks);
-  const formatterCheckIndex = lintTask.indexOf("mise run check:markdown-format");
-  assert.notEqual(readOnlyIndex, -1, "lint task must run all read-only linters concurrently");
-  assert.ok(
-    formatterCheckIndex > readOnlyIndex,
-    "lint task must run the formatter check after read-only linters complete",
+  assert.ok(lintTask.includes(readOnlyLintTasks), "lint task must run every read-only linter");
+  assert.doesNotMatch(
+    lintTask,
+    /check:markdown-format/,
+    "Markdown formatting must run before dependency installation, outside the lint task",
   );
 };
 
@@ -98,17 +97,20 @@ describe("template guard action wiring", () => {
 
   it("keeps workflow wiring explicit and orders read-only lint before formatting", () => {
     const workflow = readFileSync(".github/workflows/template-guard.yml", "utf8");
+    const guardJob = workflow.match(/\n  guard:\n([\s\S]*)$/)?.[0];
+    assert.ok(guardJob, "template-guard workflow must define jobs.guard");
+    const runnerExpression = ["$", "{{ fromJSON(inputs.runner) }}"].join("");
     const expectedSequence = [
-      "runs-on: [self-hosted, Linux, ARM64]",
+      `runs-on: ${runnerExpression}`,
       "uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5",
       "uses: pretty-good-software-org/ci-shared/actions/guard@",
     ];
-    assertWorkflowSequence(workflow, expectedSequence);
+    assertWorkflowSequence(guardJob, expectedSequence);
     assert.match(workflow, /uses: actions\/checkout@[0-9a-f]{40}\b/);
     // Supply-chain: the guard action must be pinned to an immutable commit SHA.
     // Never a mutable ref such as @main.
     assert.match(workflow, /uses: pretty-good-software-org\/ci-shared\/actions\/guard@[0-9a-f]{40}\b/);
 
-    assertLintTaskOrdersReadOnlyBeforeFormatter();
+    assertLintTaskKeepsFormatterOutsideDependencyBackedLint();
   });
 });
