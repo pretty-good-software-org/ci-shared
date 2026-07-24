@@ -7,6 +7,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: required-agent-skills-apm-lock-${{ github.repository }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 # ROAD SIGN: The organization ruleset in org-github-infrastructure requires
 # this workflow for agent-skills. The candidate is treated only as data: the
 # verifier and APM pin come from this workflow's protected ci-shared commit,
@@ -19,7 +23,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Check out trusted verifier
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
         with:
           repository: pretty-good-software-org/ci-shared
           ref: ${{ github.workflow_sha }}
@@ -27,7 +31,7 @@ jobs:
           persist-credentials: false
 
       - name: Check out pull request candidate
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
         with:
           path: candidate
           persist-credentials: false

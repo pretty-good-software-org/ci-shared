@@ -6,6 +6,10 @@ set -euo pipefail
 readonly apm_version="0.26.0"
 readonly apm_archive_url="https://github.com/microsoft/apm/releases/download/v${apm_version}/apm-linux-arm64.tar.gz"
 readonly apm_archive_sha256="c4d6b5ab6d9bdca3c3c324db7ce8d1c4faf7b317f45a55a50ae2571eaa506d25"
+readonly connect_timeout_seconds=10
+readonly transfer_timeout_seconds=120
+readonly retry_count=3
+readonly retry_delay_seconds=2
 
 fail() {
   printf 'APM setup failed: %s\n' "$1" >&2
@@ -38,7 +42,18 @@ cleanup() {
 trap cleanup EXIT
 
 archive_path="$apm_root/apm.tar.gz"
-curl --fail --location --proto '=https' --tlsv1.2 --output "$archive_path" "$apm_archive_url"
+curl \
+  --connect-timeout "$connect_timeout_seconds" \
+  --fail \
+  --location \
+  --max-time "$transfer_timeout_seconds" \
+  --output "$archive_path" \
+  --proto '=https' \
+  --retry "$retry_count" \
+  --retry-all-errors \
+  --retry-delay "$retry_delay_seconds" \
+  --tlsv1.2 \
+  "$apm_archive_url"
 printf '%s  %s\n' "$apm_archive_sha256" "$archive_path" | sha256sum --check --status || \
   fail "APM ${apm_version} archive checksum did not match"
 tar -xzf "$archive_path" -C "$apm_root"
