@@ -5,6 +5,14 @@ inputs:
     description: 'Path to the JSON plan file'
     required: false
     default: 'tofu/plan.json'
+  policy-ref:
+    description: 'Exact lowercase 40-character opa-policies commit SHA. Set with required-namespaces.'
+    required: false
+    default: ''
+  required-namespaces:
+    description: 'Newline-delimited Rego packages that must exist and be evaluated. Set with policy-ref.'
+    required: false
+    default: ''
   client-id:
     description: 'GitHub App client ID for cross-repo access (to clone opa-policies)'
     required: false
@@ -54,9 +62,9 @@ runs:
       env:
         APP_TOKEN: ${{ steps.app-token.outputs.token || steps.app-token-legacy.outputs.token || '' }}
       run: |
-        # Conftest uses go-getter to clone the opa-policies repo.
-        # go-getter runs git from a temp directory outside the checkout,
-        # so all git config must be --global (not --local).
+        # Legacy Conftest pulls and pinned policy fetches both run git from a
+        # temp directory outside the checkout, so all git config must be
+        # --global (not --local).
         #
         # GITHUB_TOKEN only has access to the current repo. The opa-policies
         # repo requires a cross-repo token from the CI_PRIVATE_CONTENT app.
@@ -82,6 +90,8 @@ runs:
       id: policy
       env:
         INPUT_PLAN_JSON: ${{ inputs.plan-json }}
+        INPUT_POLICY_REF: ${{ inputs.policy-ref }}
+        INPUT_REQUIRED_NAMESPACES: ${{ inputs.required-namespaces }}
       with:
         github-token: ${{ github.token }}
         script: |

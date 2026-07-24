@@ -206,20 +206,33 @@ Apply an OpenTofu plan.
 
 ### tofu/policy
 
-Run Conftest policy checks against an OpenTofu plan.
+Run Conftest policy checks against an OpenTofu plan. The canonical form pins the policy repository to an exact commit
+and declares every Rego package that the run must evaluate:
 
 ```yaml
 - uses: pretty-good-software-org/ci-shared/actions/tofu/policy@v1
   with:
     plan-json: ${{ steps.plan.outputs.plan-json }}
+    policy-ref: '91fc4fcb981a24d8a1e5387c49cabfbe5900a4dd'
+    required-namespaces: |
+      policies.common
+      policies.s3
 ```
 
-| Input         | Description                                             | Default          |
-| ------------- | ------------------------------------------------------- | ---------------- |
-| `plan-json`   | Path to the JSON plan file                              | `tofu/plan.json` |
-| `client-id`   | GitHub App client ID for cross-repo policy fetching     | `''`             |
-| `private-key` | GitHub App private key for cross-repo policy fetching   | `''`             |
-| `app-id`      | Deprecated GitHub App ID for cross-repo policy fetching | `''`             |
+`policy-ref` and `required-namespaces` must be set together. The action fetches only the requested commit, verifies the
+checked-out commit, confirms that every required package exists in non-test Rego source, and passes those packages to
+Conftest as explicit namespaces. Omitting both inputs preserves the legacy floating-policy behavior for staged consumer
+migration. New consumers should use the pinned form.
+
+| Input                 | Description                                                      | Default          |
+| --------------------- | ---------------------------------------------------------------- | ---------------- |
+| `plan-json`           | Path to the JSON plan file                                       | `tofu/plan.json` |
+| `policy-ref`          | Exact lowercase 40-character `opa-policies` commit SHA           | `''`             |
+| `required-namespaces` | Newline-delimited Rego packages that must exist and be evaluated | `''`             |
+| `client-id`           | GitHub App client ID for cross-repo policy fetching              | `''`             |
+| `private-key`         | GitHub App private key for cross-repo policy fetching            | `''`             |
+| `owner`               | Owner where the cross-repo access app is installed               | repository owner |
+| `app-id`              | Deprecated GitHub App ID for cross-repo policy fetching          | `''`             |
 
 | Output              | Description                                           |
 | ------------------- | ----------------------------------------------------- |
