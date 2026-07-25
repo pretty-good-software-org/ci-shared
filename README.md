@@ -224,6 +224,12 @@ checked-out commit, confirms that every required package exists in non-test Rego
 Conftest as explicit namespaces. Omitting both inputs preserves the legacy floating-policy behavior for staged consumer
 migration. New consumers should use the pinned form.
 
+In the pinned form the action also loads the policy repository's canonical data directory (`policy/data`) with `--data`,
+so central data documents — such as the IAM permissions-boundary registry — are evaluated alongside the Rego. The
+directory is taken only from the immutable pinned checkout, never from the consumer working directory, and is guarded
+against symlink and path traversal. A pinned commit that ships no `policy/data` directory omits `--data` and behaves
+exactly as before.
+
 | Input                 | Description                                                      | Default          |
 | --------------------- | ---------------------------------------------------------------- | ---------------- |
 | `plan-json`           | Path to the JSON plan file                                       | `tofu/plan.json` |

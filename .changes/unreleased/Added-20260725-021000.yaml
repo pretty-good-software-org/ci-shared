@@ -1,0 +1,8 @@
+kind: Added
+body: >-
+  The pinned OpenTofu policy check (actions/tofu/policy) now loads the policy repository's canonical data
+  directory (policy/data) via --data, so central data documents such as the IAM permissions-boundary registry
+  are evaluated. The directory is taken only from the immutable pinned checkout, never a consumer path, is
+  guarded against symlink and path traversal, and is omitted when the pinned commit ships no data directory
+  (backward compatible).
+time: 2026-07-25T02:10:00.422861+02:00
