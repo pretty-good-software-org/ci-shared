@@ -1,7 +1,7 @@
 name: 'Verify APM lock'
 description: >-
-  Regenerates an agent-skills APM lock with a pinned APM binary and fails when
-  the committed lock differs.
+  Regenerates an agent-skills APM lock with a pinned APM binary, rejects lock
+  drift, and verifies doc-update-project's transitive specialist installation.
 inputs:
   candidate-path:
     description: Path to the checked-out pull request candidate
@@ -17,7 +17,7 @@ runs:
       shell: bash
       run: bash "${GITHUB_ACTION_PATH}/install-apm.sh"
 
-    - name: Regenerate and compare APM lock
+    - name: Verify APM lock and documentation consumer
       shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}

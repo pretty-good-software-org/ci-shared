@@ -1,5 +1,5 @@
 const assert = require("node:assert/strict");
-const { chmodSync, mkdtempSync, mkdirSync, writeFileSync } = require("node:fs");
+const { chmodSync, mkdtempSync, mkdirSync, rmSync, writeFileSync } = require("node:fs");
 const { tmpdir } = require("node:os");
 const { join } = require("node:path");
 const { spawnSync } = require("node:child_process");
@@ -42,6 +42,18 @@ case "$1" in
   marketplace|audit) exit 0 ;;
   install)
     if [[ "\${2:-}" == "--frozen" ]]; then exit 0; fi
+    if [[ "\${2:-}" == "doc-update-project@pretty-good-skills" ]]; then
+      skills=(doc-agents-md doc-changelog doc-readme doc-update-project)
+      for skill in "\${skills[@]}"; do
+        if [[ "$skill" != "\${FAKE_APM_OMIT_CONSUMER_SKILL:-}" ]]; then
+          mkdir -p ".agents/skills/$skill"
+        fi
+      done
+      if [[ "\${FAKE_APM_CREATE_PI_PROJECTION:-}" == 1 ]]; then
+        mkdir -p .pi/skills
+      fi
+      exit 0
+    fi
     count="$(cat "$FAKE_APM_STATE" 2>/dev/null || printf 0)"
     count=$((count + 1))
     printf '%s\\n' "$count" >"$FAKE_APM_STATE"
@@ -96,4 +108,10 @@ const createFixture = (committedLock = stableLock): Fixture => {
   return fixture;
 };
 
-module.exports = { createFixture, temporaryDirectories };
+const cleanTemporaryDirectories = (): void => {
+  for (const directory of temporaryDirectories.splice(0)) {
+    rmSync(directory, { force: true, recursive: true });
+  }
+};
+
+module.exports = { cleanTemporaryDirectories, createFixture };
