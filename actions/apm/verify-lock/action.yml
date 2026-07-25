@@ -1,10 +1,19 @@
 name: 'Verify APM lock'
 description: >-
-  Regenerates an agent-skills APM lock with a pinned APM binary, rejects lock
-  drift, and verifies doc-update-project's transitive specialist installation.
+  Regenerates an agent-skills APM lock with a pinned APM binary and fails when
+  the committed lock differs.
 inputs:
   candidate-path:
     description: Path to the checked-out pull request candidate
+    required: true
+  marketplace-path:
+    description: Marketplace metadata directory relative to candidate-path
+    required: true
+  marketplace-name:
+    description: Local marketplace registration name
+    required: true
+  repair-command:
+    description: Developer command shown when the committed lock is stale
     required: true
   github-token:
     description: Contents-read token restricted to the approved private package repositories
@@ -15,12 +24,15 @@ runs:
     - name: Install pinned APM
       id: install
       shell: bash
-      run: bash "${GITHUB_ACTION_PATH}/install-apm.sh"
+      run: bash "${GITHUB_ACTION_PATH}/../install-apm.sh"
 
-    - name: Verify APM lock and documentation consumer
+    - name: Regenerate and compare APM lock
       shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
+        MARKETPLACE_NAME: ${{ inputs.marketplace-name }}
+        MARKETPLACE_PATH: ${{ inputs.marketplace-path }}
+        REPAIR_COMMAND: ${{ inputs.repair-command }}
       run: >-
         bash "${GITHUB_ACTION_PATH}/verify-lock.sh"
         "${{ inputs.candidate-path }}"

@@ -13,10 +13,8 @@ concurrency:
 
 # ROAD SIGN: The organization ruleset in org-github-infrastructure requires
 # this workflow for agent-skills. The candidate is treated only as data: the
-# verifier and APM pin come from this workflow's protected ci-shared commit.
-# It also installs doc-update-project in an isolated consumer to prove its three
-# specialists remain transitive; no candidate script, action, Mise config, or
-# Git hook is run.
+# verifier and APM pin come from this workflow's protected ci-shared commit,
+# and no candidate script, action, Mise configuration, or Git hook is run.
 jobs:
   verify:
     name: Verify APM lock
@@ -59,4 +57,26 @@ jobs:
         uses: ./trusted-ci/actions/apm/verify-lock
         with:
           candidate-path: ${{ github.workspace }}/candidate
+          marketplace-path: .claude-plugin
+          marketplace-name: pretty-good-skills
+          repair-command: mise run lock:refresh
+          github-token: ${{ steps.private-packages.outputs.token }}
+
+      # Transitional composition root: move this product contract to
+      # agent-skills before removing this source workflow from ci-shared.
+      - name: Verify documentation package consumer
+        uses: ./trusted-ci/actions/apm/verify-consumer
+        with:
+          candidate-path: ${{ github.workspace }}/candidate
+          marketplace-path: .claude-plugin
+          marketplace-name: pretty-good-skills
+          package: doc-update-project@pretty-good-skills
+          target: agent-skills
+          projection-path: .agents/skills
+          expected-entries: |
+            doc-agents-md
+            doc-changelog
+            doc-readme
+            doc-update-project
+          forbidden-paths: .pi/skills
           github-token: ${{ steps.private-packages.outputs.token }}

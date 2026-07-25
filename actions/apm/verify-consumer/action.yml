@@ -1,0 +1,66 @@
+name: 'Verify APM consumer'
+description: >-
+  Installs one APM package in an isolated consumer and verifies the exact
+  projection entries without executing candidate lifecycle scripts.
+inputs:
+  candidate-path:
+    description: Path to the checked-out marketplace candidate
+    required: true
+  marketplace-path:
+    description: Marketplace metadata directory relative to candidate-path
+    required: true
+  marketplace-name:
+    description: Local marketplace registration name
+    required: true
+  package:
+    description: Qualified package to install from the marketplace
+    required: true
+  target:
+    description: APM target written to the isolated consumer manifest
+    required: true
+  projection-path:
+    description: Relative consumer directory whose entries must match exactly
+    required: true
+  expected-entries:
+    description: Sorted newline-delimited projection entry names
+    required: true
+  forbidden-paths:
+    description: Newline-delimited consumer-relative paths that must not exist
+    required: false
+    default: ''
+  github-token:
+    description: Contents-read token restricted to approved dependency repositories
+    required: true
+runs:
+  using: 'composite'
+  steps:
+    - name: Install pinned APM
+      id: install
+      shell: bash
+      run: bash "${GITHUB_ACTION_PATH}/../install-apm.sh"
+
+    - name: Verify isolated APM consumer
+      shell: bash
+      env:
+        EXPECTED_ENTRIES: ${{ inputs.expected-entries }}
+        FORBIDDEN_PATHS: ${{ inputs.forbidden-paths }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        MARKETPLACE_NAME: ${{ inputs.marketplace-name }}
+        MARKETPLACE_PATH: ${{ inputs.marketplace-path }}
+        PACKAGE: ${{ inputs.package }}
+        PROJECTION_PATH: ${{ inputs.projection-path }}
+        TARGET: ${{ inputs.target }}
+      run: >-
+        bash "${GITHUB_ACTION_PATH}/verify-consumer.sh"
+        "${{ inputs.candidate-path }}"
+        "${{ steps.install.outputs.apm-bin }}"
+
+    - name: Remove pinned APM
+      if: always()
+      shell: bash
+      env:
+        APM_ROOT: ${{ steps.install.outputs.apm-root }}
+      run: |
+        if [[ -n "$APM_ROOT" ]]; then
+          rm -rf -- "$APM_ROOT"
+        fi

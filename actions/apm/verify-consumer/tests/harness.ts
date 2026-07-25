@@ -1,17 +1,13 @@
-const { readFileSync } = require("node:fs");
 const { resolve } = require("node:path");
 const { spawnSync } = require("node:child_process");
 
-const verifier = resolve("actions/apm/verify-lock/verify-lock.sh");
+const verifier = resolve("actions/apm/verify-consumer/verify-consumer.sh");
 
 interface Fixture {
   fakeApm: string;
-  firstLock: string;
   log: string;
   repository: string;
-  secondLock: string;
   sentinel: string;
-  state: string;
 }
 
 interface Result {
@@ -22,13 +18,17 @@ interface Result {
 
 const verifierEnvironment = (fixture: Fixture): NodeJS.ProcessEnv => ({
   ...process.env,
-  FAKE_APM_FIRST_LOCK: fixture.firstLock,
+  EXPECTED_ENTRIES: "skill-a\nskill-b",
   FAKE_APM_LOG: fixture.log,
-  FAKE_APM_SECOND_LOCK: fixture.secondLock,
   FAKE_APM_SENTINEL: fixture.sentinel,
-  FAKE_APM_STATE: fixture.state,
+  FORBIDDEN_PATHS: ".pi/skills",
   GITHUB_TOKEN: "read-only-test-token",
+  MARKETPLACE_NAME: "example-marketplace",
+  MARKETPLACE_PATH: ".claude-plugin",
+  PACKAGE: "example-bundle@example-marketplace",
+  PROJECTION_PATH: ".agents/skills",
   RUNNER_TEMP: resolve(fixture.repository, ".."),
+  TARGET: "agent-skills",
 });
 
 const executeVerifier = (fixture: Fixture, env: NodeJS.ProcessEnv): Result => {
@@ -42,31 +42,41 @@ const executeVerifier = (fixture: Fixture, env: NodeJS.ProcessEnv): Result => {
 
 const verifyFixture = (fixture: Fixture): Result => executeVerifier(fixture, verifierEnvironment(fixture));
 
+const verifyFixtureWithForbiddenPath = (fixture: Fixture): Result => {
+  const env = verifierEnvironment(fixture);
+  env.FAKE_APM_CREATE_FORBIDDEN = "1";
+  return executeVerifier(fixture, env);
+};
+
+const verifyFixtureWithMissingEntry = (fixture: Fixture): Result => {
+  const env = verifierEnvironment(fixture);
+  env.FAKE_APM_OMIT_ENTRY = "skill-b";
+  return executeVerifier(fixture, env);
+};
+
+const verifyFixtureWithSymlinkEntry = (fixture: Fixture): Result => {
+  const env = verifierEnvironment(fixture);
+  env.FAKE_APM_SYMLINK_ENTRY = "1";
+  return executeVerifier(fixture, env);
+};
+
+const verifyFixtureWithUnsafeMarketplacePath = (fixture: Fixture): Result => {
+  const env = verifierEnvironment(fixture);
+  env.MARKETPLACE_PATH = "../outside";
+  return executeVerifier(fixture, env);
+};
+
 const verifyFixtureWithoutToken = (fixture: Fixture): Result => {
   const env = verifierEnvironment(fixture);
   env.GITHUB_TOKEN = "";
   return executeVerifier(fixture, env);
 };
 
-const verifyFixtureWithoutDocReadme = (fixture: Fixture): Result => {
-  const env = verifierEnvironment(fixture);
-  env.FAKE_APM_OMIT_CONSUMER_SKILL = "doc-readme";
-  return executeVerifier(fixture, env);
-};
-
-const verifyFixtureWithPiProjection = (fixture: Fixture): Result => {
-  const env = verifierEnvironment(fixture);
-  env.FAKE_APM_CREATE_PI_PROJECTION = "1";
-  return executeVerifier(fixture, env);
-};
-
-const normalizedCommandLog = (path: string): string =>
-  readFileSync(path, "utf8").replace(/marketplace add .*\/marketplace --name/g, "marketplace add <marketplace> --name");
-
 module.exports = {
-  normalizedCommandLog,
   verifyFixture,
-  verifyFixtureWithPiProjection,
-  verifyFixtureWithoutDocReadme,
+  verifyFixtureWithForbiddenPath,
+  verifyFixtureWithMissingEntry,
+  verifyFixtureWithSymlinkEntry,
+  verifyFixtureWithUnsafeMarketplacePath,
   verifyFixtureWithoutToken,
 };
