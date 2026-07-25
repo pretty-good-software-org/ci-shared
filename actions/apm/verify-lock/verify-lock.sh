@@ -37,8 +37,10 @@ readonly candidate="$verification_root/candidate"
 readonly marketplace="$verification_root/marketplace"
 readonly first_home="$verification_root/first-home"
 readonly second_home="$verification_root/second-home"
+readonly consumer="$verification_root/consumer"
+readonly consumer_home="$verification_root/consumer-home"
 readonly gitconfig="$verification_root/gitconfig"
-mkdir -p "$candidate" "$marketplace" "$first_home" "$second_home"
+mkdir -p "$candidate" "$marketplace" "$first_home" "$second_home" "$consumer" "$consumer_home"
 touch "$gitconfig"
 git -C "$candidate_checkout" archive --format=tar HEAD | tar -xf - -C "$candidate"
 
@@ -66,6 +68,37 @@ run_apm() {
     "$apm_bin" "$@"
 }
 
+verify_doc_update_consumer() {
+  local skills_dir="$consumer/.agents/skills"
+  local expected_skills actual_skills
+  readonly expected_skills=$'doc-agents-md\ndoc-changelog\ndoc-readme\ndoc-update-project'
+
+  cat > "$consumer/apm.yml" <<'YAML'
+name: doc-update-consumer
+version: 1.0.0
+description: Isolated documentation dependency consumer.
+targets: [agent-skills]
+YAML
+
+  (
+    cd "$consumer"
+    run_apm "$consumer_home" marketplace add "$marketplace" --name pretty-good-skills
+    run_apm "$consumer_home" install doc-update-project@pretty-good-skills
+  )
+
+  [[ -d "$skills_dir" && ! -L "$skills_dir" ]] || \
+    fail "doc-update-project consumer did not create a regular .agents/skills directory"
+  actual_skills="$(find "$skills_dir" -mindepth 1 -maxdepth 1 -exec basename {} \; | sort)"
+  [[ "$actual_skills" == "$expected_skills" ]] || \
+    fail "doc-update-project consumer installed the wrong skills; expected [$expected_skills], got [$actual_skills]"
+  while IFS= read -r skill; do
+    [[ -d "$skills_dir/$skill" && ! -L "$skills_dir/$skill" ]] || \
+      fail "doc-update-project consumer skill $skill must be a regular directory"
+  done <<< "$actual_skills"
+  [[ ! -e "$consumer/.pi/skills" && ! -L "$consumer/.pi/skills" ]] || \
+    fail "doc-update-project consumer created a duplicate .pi/skills projection"
+}
+
 cd "$candidate"
 rm -rf -- apm_modules .agents
 run_apm "$first_home" marketplace add "$marketplace" --name pretty-good-skills
@@ -86,4 +119,6 @@ if ! cmp -s "$committed_lock" "$generated_lock"; then
   diff -u "$committed_lock" "$generated_lock" >&2 || true
   fail "apm.lock.yaml is stale; run 'mise run lock:refresh' locally and commit the result"
 fi
-printf 'APM lock matches a clean, audited resolution\n'
+
+verify_doc_update_consumer
+printf 'APM lock matches clean audited resolutions and doc-update-project resolves its specialists\n'
