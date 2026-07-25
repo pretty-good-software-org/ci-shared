@@ -5,13 +5,14 @@ const { mkdtempSync } = fs;
 const { tmpdir } = require("node:os");
 const { join } = require("node:path");
 const { validateNamespaceNames, validateRequiredNamespaces } = require("./policy-namespace.ts");
+const { resolvePolicyDataDirectory } = require("./policy-data.ts");
 
 const POLICY_REPOSITORY = "ssh://git@github.com/pretty-good-software-org/opa-policies.git";
 const POLICY_DIRECTORY = "policy";
 const POLICY_REF_PATTERN = /^[0-9a-f]{40}$/;
 
 interface PinnedPolicyArgs<Result> {
-  evaluatePolicy: (policyDirectory: string) => Result;
+  evaluatePolicy: (policyDirectory: string, dataDirectory?: string) => Result;
   exec: ExecFn;
   policyRef: string;
   requiredNamespaces: string[];
@@ -70,7 +71,8 @@ const executePinnedPolicy = <Result>(args: ExecutePinnedPolicyArgs<Result>): Res
   verifyFetchedCommit(args.checkoutRoot, args.policyRef, args.exec);
   const policyDirectory = join(args.checkoutRoot, POLICY_DIRECTORY);
   validateRequiredNamespaces(policyDirectory, args.requiredNamespaces);
-  return args.evaluatePolicy(policyDirectory);
+  const dataDirectory = resolvePolicyDataDirectory(args.checkoutRoot, policyDirectory);
+  return args.evaluatePolicy(policyDirectory, dataDirectory);
 };
 
 const errorMessage = (error: unknown): string => {

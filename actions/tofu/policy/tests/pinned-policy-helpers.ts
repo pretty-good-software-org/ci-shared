@@ -11,6 +11,9 @@ const SUCCESS_OUTPUT = "5 tests, 5 passed, 0 warnings, 0 failures";
 interface PinnedExecOptions {
   fetchedCommit?: string;
   packages?: string[];
+  // Runs after the policy source is written, with the checkout root.
+  // Materializes the policy/data directory, or a hostile symlink, for the test.
+  setupData?: (checkoutRoot: string) => void;
 }
 
 const writePolicySource = (checkoutRoot: string, packages: string[]): void => {
@@ -24,15 +27,26 @@ const writePolicySource = (checkoutRoot: string, packages: string[]): void => {
 const isGitInit = (bin: string, args: string[]): boolean => bin === "git" && args[0] === "init";
 const isGitRevisionCheck = (bin: string, args: string[]): boolean => bin === "git" && args.includes("rev-parse");
 
-const pinnedExec = ({ fetchedCommit = POLICY_COMMIT, packages = ["policies.s3"] }: PinnedExecOptions = {}) => {
+const pinnedExec = ({
+  fetchedCommit = POLICY_COMMIT,
+  packages = ["policies.s3"],
+  setupData,
+}: PinnedExecOptions = {}) => {
   const commands: string[] = [];
   let checkoutRoot = "";
+
+  const handleGitInit = (args: string[]): void => {
+    checkoutRoot = args.at(-1) || "";
+    writePolicySource(checkoutRoot, packages);
+    if (setupData) {
+      setupData(checkoutRoot);
+    }
+  };
 
   const exec = (bin: string, args: string[]): string => {
     commands.push([bin, ...args].join(" "));
     if (isGitInit(bin, args)) {
-      checkoutRoot = args.at(-1) || "";
-      writePolicySource(checkoutRoot, packages);
+      handleGitInit(args);
       return "";
     }
     if (isGitRevisionCheck(bin, args)) {

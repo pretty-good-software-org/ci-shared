@@ -168,12 +168,22 @@ module.exports = { findFloorExemptReason, validateConftestIntegrity };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const { withPinnedPolicy } = __nccwpck_require__(745);
 const { evaluatePolicy, execErrorOutput } = __nccwpck_require__(806);
-const commandArguments = (args, policyDirectory) => {
-    const namespaceArguments = args.requiredNamespaces.flatMap((namespace) => ["--namespace", namespace]);
-    return ["test", "--policy", policyDirectory, ...namespaceArguments, "--quiet=false", args.planJson];
+// --data is added only when the pinned checkout ships a data directory.
+// An older policy commit without one keeps the exact legacy command.
+// The directory is always the immutable checkout's own, never a consumer path.
+const dataArguments = (dataDirectory) => {
+    if (!dataDirectory) {
+        return [];
+    }
+    return ["--data", dataDirectory];
 };
-const evaluateFetchedPolicy = (args, policyDirectory) => {
-    const argsForConftest = commandArguments(args, policyDirectory);
+const commandArguments = (args, policyDirectory, dataDirectory) => {
+    const namespaceArguments = args.requiredNamespaces.flatMap((namespace) => ["--namespace", namespace]);
+    const data = dataArguments(dataDirectory);
+    return ["test", "--policy", policyDirectory, ...data, ...namespaceArguments, "--quiet=false", args.planJson];
+};
+const evaluateFetchedPolicy = (args, policyDirectory, dataDirectory) => {
+    const argsForConftest = commandArguments(args, policyDirectory, dataDirectory);
     return evaluatePolicy(argsForConftest, args.exec, args.floorExemptReason);
 };
 const pinnedPolicyFailure = (error) => {
@@ -191,7 +201,7 @@ const failedPinnedPolicyResult = (args, error) => ({
 });
 const runPinnedPolicy = (args) => {
     const checkoutArgs = {
-        evaluatePolicy: (policyDirectory) => evaluateFetchedPolicy(args, policyDirectory),
+        evaluatePolicy: (policyDirectory, dataDirectory) => evaluateFetchedPolicy(args, policyDirectory, dataDirectory),
         exec: args.exec,
         policyRef: args.policyRef,
         requiredNamespaces: args.requiredNamespaces,
@@ -218,6 +228,7 @@ const { mkdtempSync } = fs;
 const { tmpdir } = __nccwpck_require__(161);
 const { join } = __nccwpck_require__(760);
 const { validateNamespaceNames, validateRequiredNamespaces } = __nccwpck_require__(108);
+const { resolvePolicyDataDirectory } = __nccwpck_require__(511);
 const POLICY_REPOSITORY = "ssh://git@github.com/pretty-good-software-org/opa-policies.git";
 const POLICY_DIRECTORY = "policy";
 const POLICY_REF_PATTERN = /^[0-9a-f]{40}$/;
@@ -264,7 +275,8 @@ const executePinnedPolicy = (args) => {
     verifyFetchedCommit(args.checkoutRoot, args.policyRef, args.exec);
     const policyDirectory = join(args.checkoutRoot, POLICY_DIRECTORY);
     validateRequiredNamespaces(policyDirectory, args.requiredNamespaces);
-    return args.evaluatePolicy(policyDirectory);
+    const dataDirectory = resolvePolicyDataDirectory(args.checkoutRoot, policyDirectory);
+    return args.evaluatePolicy(policyDirectory, dataDirectory);
 };
 const errorMessage = (error) => {
     if (error instanceof Error) {
@@ -301,6 +313,56 @@ const withPinnedPolicy = (args) => {
     }
 };
 module.exports = { withPinnedPolicy };
+
+
+/***/ }),
+
+/***/ 511:
+/***/ ((module, exports, __nccwpck_require__) => {
+
+
+// Resolves the canonical policy/data directory inside the pinned checkout.
+// Conftest does not auto-load data from --policy or the working directory.
+// The pinned runner must therefore pass this directory explicitly with --data.
+// Only the immutable checkout's own directory is used, never a consumer path.
+// The path is guarded against symlink and traversal escapes below.
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const fs = __nccwpck_require__(24);
+const { isAbsolute, join, relative } = __nccwpck_require__(760);
+const POLICY_DATA_DIRECTORY = "data";
+const integrityError = (message) => new Error(`Policy integrity check failed: ${message}`);
+// True when the resolved data path is a strict descendant of the checkout root.
+// Equal paths and any escaping path (starting with "..", or absolute) fail.
+const isWithinRoot = (realRoot, realData) => {
+    const rel = relative(realRoot, realData);
+    return rel !== "" && !rel.startsWith("..") && !isAbsolute(rel);
+};
+// Validates the candidate's real, symlink-resolved location.
+// It must be a directory strictly inside the checkout root.
+// Any escape or non-directory throws a policy-integrity error.
+const assertDataDirectoryContained = (checkoutRoot, candidate) => {
+    const realRoot = fs.realpathSync(checkoutRoot);
+    const realData = fs.realpathSync(candidate);
+    if (!isWithinRoot(realRoot, realData)) {
+        throw integrityError("policy data directory resolves outside the policy checkout");
+    }
+    if (!fs.statSync(realData).isDirectory()) {
+        throw integrityError("policy data path is not a directory");
+    }
+};
+// Returns the checkout-relative policy/data path to pass to --data.
+// Returns undefined when the checkout ships no data directory.
+// That covers older pinned commits and stays backward compatible.
+// The returned path is the plain join path, matching the --policy argument.
+const resolvePolicyDataDirectory = (checkoutRoot, policyDirectory) => {
+    const candidate = join(policyDirectory, POLICY_DATA_DIRECTORY);
+    if (!fs.existsSync(candidate)) {
+        return undefined;
+    }
+    assertDataDirectoryContained(checkoutRoot, candidate);
+    return candidate;
+};
+module.exports = { resolvePolicyDataDirectory };
 
 
 /***/ }),
