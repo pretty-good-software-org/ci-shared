@@ -1,6 +1,6 @@
 const { afterEach, describe, it } = require("node:test");
 const assert = require("node:assert/strict");
-const { existsSync, readFileSync } = require("node:fs");
+const { existsSync, readFileSync, readdirSync } = require("node:fs");
 const { addMarketplaceSymlink, cleanTemporaryDirectories, createFixture } = require("./fixture.ts");
 const {
   verifyFixture,
@@ -85,15 +85,16 @@ describe("consumer trust boundary", () => {
 });
 
 describe("shared action ownership", () => {
-  it("keeps shared APM action code free of product and organization identities", () => {
-    const sources = [
-      "actions/apm/path-validation.sh",
-      "actions/apm/verify-consumer/action.yml",
-      "actions/apm/verify-consumer/verify-consumer.sh",
-      "actions/apm/verify-lock/action.yml",
-      "actions/apm/verify-lock/verify-lock.sh",
-    ];
-    const sharedCode = sources.map((path) => readFileSync(path, "utf8")).join("\n");
-    assert.doesNotMatch(sharedCode, /doc-update|pretty-good|platform-|agent-skills-development/i);
+  it("keeps repository-specific APM composition roots out of shared workflows", () => {
+    const workflowDirectory = ".github/workflows";
+    const workflows = readdirSync(workflowDirectory)
+      .filter((name: string) => name.endsWith(".yml") || name.endsWith(".yaml"))
+      .map((name: string) => readFileSync(`${workflowDirectory}/${name}`, "utf8"))
+      .join("\n");
+    assert.doesNotMatch(
+      workflows,
+      /actions\/apm\/verify-(?:consumer|lock)/,
+      "consumer repositories must own product-specific APM workflow composition",
+    );
   });
 });
