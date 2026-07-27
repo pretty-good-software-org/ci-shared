@@ -10,6 +10,10 @@ compile = false
 
 [tools]
 cocogitto = "6.5.0"
+# Conftest is the policy engine this repo pins. The policy action's live
+# regressions run this exact binary, so a bump must be validated against
+# actions/tofu/policy/tests/pinned-policy-isolation.test.ts before it lands.
+conftest = "0.68.2"
 actionlint = "1.7.11"
 yamllint = "1.38.0"
 rumdl = "0.2.38"

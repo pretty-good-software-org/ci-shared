@@ -1,0 +1,6 @@
+kind: Security
+body: >-
+  Pin the conftest invocation to the verified policy checkout so a consumer
+  conftest configuration or CONFTEST_UPDATE cannot replace, redirect or silence
+  the evaluated policy, and verify the checkout is unchanged afterwards.
+time: 2026-07-28T00:00:00.000000+02:00
