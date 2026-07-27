@@ -20,11 +20,6 @@ ci-shared
 │   │   └── cleanup-s3
 │   ├── github
 │   │   └── comment
-│   ├── guard
-│   │   ├── action.yml
-│   │   ├── guard.sh
-│   │   ├── lint-standards.toml
-│   │   └── tests
 │   ├── setup
 │   │   ├── mise
 │   │   ├── npm-auth
@@ -142,9 +137,8 @@ directly.
 mise run test
 ```
 
-Tests are auto-discovered via `actions/*/*/tests/*.test.ts`, `actions/guard/tests/*.test.ts`,
-`test/*.test.ts` (see `mise-tasks/test/_default`). No additional test
-dependencies are needed.
+Tests are auto-discovered via `actions/*/*/tests/*.test.ts`, `test/*.test.ts`
+(see `mise-tasks/test/_default`). No additional test dependencies are needed.
 
 ## Tool Management
 
