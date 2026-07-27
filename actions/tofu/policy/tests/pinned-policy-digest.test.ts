@@ -10,6 +10,8 @@ const { tmpdir } = require("node:os");
 const { POLICY_COMMIT, pinnedExec, runPinnedAction } = require("./pinned-policy-helpers.ts");
 const { hashPolicyTree } = require("../policy-tree.ts");
 
+const FIRST_INVALID_UTF8 = "70c328";
+const SECOND_INVALID_UTF8 = "70a0a1";
 const TREE_CHANGED = "Policy integrity check failed: the verified policy tree changed during evaluation";
 
 // Rewrites a policy file while conftest is notionally running.
@@ -67,4 +69,27 @@ it("digests a symlink by its target text rather than following it", () => {
     digestWithLink("/nonexistent/other.rego"),
     "retargeting a link must change the digest",
   );
+  assert.strictEqual(
+    dangling,
+    digestWithLink("/nonexistent/policy.rego"),
+    "the same tree must digest the same under a different checkout path",
+  );
+});
+
+// Bodies are digested as raw bytes.
+// Two files differing only in invalid UTF-8 must not collide.
+// A lossy decode would map both to the replacement character.
+it("distinguishes files that differ only outside valid UTF-8", () => {
+  const root = mkdtempSync(join(tmpdir(), "ci-shared-digest-bytes-"));
+  try {
+    const tree = join(root, "policy");
+    mkdirSync(tree);
+    const target = join(tree, "a.rego");
+    writeFileSync(target, Buffer.from(FIRST_INVALID_UTF8, "hex"));
+    const first = hashPolicyTree(tree);
+    writeFileSync(target, Buffer.from(SECOND_INVALID_UTF8, "hex"));
+    assert.notStrictEqual(first, hashPolicyTree(tree), "invalid byte sequences must not collide");
+  } finally {
+    rmSync(root, { force: true, recursive: true });
+  }
 });

@@ -20,7 +20,10 @@ interface Fixture {
 }
 
 interface LiveOptions {
-  env?: NodeJS.ProcessEnv;
+  // Reaches conftest only, standing in for a variable that got past the boundary.
+  childOnlyEnv?: NodeJS.ProcessEnv;
+  // Inherited by the action and by conftest, which is how a runner supplies one.
+  env?: Record<string, string>;
   silentPolicy?: boolean;
   transform?: (args: string[]) => string[];
 }
@@ -36,14 +39,23 @@ const dropFlag = (flag: string) => (args: string[]) => {
 const withoutConfigIsolation = dropFlag("--config-file");
 const withoutUpdatePin = dropFlag("--update");
 const withoutColorPin = (args: string[]): string[] => args.filter((arg: string) => arg !== "--no-color");
+const withoutParserPin = dropFlag("--parser");
+const withoutNoFailPin = (args: string[]): string[] => args.filter((arg: string) => arg !== "--no-fail=false");
 
 // Reproduces the invocation as it stood before this pin.
 // The consumer configuration file is read and nothing states that updates are off.
 const withoutPinning = (args: string[]): string[] => withoutUpdatePin(withoutConfigIsolation(args));
 
+const childEnvironment = (options: LiveOptions): NodeJS.ProcessEnv => {
+  if (options.childOnlyEnv) {
+    return options.childOnlyEnv;
+  }
+  return { ...process.env, ...options.env };
+};
+
 const runConftest = (args: string[], fixture: Fixture, options: LiveOptions): string => {
   const transform = options.transform || ((given: string[]) => given);
-  const env = options.env || process.env;
+  const env = childEnvironment(options);
   return execFileSync("conftest", transform(args), {
     cwd: fixture.checkout,
     encoding: "utf8",
@@ -86,6 +98,7 @@ const runLivePolicy = async (fixture: Fixture, options: LiveOptions = {}) => {
     INPUT_PLAN_JSON: "plan.json",
     INPUT_POLICY_REF: POLICY_COMMIT,
     INPUT_REQUIRED_NAMESPACES: REQUIRED_NAMESPACES.join("\n"),
+    ...options.env,
   };
   const args = { cwd: fixture.checkout, env, exec, logWarning: () => {}, writeOutput };
   const rejection = await policy(args).then(
@@ -105,6 +118,8 @@ module.exports = {
   runLivePolicy,
   withoutColorPin,
   withoutConfigIsolation,
+  withoutNoFailPin,
+  withoutParserPin,
   withoutPinning,
   withoutUpdatePin,
 };

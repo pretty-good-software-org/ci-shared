@@ -5,6 +5,7 @@ import type { ExecFn, PolicyResult } from "./policy-types";
 const { execCapture } = require("../../../lib/exec.ts");
 const { resolveOutputWriter } = require("../../../lib/github-output.ts");
 const { findFloorExemptReason, validateConftestIntegrity } = require("./conftest-integrity.ts");
+const { conftestEnvironmentFailure } = require("./policy-environment.ts");
 const { parseRequiredNamespaces } = require("./policy-namespace.ts");
 const { runPinnedPolicy } = require("./pinned-policy-runner.ts");
 const { evaluatePolicy, execErrorOutput } = require("./policy-result.ts");
@@ -42,11 +43,6 @@ const configurationFailureResult = (configuration: PolicyConfiguration): PolicyR
   policyViolations: configuration.integrityFailure,
 });
 
-const runPolicyTest = (planJson: string, exec: ExecFn, floorExemptReason: string): PolicyResult => {
-  const commandArguments = ["test", "--quiet=false", planJson];
-  return evaluatePolicy(commandArguments, exec, floorExemptReason);
-};
-
 const run = ({ planJson, cwd = process.cwd() }: RunArgs, exec: ExecFn = execCapture): PolicyResult => {
   const configuration = inspectPolicyConfiguration(cwd);
   if (configuration.integrityFailure) {
@@ -65,7 +61,8 @@ const run = ({ planJson, cwd = process.cwd() }: RunArgs, exec: ExecFn = execCapt
     };
   }
 
-  return runPolicyTest(planJson, exec, configuration.floorExemptReason);
+  const commandArguments = ["test", "--quiet=false", planJson];
+  return evaluatePolicy(commandArguments, exec, configuration.floorExemptReason);
 };
 
 const runPinned = (inputs: PolicyInputs, cwd: string | undefined, exec: ExecFn): PolicyResult => {
@@ -98,6 +95,19 @@ const runRequestedPolicy = (inputs: PolicyInputs, cwd: string | undefined, exec:
   return runPinned(inputs, cwd, exec);
 };
 
+// Conftest settings in the environment outrank the isolated configuration file.
+// The run therefore stops before any policy is fetched or evaluated.
+const evaluateRequest = (args: MainArgs, env: NodeJS.ProcessEnv, exec: ExecFn): PolicyResult => {
+  const environmentFailure = conftestEnvironmentFailure(env);
+  if (environmentFailure) {
+    const configuration = { floorExemptReason: "", integrityFailure: environmentFailure };
+    return configurationFailureResult(configuration);
+  }
+
+  const policyInputs = resolvePolicyInputs(env);
+  return runRequestedPolicy(policyInputs, args.cwd, exec);
+};
+
 const enforcePolicyIntegrity = (result: PolicyResult): void => {
   if (result.policyIntegrityFailed) {
     throw new Error(result.policyViolations);
@@ -124,8 +134,7 @@ interface MainArgs {
 
 const main = async (args: MainArgs = {}): Promise<void> => {
   const { env = process.env, exec = execCapture } = args;
-  const policyInputs = resolvePolicyInputs(env);
-  const result = runRequestedPolicy(policyInputs, args.cwd, exec);
+  const result = evaluateRequest(args, env, exec);
   logFloorExemption(result.floorExemptReason, resolveWarningLogger(args.logWarning));
 
   const setOutput = resolveOutputWriter(args);

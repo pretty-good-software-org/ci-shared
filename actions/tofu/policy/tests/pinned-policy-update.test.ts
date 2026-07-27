@@ -58,18 +58,18 @@ it("does not fetch a floating git update source", async () => {
   });
 });
 
-it("control: without the empty --update pin CONFTEST_UPDATE replaces the verified tree", async () => {
+it("control: a CONFTEST_UPDATE that reached conftest without the --update pin replaces the tree", async () => {
   await withLiveFixture('namespace = ["policies.s3"]\n', async (fixture: LiveFixture) => {
-    const env = { ...process.env, CONFTEST_UPDATE: `${fixture.directorySource}//policy` };
-    const { rejection } = await runLivePolicy(fixture, { env, transform: withoutUpdatePin });
+    const childOnlyEnv = { ...process.env, CONFTEST_UPDATE: `${fixture.directorySource}//policy` };
+    const { rejection } = await runLivePolicy(fixture, { childOnlyEnv, transform: withoutUpdatePin });
     assert.strictEqual(rejection, TREE_CHANGED, "the environment source must reach and replace the verified tree");
   });
 });
 
-it("ignores an update source supplied through the environment", async () => {
+it("ignores a CONFTEST_UPDATE that reached conftest past the boundary", async () => {
   await withLiveFixture('namespace = ["policies.s3"]\n', async (fixture: LiveFixture) => {
-    const env = { ...process.env, CONFTEST_UPDATE: `${fixture.directorySource}//policy` };
-    const { outputs, rejection } = await runLivePolicy(fixture, { env });
+    const childOnlyEnv = { ...process.env, CONFTEST_UPDATE: `${fixture.directorySource}//policy` };
+    const { outputs, rejection } = await runLivePolicy(fixture, { childOnlyEnv });
     assertVerifiedPolicyEvaluated(outputs, rejection);
   });
 });

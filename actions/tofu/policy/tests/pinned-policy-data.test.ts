@@ -25,7 +25,7 @@ it("loads the immutable data directory with --data when the pinned checkout ship
   const checkoutRoot = getCheckoutRoot();
   assert.strictEqual(
     conftestCommand(commands),
-    `conftest test --config-file ${join(checkoutRoot, "conftest-pinned.toml")} --policy ${join(checkoutRoot, "policy")} --update  --data ${join(checkoutRoot, "policy", "data")} --namespace policies.s3 --no-color --quiet=false tofu/plan.json`,
+    `conftest test --config-file ${join(checkoutRoot, "conftest-pinned.toml")} --policy ${join(checkoutRoot, "policy")} --update  --data ${join(checkoutRoot, "policy", "data")} --namespace policies.s3 --parser json --no-fail=false --no-color --quiet=false tofu/plan.json`,
     "--data must load the checkout's own data directory, positioned after --policy",
   );
   assert.strictEqual(outputs["has_violations"], "false", "a verified policy result should pass");
@@ -39,7 +39,7 @@ it("omits --data when the pinned checkout has no data directory", async () => {
   const checkoutRoot = getCheckoutRoot();
   assert.strictEqual(
     conftestCommand(commands),
-    `conftest test --config-file ${join(checkoutRoot, "conftest-pinned.toml")} --policy ${join(checkoutRoot, "policy")} --update  --namespace policies.s3 --no-color --quiet=false tofu/plan.json`,
+    `conftest test --config-file ${join(checkoutRoot, "conftest-pinned.toml")} --policy ${join(checkoutRoot, "policy")} --update  --namespace policies.s3 --parser json --no-fail=false --no-color --quiet=false tofu/plan.json`,
     "a checkout without a data directory must keep the exact legacy command with no --data",
   );
 });

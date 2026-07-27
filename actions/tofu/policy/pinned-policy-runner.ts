@@ -44,6 +44,13 @@ const commandArguments = (args: RunPinnedPolicyArgs, sources: PolicySources): st
     "",
     ...data,
     ...namespaceArguments,
+    // A parser that cannot read the plan turns it into an empty document.
+    // Every policy then passes against nothing. The input is the JSON plan.
+    "--parser",
+    "json",
+    // Without this, a run that found violations can still exit zero.
+    // A zero exit is read here as a clean policy result.
+    "--no-fail=false",
     // Conftest colours its summary even when stdout is not a terminal.
     // The loaded-test count is read back out of that summary.
     // Colour codes sit between the newline and the count, hiding it.

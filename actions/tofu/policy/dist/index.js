@@ -2,18 +2,19 @@
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 486:
+/***/ 673:
 /***/ ((module, exports, __nccwpck_require__) => {
 
 
 // Run Conftest policy checks against an OpenTofu plan.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const { execCapture } = __nccwpck_require__(361);
-const { resolveOutputWriter } = __nccwpck_require__(1);
-const { findFloorExemptReason, validateConftestIntegrity } = __nccwpck_require__(984);
-const { parseRequiredNamespaces } = __nccwpck_require__(108);
-const { runPinnedPolicy } = __nccwpck_require__(724);
-const { evaluatePolicy, execErrorOutput } = __nccwpck_require__(806);
+const { execCapture } = __nccwpck_require__(6);
+const { resolveOutputWriter } = __nccwpck_require__(96);
+const { findFloorExemptReason, validateConftestIntegrity } = __nccwpck_require__(59);
+const { conftestEnvironmentFailure } = __nccwpck_require__(677);
+const { parseRequiredNamespaces } = __nccwpck_require__(631);
+const { runPinnedPolicy } = __nccwpck_require__(195);
+const { evaluatePolicy, execErrorOutput } = __nccwpck_require__(299);
 const POLICY_REPOSITORY = "git::ssh://git@github.com/pretty-good-software-org/opa-policies.git//policy";
 const inspectPolicyConfiguration = (cwd) => {
     const integrityFailure = validateConftestIntegrity(cwd);
@@ -28,10 +29,6 @@ const configurationFailureResult = (configuration) => ({
     policyIntegrityFailed: true,
     policyViolations: configuration.integrityFailure,
 });
-const runPolicyTest = (planJson, exec, floorExemptReason) => {
-    const commandArguments = ["test", "--quiet=false", planJson];
-    return evaluatePolicy(commandArguments, exec, floorExemptReason);
-};
 const run = ({ planJson, cwd = process.cwd() }, exec = execCapture) => {
     const configuration = inspectPolicyConfiguration(cwd);
     if (configuration.integrityFailure) {
@@ -49,7 +46,8 @@ const run = ({ planJson, cwd = process.cwd() }, exec = execCapture) => {
             policyViolations: `Policy integrity check failed: conftest pull failed: ${execErrorOutput(error)}`,
         };
     }
-    return runPolicyTest(planJson, exec, configuration.floorExemptReason);
+    const commandArguments = ["test", "--quiet=false", planJson];
+    return evaluatePolicy(commandArguments, exec, configuration.floorExemptReason);
 };
 const runPinned = (inputs, cwd, exec) => {
     const configuration = inspectPolicyConfiguration(cwd || process.cwd());
@@ -77,6 +75,17 @@ const runRequestedPolicy = (inputs, cwd, exec) => {
     }
     return runPinned(inputs, cwd, exec);
 };
+// Conftest settings in the environment outrank the isolated configuration file.
+// The run therefore stops before any policy is fetched or evaluated.
+const evaluateRequest = (args, env, exec) => {
+    const environmentFailure = conftestEnvironmentFailure(env);
+    if (environmentFailure) {
+        const configuration = { floorExemptReason: "", integrityFailure: environmentFailure };
+        return configurationFailureResult(configuration);
+    }
+    const policyInputs = resolvePolicyInputs(env);
+    return runRequestedPolicy(policyInputs, args.cwd, exec);
+};
 const enforcePolicyIntegrity = (result) => {
     if (result.policyIntegrityFailed) {
         throw new Error(result.policyViolations);
@@ -90,8 +99,7 @@ const logFloorExemption = (reason, logWarning) => {
 };
 const main = async (args = {}) => {
     const { env = process.env, exec = execCapture } = args;
-    const policyInputs = resolvePolicyInputs(env);
-    const result = runRequestedPolicy(policyInputs, args.cwd, exec);
+    const result = evaluateRequest(args, env, exec);
     logFloorExemption(result.floorExemptReason, resolveWarningLogger(args.logWarning));
     const setOutput = resolveOutputWriter(args);
     setOutput("has_violations", String(result.hasViolations));
@@ -103,7 +111,7 @@ module.exports = Object.assign(main, { run });
 
 /***/ }),
 
-/***/ 573:
+/***/ 936:
 /***/ ((module, exports, __nccwpck_require__) => {
 
 
@@ -134,7 +142,7 @@ module.exports = { ISOLATED_CONFIG_FILE, writeIsolatedConfig };
 
 /***/ }),
 
-/***/ 984:
+/***/ 59:
 /***/ ((module, exports, __nccwpck_require__) => {
 
 
@@ -192,13 +200,13 @@ module.exports = { findFloorExemptReason, validateConftestIntegrity };
 
 /***/ }),
 
-/***/ 724:
+/***/ 195:
 /***/ ((module, exports, __nccwpck_require__) => {
 
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const { withPinnedPolicy } = __nccwpck_require__(745);
-const { evaluatePolicy, execErrorOutput } = __nccwpck_require__(806);
+const { withPinnedPolicy } = __nccwpck_require__(972);
+const { evaluatePolicy, execErrorOutput } = __nccwpck_require__(299);
 // --data is added only when the pinned checkout ships a data directory.
 // An older policy commit without one keeps the exact legacy command.
 // The directory is always the immutable checkout's own, never a consumer path.
@@ -225,6 +233,13 @@ const commandArguments = (args, sources) => {
         "",
         ...data,
         ...namespaceArguments,
+        // A parser that cannot read the plan turns it into an empty document.
+        // Every policy then passes against nothing. The input is the JSON plan.
+        "--parser",
+        "json",
+        // Without this, a run that found violations can still exit zero.
+        // A zero exit is read here as a clean policy result.
+        "--no-fail=false",
         // Conftest colours its summary even when stdout is not a terminal.
         // The loaded-test count is read back out of that summary.
         // Colour codes sit between the newline and the count, hiding it.
@@ -269,7 +284,7 @@ module.exports = { runPinnedPolicy };
 
 /***/ }),
 
-/***/ 745:
+/***/ 972:
 /***/ ((module, exports, __nccwpck_require__) => {
 
 
@@ -278,10 +293,10 @@ const fs = __nccwpck_require__(24);
 const { mkdtempSync } = fs;
 const { tmpdir } = __nccwpck_require__(161);
 const { join } = __nccwpck_require__(760);
-const { validateNamespaceNames, validateRequiredNamespaces } = __nccwpck_require__(108);
-const { resolvePolicyDataDirectory } = __nccwpck_require__(511);
-const { hashPolicyTree } = __nccwpck_require__(547);
-const { writeIsolatedConfig } = __nccwpck_require__(573);
+const { validateNamespaceNames, validateRequiredNamespaces } = __nccwpck_require__(631);
+const { resolvePolicyDataDirectory } = __nccwpck_require__(434);
+const { hashPolicyTree } = __nccwpck_require__(94);
+const { writeIsolatedConfig } = __nccwpck_require__(936);
 const POLICY_REPOSITORY = "ssh://git@github.com/pretty-good-software-org/opa-policies.git";
 const POLICY_DIRECTORY = "policy";
 const POLICY_REF_PATTERN = /^[0-9a-f]{40}$/;
@@ -382,7 +397,7 @@ module.exports = { withPinnedPolicy };
 
 /***/ }),
 
-/***/ 511:
+/***/ 434:
 /***/ ((module, exports, __nccwpck_require__) => {
 
 
@@ -432,7 +447,35 @@ module.exports = { resolvePolicyDataDirectory };
 
 /***/ }),
 
-/***/ 108:
+/***/ 677:
+/***/ ((module, exports) => {
+
+
+// Refuses to evaluate policy with conftest settings inherited from the environment.
+//
+// Viper reads CONFTEST_* variables ahead of any configuration file.
+// The isolated configuration file therefore cannot shadow them.
+// Naming the dangerous ones as flags would be a deny-list, and conftest gains settings.
+// The action's inputs are authoritative instead.
+// Any inherited CONFTEST_* variable fails the run closed, including unknown ones.
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const CONFTEST_ENVIRONMENT_PREFIX = "CONFTEST_";
+const conftestEnvironmentNames = (env) => Object.keys(env)
+    .filter((name) => name.startsWith(CONFTEST_ENVIRONMENT_PREFIX))
+    .toSorted();
+const conftestEnvironmentFailure = (env) => {
+    const names = conftestEnvironmentNames(env);
+    if (names.length === 0) {
+        return "";
+    }
+    return `Policy integrity check failed: refusing to evaluate policy with conftest settings from the environment: ${names.join(", ")}`;
+};
+module.exports = { conftestEnvironmentFailure };
+
+
+/***/ }),
+
+/***/ 631:
 /***/ ((module, exports, __nccwpck_require__) => {
 
 
@@ -485,7 +528,7 @@ module.exports = { parseRequiredNamespaces, validateNamespaceNames, validateRequ
 
 /***/ }),
 
-/***/ 806:
+/***/ 299:
 /***/ ((module, exports) => {
 
 
@@ -543,7 +586,7 @@ module.exports = { evaluatePolicy, execErrorOutput };
 
 /***/ }),
 
-/***/ 547:
+/***/ 94:
 /***/ ((module, exports, __nccwpck_require__) => {
 
 
@@ -551,38 +594,47 @@ module.exports = { evaluatePolicy, execErrorOutput };
 // The pinning flags are the enforcement; this digest is the proof.
 // Symlinks are digested by their target text and never followed.
 // Following one would let a planted link pull host files into the digest.
+// Paths are digested relative to the tree root and file bodies as raw bytes.
+// The digest therefore describes the tree itself, not where it was checked out.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const { createHash } = __nccwpck_require__(598);
 const { readFileSync, readdirSync, readlinkSync } = __nccwpck_require__(24);
-const { join } = __nccwpck_require__(760);
-const entryContent = (entry, path) => {
-    if (entry.isSymbolicLink()) {
-        return `symlink:${readlinkSync(path)}`;
-    }
-    if (entry.isFile()) {
-        return `file:${readFileSync(path, "utf8")}`;
-    }
-    return "other:";
+const { join, relative } = __nccwpck_require__(760);
+// Each part is length-prefixed so no file body can imitate the next entry's header.
+const digestPart = (digest, label, value) => {
+    digest.update(`${label}:${value.length}:`);
+    digest.update(value);
 };
-const digestEntry = (digest, directory, entry) => {
-    const path = join(directory, entry.name);
-    digest.update(` ${path} `);
-    if (entry.isDirectory() && !entry.isSymbolicLink()) {
-        digest.update("directory:");
-        digestDirectory(digest, path);
+const digestContent = (context, path, entry) => {
+    if (entry.isSymbolicLink()) {
+        digestPart(context.digest, "symlink", readlinkSync(path));
         return;
     }
-    digest.update(entryContent(entry, path));
+    if (entry.isFile()) {
+        digestPart(context.digest, "file", readFileSync(path));
+        return;
+    }
+    digestPart(context.digest, "other", "");
+};
+const digestEntry = (context, directory, entry) => {
+    const path = join(directory, entry.name);
+    digestPart(context.digest, "path", relative(context.root, path));
+    if (entry.isDirectory() && !entry.isSymbolicLink()) {
+        digestPart(context.digest, "directory", "");
+        digestDirectory(context, path);
+        return;
+    }
+    digestContent(context, path, entry);
 };
 const byName = (left, right) => left.name.localeCompare(right.name);
-const digestDirectory = (digest, directory) => {
+const digestDirectory = (context, directory) => {
     const entries = readdirSync(directory, { withFileTypes: true }).toSorted(byName);
-    entries.forEach((entry) => digestEntry(digest, directory, entry));
+    entries.forEach((entry) => digestEntry(context, directory, entry));
 };
-// Returns a stable digest over every path, file body and link target in the tree.
+// Returns a stable digest over every relative path, file body and link target.
 const hashPolicyTree = (policyDirectory) => {
     const digest = createHash("sha256");
-    digestDirectory(digest, policyDirectory);
+    digestDirectory({ digest, root: policyDirectory }, policyDirectory);
     return digest.digest("hex");
 };
 module.exports = { hashPolicyTree };
@@ -590,7 +642,7 @@ module.exports = { hashPolicyTree };
 
 /***/ }),
 
-/***/ 361:
+/***/ 6:
 /***/ ((module, exports, __nccwpck_require__) => {
 
 
@@ -640,7 +692,7 @@ module.exports = { execCapture, execStream, execStreamWithEnv };
 
 /***/ }),
 
-/***/ 1:
+/***/ 96:
 /***/ ((module, exports, __nccwpck_require__) => {
 
 
@@ -750,7 +802,7 @@ module.exports = require("node:path");
 /******/ 	// startup
 /******/ 	// Load entry module and return exports
 /******/ 	// This entry module is referenced by other modules so it can't be inlined
-/******/ 	var __webpack_exports__ = __nccwpck_require__(486);
+/******/ 	var __webpack_exports__ = __nccwpck_require__(673);
 /******/ 	module.exports = __webpack_exports__;
 /******/ 	
 /******/ })()
