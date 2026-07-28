@@ -46,34 +46,54 @@ it("fails closed when a file is added to the verified tree during evaluation", a
   await assert.rejects(action, { message: TREE_CHANGED }, "an added policy file must not be trusted");
 });
 
-// Following a link would read host files into the digest.
-// A dangling link would throw. Digesting the target text avoids both.
-const digestWithLink = (target: string): string => {
-  const root = mkdtempSync(join(tmpdir(), "ci-shared-digest-"));
+// Builds the same tree under whichever root it is given.
+const digestTreeUnder = (root: string): string => {
   try {
     const tree = join(root, "policy");
     mkdirSync(tree);
     writeFileSync(join(tree, "a.rego"), "package policies.s3\n", "utf8");
-    symlinkSync(target, join(tree, "link.rego"));
+    symlinkSync("/nonexistent/policy.rego", join(tree, "link.rego"));
     return hashPolicyTree(tree);
   } finally {
     rmSync(root, { force: true, recursive: true });
   }
 };
 
+// Following a link would read host files into the digest.
+// A dangling link would throw. Digesting the target text avoids both.
+// The link is retargeted inside one fixed root, so only its target text changes.
+const retargetLink = (tree: string, target: string): void => {
+  const link = join(tree, "link.rego");
+  rmSync(link, { force: true });
+  symlinkSync(target, link);
+};
+
+// Creates the tree once and returns its digest before and after the link moves.
+const digestsAroundRetarget = (tree: string): { after: string; before: string } => {
+  mkdirSync(tree);
+  writeFileSync(join(tree, "a.rego"), "package policies.s3\n", "utf8");
+  retargetLink(tree, "/nonexistent/policy.rego");
+  const before = hashPolicyTree(tree);
+  retargetLink(tree, "/nonexistent/other.rego");
+  return { after: hashPolicyTree(tree), before };
+};
+
 it("digests a symlink by its target text rather than following it", () => {
-  const dangling = digestWithLink("/nonexistent/policy.rego");
-  assert.match(dangling, /^[0-9a-f]{64}$/, "a dangling link must not break the digest");
-  assert.notStrictEqual(
-    dangling,
-    digestWithLink("/nonexistent/other.rego"),
-    "retargeting a link must change the digest",
-  );
-  assert.strictEqual(
-    dangling,
-    digestWithLink("/nonexistent/policy.rego"),
-    "the same tree must digest the same under a different checkout path",
-  );
+  const root = mkdtempSync(join(tmpdir(), "ci-shared-digest-"));
+  try {
+    const { after, before } = digestsAroundRetarget(join(root, "policy"));
+    assert.match(before, /^[0-9a-f]{64}$/, "a dangling link must not break the digest");
+    assert.notStrictEqual(before, after, "retargeting a link must change the digest");
+  } finally {
+    rmSync(root, { force: true, recursive: true });
+  }
+});
+
+// The digest describes the tree, not where it was checked out.
+it("digests the same tree identically under a different root", () => {
+  const first = digestTreeUnder(mkdtempSync(join(tmpdir(), "ci-shared-digest-a-")));
+  const second = digestTreeUnder(mkdtempSync(join(tmpdir(), "ci-shared-digest-b-")));
+  assert.strictEqual(first, second, "an absolute path must not leak into the digest");
 });
 
 // Bodies are digested as raw bytes.

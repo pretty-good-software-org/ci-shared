@@ -2,7 +2,7 @@
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 939:
+/***/ 998:
 /***/ ((module, exports, __nccwpck_require__) => {
 
 
@@ -13,9 +13,9 @@
 // INPUT_PLAN_JSON env var as a fallback; see parse-env.ts.
 // Detects resource changes and builds a drift summary markdown fragment.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const { resolveOutputWriter } = __nccwpck_require__(96);
-const { analyzeDrift } = __nccwpck_require__(7);
-const { parseEnv } = __nccwpck_require__(512);
+const { resolveOutputWriter } = __nccwpck_require__(1);
+const { analyzeDrift } = __nccwpck_require__(744);
+const { parseEnv } = __nccwpck_require__(471);
 const main = async (args = {}) => {
     const env = args.env || process.env;
     const driftArgs = parseEnv(env);
@@ -29,7 +29,7 @@ module.exports = Object.assign(main, { analyzeDrift, parseEnv });
 
 /***/ }),
 
-/***/ 7:
+/***/ 744:
 /***/ ((module, exports) => {
 
 
@@ -91,7 +91,7 @@ module.exports = { analyzeDrift };
 
 /***/ }),
 
-/***/ 512:
+/***/ 471:
 /***/ ((module, exports, __nccwpck_require__) => {
 
 
@@ -128,7 +128,7 @@ module.exports = { parseEnv };
 
 /***/ }),
 
-/***/ 96:
+/***/ 1:
 /***/ ((module, exports, __nccwpck_require__) => {
 
 
@@ -217,7 +217,7 @@ module.exports = require("node:fs");
 /******/ 	// startup
 /******/ 	// Load entry module and return exports
 /******/ 	// This entry module is referenced by other modules so it can't be inlined
-/******/ 	var __webpack_exports__ = __nccwpck_require__(939);
+/******/ 	var __webpack_exports__ = __nccwpck_require__(998);
 /******/ 	module.exports = __webpack_exports__;
 /******/ 	
 /******/ })()
