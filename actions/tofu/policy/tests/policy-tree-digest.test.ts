@@ -90,12 +90,15 @@ it("does not let a file body imitate the next entry's header", () => {
 // It covers relative paths, length-prefixed framing, byte reads and entry order.
 // Regenerate it only with a reviewed diff.
 // A change here means every verified tree digests differently from then on.
-const GOLDEN_TREE_DIGEST = "2dc714328da335704a1d3482b0e108e93eaa35aebb1adb15341bd1f0744b5fb4";
+const GOLDEN_TREE_DIGEST = "8a0603268ae8111c00be047e209dc9bfef629110dcc35a1edc29308b0afa2234";
 
 const writeGoldenTree = (root: string): string => {
   const tree = join(root, "policy");
   mkdirSync(join(tree, "nested"), { recursive: true });
   writeFileSync(join(tree, "B.rego"), "package policies.b\n", "utf8");
+  // Seven UTF-8 bytes but six UTF-16 units.
+  // The golden value differs if the length prefix counts characters.
+  writeFileSync(join(tree, "\u00e9.rego"), "package policies.e\n", "utf8");
   writeFileSync(join(tree, "a.rego"), "package policies.a\n", "utf8");
   writeFileSync(join(tree, "nested", "c.rego"), "package policies.c\n", "utf8");
   symlinkSync("/nonexistent/target.rego", join(tree, "link.rego"));

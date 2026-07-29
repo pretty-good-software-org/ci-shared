@@ -121,10 +121,13 @@ describe("build refuses a tree npm did not install", () => {
       (root: string) => mkdirSync(join(root, "node_modules/typescript"), { recursive: true }),
     ],
     [
-      "a linked package where npm writes a directory",
+      // Carries npm's own manifest, so only the link check can reject it. Without
+      // it this case would pass for the same reason as every other layout above.
+      "a linked package inside a tree npm otherwise installed",
       (root: string) => {
         const modules = join(root, "node_modules");
         mkdirSync(join(modules, "store"), { recursive: true });
+        writeFileSync(join(modules, ".package-lock.json"), "{}\n", "utf8");
         symlinkSync(join(modules, "store"), join(modules, "typescript"));
       },
     ],

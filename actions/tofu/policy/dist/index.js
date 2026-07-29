@@ -605,6 +605,12 @@ module.exports = { evaluatePolicy, execErrorOutput };
 // Following one would let a planted link pull host files into the digest.
 // Paths are digested relative to the tree root and file bodies as raw bytes.
 // The digest therefore describes the tree itself, not where it was checked out.
+//
+// One asymmetry is knowingly left in place. ReaddirSync returns names decoded as
+// Text, so two filenames differing only outside valid UTF-8 digest alike.
+// Reading them as Buffers would need a Buffer comparator and join throughout.
+// The failure it allows is a tripwire that fires when nothing changed, never one
+// That stays silent when something did, so it fails closed.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const { createHash } = __nccwpck_require__(598);
 // ReaddirSync is reached through the module object, so a test can hand back
@@ -613,8 +619,12 @@ const fs = __nccwpck_require__(24);
 const { readFileSync, readlinkSync } = fs;
 const { join, relative } = __nccwpck_require__(760);
 // Each part is length-prefixed so no file body can imitate the next entry's header.
+// The prefix counts bytes rather than characters.
+// A string's .length is UTF-16 units, so an accented name declares six and
+// Absorbs seven, leaving the framing to rest on UTF-8 being a prefix code
+// Rather than on the count being right.
 const digestPart = (digest, label, value) => {
-    digest.update(`${label}:${value.length}:`);
+    digest.update(`${label}:${Buffer.byteLength(value)}:`);
     digest.update(value);
 };
 const digestContent = (context, path, entry) => {

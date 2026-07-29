@@ -24,6 +24,15 @@ if [ -d node_modules ] && [ ! -e node_modules/.package-lock.json ]; then
   exit 1
 fi
 
+# The manifest above says npm installed the tree; it says nothing about a package
+# swapped inside it afterwards. `npm link typescript` leaves the manifest intact
+# and points the compiler at a version the lockfile does not pin, which is the
+# same bundle drift by another route.
+if [ -L node_modules/typescript ]; then
+  echo "refusing to build: node_modules/typescript is a link; run 'npm ci'" >&2
+  exit 1
+fi
+
 while IFS= read -r action_file; do
   ./node_modules/.bin/ncc build "${action_file}" -o "$(dirname "${action_file}")/dist"
 done < <(find actions -name 'action.ts' -not -path '*/tests/*' -not -path '*/dist/*')

@@ -1,0 +1,5 @@
+kind: Fixed
+body: >-
+  Count bytes rather than characters in the policy tree digest's length prefix,
+  and keep refusing a linked package inside a tree npm otherwise installed.
+time: 2026-07-29T03:00:00.000000+02:00

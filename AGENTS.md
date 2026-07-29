@@ -1,5 +1,5 @@
 ---
-last_validated: 2026-07-22T22:59:21Z
+last_validated: 2026-07-29T09:57:35Z
 project_type: github-actions
 ---
 
@@ -15,6 +15,11 @@ with its own `action.yml`, TypeScript implementation, bundled JS, and tests.
 ```text
 ci-shared
 ├── actions
+│   ├── apm
+│   │   ├── install-apm.sh
+│   │   ├── path-validation.sh
+│   │   ├── verify-consumer
+│   │   └── verify-lock
 │   ├── aws
 │   │   ├── cleanup-dynamodb
 │   │   └── cleanup-s3
@@ -22,7 +27,7 @@ ci-shared
 │   │   └── comment
 │   ├── setup
 │   │   ├── mise
-│   │   ├── npm-auth
+│   │   └── npm-auth
 │   └── tofu
 │       ├── analyze-drift
 │       ├── apply
@@ -68,8 +73,6 @@ ci-shared
 │   │   ├── ts
 │   │   ├── typecheck
 │   │   └── yaml
-│   │   ├── regenerate
-│   │   └── verify
 │   ├── release
 │   │   ├── changelog
 │   │   └── release
@@ -84,6 +87,7 @@ ci-shared
 ├── README.md
 ├── RELEASING.md
 ├── test
+│   ├── install-manager.test.ts
 │   └── markdown-format.test.ts
 └── tsconfig.json
 ```
