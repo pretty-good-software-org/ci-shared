@@ -1,0 +1,7 @@
+kind: Security
+body: >-
+  Refuse a policy tree filename that is not valid UTF-8 rather than digesting it
+  through a lenient decode. Every invalid byte decoded to U+FFFD, so two distinct
+  filenames collapsed onto one path part and the digest stopped describing the
+  tree unambiguously. Names are now enumerated as raw bytes and ordered by them.
+time: 2026-07-29T05:00:00.000000+02:00

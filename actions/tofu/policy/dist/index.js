@@ -606,11 +606,11 @@ module.exports = { evaluatePolicy, execErrorOutput };
 // Paths are digested relative to the tree root and file bodies as raw bytes.
 // The digest therefore describes the tree itself, not where it was checked out.
 //
-// One asymmetry is knowingly left in place. ReaddirSync returns names decoded as
-// Text, so two filenames differing only outside valid UTF-8 digest alike.
-// Reading them as Buffers would need a Buffer comparator and join throughout.
-// The failure it allows is a tripwire that fires when nothing changed, never one
-// That stays silent when something did, so it fails closed.
+// Names are enumerated as raw bytes and decoded strictly. A lenient decode maps
+// Every invalid byte onto U+FFFD, so two distinct filenames collapse onto one
+// Path part and the tree they describe stops being unambiguous. Policy sources
+// Are Git paths that people maintain, so a name outside UTF-8 is refused rather
+// Than digested: the run stops instead of trusting a name it cannot represent.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const { createHash } = __nccwpck_require__(598);
 // ReaddirSync is reached through the module object, so a test can hand back
@@ -618,6 +618,16 @@ const { createHash } = __nccwpck_require__(598);
 const fs = __nccwpck_require__(24);
 const { readFileSync, readlinkSync } = fs;
 const { join, relative } = __nccwpck_require__(760);
+// Fatal decoding, so an invalid byte throws instead of becoming U+FFFD.
+const STRICT_UTF8 = new TextDecoder("utf-8", { fatal: true });
+const decodeName = (raw) => {
+    try {
+        return STRICT_UTF8.decode(raw);
+    }
+    catch {
+        throw new Error(`Policy integrity check failed: policy tree contains a filename that is not valid UTF-8: ${raw.toString("hex")}`);
+    }
+};
 // Each part is length-prefixed so no file body can imitate the next entry's header.
 // The prefix counts bytes rather than characters.
 // A string's .length is UTF-16 units, so an accented name declares six and
@@ -641,7 +651,7 @@ const digestContent = (context, path, entry) => {
     digestPart(context.digest, "other", "");
 };
 const digestEntry = (context, directory, entry) => {
-    const path = join(directory, entry.name);
+    const path = join(directory, decodeName(entry.name));
     digestPart(context.digest, "path", relative(context.root, path));
     if (entry.isDirectory() && !entry.isSymbolicLink()) {
         digestPart(context.digest, "directory", "");
@@ -650,19 +660,13 @@ const digestEntry = (context, directory, entry) => {
     }
     digestContent(context, path, entry);
 };
-// Code-unit order rather than localeCompare, whose collation is locale-dependent.
-// The digest must be the same value on every machine that computes it.
-const byName = (left, right) => {
-    if (left.name === right.name) {
-        return 0;
-    }
-    if (left.name < right.name) {
-        return -1;
-    }
-    return 1;
-};
+// Raw-byte order, which is the same on every machine. Ordering the decoded text
+// Instead would sort by UTF-16 code unit, where an astral name sorts before a
+// Three-byte one although its bytes are larger.
+const byName = (left, right) => Buffer.compare(left.name, right.name);
 const digestDirectory = (context, directory) => {
-    const entries = fs.readdirSync(directory, { withFileTypes: true }).toSorted(byName);
+    const options = { encoding: "buffer", withFileTypes: true };
+    const entries = fs.readdirSync(directory, options).toSorted(byName);
     entries.forEach((entry) => digestEntry(context, directory, entry));
 };
 // Returns a stable digest over every relative path, file body and link target.

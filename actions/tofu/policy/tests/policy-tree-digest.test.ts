@@ -90,7 +90,7 @@ it("does not let a file body imitate the next entry's header", () => {
 // It covers relative paths, length-prefixed framing, byte reads and entry order.
 // Regenerate it only with a reviewed diff.
 // A change here means every verified tree digests differently from then on.
-const GOLDEN_TREE_DIGEST = "c1987f84d37292e78bfcd4d65e64c86fe0280831ef1411dfe17ecd7687d2182c";
+const GOLDEN_TREE_DIGEST = "2e8ef1aff790fdaa5f3f4b9dd5e9c232f9e6714521ead2a642d17f899c36ad6b";
 
 const writeGoldenTree = (root: string): string => {
   const tree = join(root, "policy");
@@ -101,6 +101,11 @@ const writeGoldenTree = (root: string): string => {
   // Filesystem that normalises to NFD hands back the same bytes and the golden
   // Holds there too; an accented letter would not.
   writeFileSync(join(tree, "\u00f0.rego"), "package policies.e\n", "utf8");
+  // These two disagree about order: by UTF-16 code unit the astral name sorts
+  // First, by raw UTF-8 bytes the three-byte one does. The golden therefore
+  // Records which ordering the digest uses.
+  writeFileSync(join(tree, "\uff5a.rego"), "package policies.z\n", "utf8");
+  writeFileSync(join(tree, "\u{1f600}.rego"), "package policies.s\n", "utf8");
   writeFileSync(join(tree, "a.rego"), "package policies.a\n", "utf8");
   writeFileSync(join(tree, "nested", "c.rego"), "package policies.c\n", "utf8");
   symlinkSync("/nonexistent/target.rego", join(tree, "link.rego"));
