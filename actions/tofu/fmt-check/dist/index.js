@@ -2,7 +2,7 @@
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 443:
+/***/ 658:
 /***/ ((module, exports, __nccwpck_require__) => {
 
 
@@ -10,7 +10,7 @@
 //
 // Runs tofu fmt -check -recursive against the working directory.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const { execStream } = __nccwpck_require__(6);
+const { execStream } = __nccwpck_require__(361);
 const run = ({ workingDirectory }, exec = execStream) => {
     exec("tofu", [`-chdir=${workingDirectory}`, "fmt", "-check", "-recursive"]);
 };
@@ -23,7 +23,7 @@ module.exports = Object.assign(main, { run });
 
 /***/ }),
 
-/***/ 6:
+/***/ 361:
 /***/ ((module, exports, __nccwpck_require__) => {
 
 
@@ -122,7 +122,7 @@ module.exports = require("node:child_process");
 /******/ 	// startup
 /******/ 	// Load entry module and return exports
 /******/ 	// This entry module is referenced by other modules so it can't be inlined
-/******/ 	var __webpack_exports__ = __nccwpck_require__(443);
+/******/ 	var __webpack_exports__ = __nccwpck_require__(658);
 /******/ 	module.exports = __webpack_exports__;
 /******/ 	
 /******/ })()

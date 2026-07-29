@@ -2,7 +2,7 @@
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 339:
+/***/ 986:
 /***/ ((module, exports, __nccwpck_require__) => {
 
 
@@ -10,8 +10,8 @@
 //
 // Lists all tables, filters by prefix, and deletes each match.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const { execCapture } = __nccwpck_require__(6);
-const { listTables } = __nccwpck_require__(167);
+const { execCapture } = __nccwpck_require__(361);
+const { listTables } = __nccwpck_require__(692);
 const MIN_PREFIX_LENGTH = 5;
 const run = ({ prefix, region }, exec = execCapture) => {
     const tables = listTables(prefix, region, exec);
@@ -59,13 +59,13 @@ module.exports = Object.assign(main, { listTables, run });
 
 /***/ }),
 
-/***/ 167:
+/***/ 692:
 /***/ ((module, exports, __nccwpck_require__) => {
 
 
 // List DynamoDB tables matching a prefix with pagination.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const { execCapture } = __nccwpck_require__(6);
+const { execCapture } = __nccwpck_require__(361);
 const fetchTablePage = (region, startTable, exec) => {
     const args = ["dynamodb", "list-tables", "--region", region, "--output", "json"];
     if (startTable) {
@@ -91,7 +91,7 @@ module.exports = { listTables };
 
 /***/ }),
 
-/***/ 6:
+/***/ 361:
 /***/ ((module, exports, __nccwpck_require__) => {
 
 
@@ -190,7 +190,7 @@ module.exports = require("node:child_process");
 /******/ 	// startup
 /******/ 	// Load entry module and return exports
 /******/ 	// This entry module is referenced by other modules so it can't be inlined
-/******/ 	var __webpack_exports__ = __nccwpck_require__(339);
+/******/ 	var __webpack_exports__ = __nccwpck_require__(986);
 /******/ 	module.exports = __webpack_exports__;
 /******/ 	
 /******/ })()

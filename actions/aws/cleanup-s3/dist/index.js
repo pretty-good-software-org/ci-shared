@@ -2,7 +2,7 @@
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 421:
+/***/ 836:
 /***/ ((module, exports, __nccwpck_require__) => {
 
 
@@ -11,9 +11,9 @@
 // Handles versioned buckets by deleting all object versions and
 // Delete markers before removing the bucket itself.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const { execCapture } = __nccwpck_require__(6);
-const { deleteAllVersions } = __nccwpck_require__(472);
-const { listBuckets } = __nccwpck_require__(973);
+const { execCapture } = __nccwpck_require__(361);
+const { deleteAllVersions } = __nccwpck_require__(27);
+const { listBuckets } = __nccwpck_require__(368);
 const MIN_PREFIX_LENGTH = 5;
 const run = ({ prefix, region }, exec = execCapture) => {
     const buckets = listBuckets(prefix, region, exec);
@@ -62,13 +62,13 @@ module.exports = Object.assign(main, { deleteAllVersions, listBuckets, run });
 
 /***/ }),
 
-/***/ 472:
+/***/ 27:
 /***/ ((module, exports, __nccwpck_require__) => {
 
 
 // Delete all object versions and delete markers from an S3 bucket.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const { execCapture } = __nccwpck_require__(6);
+const { execCapture } = __nccwpck_require__(361);
 const toEntry = (entry) => ({ Key: entry.Key, VersionId: entry.VersionId });
 const collectObjects = (data) => [
     ...(data.Versions || []).map(toEntry),
@@ -121,13 +121,13 @@ module.exports = { deleteAllVersions };
 
 /***/ }),
 
-/***/ 973:
+/***/ 368:
 /***/ ((module, exports, __nccwpck_require__) => {
 
 
 // List S3 buckets matching a name prefix.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const { execCapture } = __nccwpck_require__(6);
+const { execCapture } = __nccwpck_require__(361);
 const listBuckets = (prefix, region, exec = execCapture) => {
     const raw = exec("aws", ["s3api", "list-buckets", "--region", region, "--output", "json"]);
     const data = JSON.parse(raw);
@@ -138,7 +138,7 @@ module.exports = { listBuckets };
 
 /***/ }),
 
-/***/ 6:
+/***/ 361:
 /***/ ((module, exports, __nccwpck_require__) => {
 
 
@@ -150,7 +150,7 @@ module.exports = { listBuckets };
 // - execStream: streams to console (inherit mode)
 // - execStreamWithEnv: streams to console with optional env override
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const { execFileSync } = __nccwpck_require__(802);
+const { execFileSync } = __nccwpck_require__(421);
 const logStderr = (error) => {
     const stderr = String(error.stderr || "").trim();
     if (stderr) {
@@ -188,7 +188,7 @@ module.exports = { execCapture, execStream, execStreamWithEnv };
 
 /***/ }),
 
-/***/ 802:
+/***/ 421:
 /***/ ((module) => {
 
 module.exports = require("node:child_process");
@@ -237,7 +237,7 @@ module.exports = require("node:child_process");
 /******/ 	// startup
 /******/ 	// Load entry module and return exports
 /******/ 	// This entry module is referenced by other modules so it can't be inlined
-/******/ 	var __webpack_exports__ = __nccwpck_require__(421);
+/******/ 	var __webpack_exports__ = __nccwpck_require__(836);
 /******/ 	module.exports = __webpack_exports__;
 /******/ 	
 /******/ })()

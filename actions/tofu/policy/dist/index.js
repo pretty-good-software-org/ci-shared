@@ -2,19 +2,19 @@
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 673:
+/***/ 486:
 /***/ ((module, exports, __nccwpck_require__) => {
 
 
 // Run Conftest policy checks against an OpenTofu plan.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const { execCapture } = __nccwpck_require__(6);
-const { resolveOutputWriter } = __nccwpck_require__(96);
-const { findFloorExemptReason, validateConftestIntegrity } = __nccwpck_require__(59);
-const { conftestEnvironmentFailure } = __nccwpck_require__(677);
-const { parseRequiredNamespaces } = __nccwpck_require__(631);
-const { runPinnedPolicy } = __nccwpck_require__(195);
-const { evaluatePolicy, execErrorOutput } = __nccwpck_require__(299);
+const { execCapture } = __nccwpck_require__(361);
+const { resolveOutputWriter } = __nccwpck_require__(1);
+const { findFloorExemptReason, validateConftestIntegrity } = __nccwpck_require__(984);
+const { conftestEnvironmentFailure } = __nccwpck_require__(394);
+const { parseRequiredNamespaces } = __nccwpck_require__(108);
+const { runPinnedPolicy } = __nccwpck_require__(724);
+const { evaluatePolicy, execErrorOutput } = __nccwpck_require__(806);
 const POLICY_REPOSITORY = "git::ssh://git@github.com/pretty-good-software-org/opa-policies.git//policy";
 const inspectPolicyConfiguration = (cwd) => {
     const integrityFailure = validateConftestIntegrity(cwd);
@@ -111,7 +111,7 @@ module.exports = Object.assign(main, { run });
 
 /***/ }),
 
-/***/ 936:
+/***/ 573:
 /***/ ((module, exports, __nccwpck_require__) => {
 
 
@@ -142,7 +142,7 @@ module.exports = { ISOLATED_CONFIG_FILE, writeIsolatedConfig };
 
 /***/ }),
 
-/***/ 59:
+/***/ 984:
 /***/ ((module, exports, __nccwpck_require__) => {
 
 
@@ -200,13 +200,13 @@ module.exports = { findFloorExemptReason, validateConftestIntegrity };
 
 /***/ }),
 
-/***/ 195:
+/***/ 724:
 /***/ ((module, exports, __nccwpck_require__) => {
 
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const { withPinnedPolicy } = __nccwpck_require__(972);
-const { evaluatePolicy, execErrorOutput } = __nccwpck_require__(299);
+const { withPinnedPolicy } = __nccwpck_require__(745);
+const { evaluatePolicy, execErrorOutput } = __nccwpck_require__(806);
 // --data is added only when the pinned checkout ships a data directory.
 // An older policy commit without one keeps the exact legacy command.
 // The directory is always the immutable checkout's own, never a consumer path.
@@ -284,7 +284,7 @@ module.exports = { runPinnedPolicy };
 
 /***/ }),
 
-/***/ 972:
+/***/ 745:
 /***/ ((module, exports, __nccwpck_require__) => {
 
 
@@ -293,10 +293,10 @@ const fs = __nccwpck_require__(24);
 const { mkdtempSync } = fs;
 const { tmpdir } = __nccwpck_require__(161);
 const { join } = __nccwpck_require__(760);
-const { validateNamespaceNames, validateRequiredNamespaces } = __nccwpck_require__(631);
-const { resolvePolicyDataDirectory } = __nccwpck_require__(434);
-const { hashPolicyTree } = __nccwpck_require__(94);
-const { writeIsolatedConfig } = __nccwpck_require__(936);
+const { validateNamespaceNames, validateRequiredNamespaces } = __nccwpck_require__(108);
+const { resolvePolicyDataDirectory } = __nccwpck_require__(511);
+const { hashPolicyTree } = __nccwpck_require__(547);
+const { writeIsolatedConfig } = __nccwpck_require__(573);
 const POLICY_REPOSITORY = "ssh://git@github.com/pretty-good-software-org/opa-policies.git";
 const POLICY_DIRECTORY = "policy";
 const POLICY_REF_PATTERN = /^[0-9a-f]{40}$/;
@@ -397,7 +397,7 @@ module.exports = { withPinnedPolicy };
 
 /***/ }),
 
-/***/ 434:
+/***/ 511:
 /***/ ((module, exports, __nccwpck_require__) => {
 
 
@@ -447,7 +447,7 @@ module.exports = { resolvePolicyDataDirectory };
 
 /***/ }),
 
-/***/ 677:
+/***/ 394:
 /***/ ((module, exports) => {
 
 
@@ -475,7 +475,7 @@ module.exports = { conftestEnvironmentFailure };
 
 /***/ }),
 
-/***/ 631:
+/***/ 108:
 /***/ ((module, exports, __nccwpck_require__) => {
 
 
@@ -528,7 +528,7 @@ module.exports = { parseRequiredNamespaces, validateNamespaceNames, validateRequ
 
 /***/ }),
 
-/***/ 299:
+/***/ 806:
 /***/ ((module, exports) => {
 
 
@@ -586,7 +586,7 @@ module.exports = { evaluatePolicy, execErrorOutput };
 
 /***/ }),
 
-/***/ 94:
+/***/ 547:
 /***/ ((module, exports, __nccwpck_require__) => {
 
 
@@ -644,7 +644,7 @@ module.exports = { hashPolicyTree };
 
 /***/ }),
 
-/***/ 6:
+/***/ 361:
 /***/ ((module, exports, __nccwpck_require__) => {
 
 
@@ -694,7 +694,7 @@ module.exports = { execCapture, execStream, execStreamWithEnv };
 
 /***/ }),
 
-/***/ 96:
+/***/ 1:
 /***/ ((module, exports, __nccwpck_require__) => {
 
 
@@ -804,7 +804,7 @@ module.exports = require("node:path");
 /******/ 	// startup
 /******/ 	// Load entry module and return exports
 /******/ 	// This entry module is referenced by other modules so it can't be inlined
-/******/ 	var __webpack_exports__ = __nccwpck_require__(673);
+/******/ 	var __webpack_exports__ = __nccwpck_require__(486);
 /******/ 	module.exports = __webpack_exports__;
 /******/ 	
 /******/ })()
