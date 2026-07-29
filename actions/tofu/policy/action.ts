@@ -61,7 +61,10 @@ const run = ({ planJson, cwd = process.cwd() }: RunArgs, exec: ExecFn = execCapt
     };
   }
 
-  const commandArguments = ["test", "--quiet=false", planJson];
+  // Conftest colours its summary even when stdout is not a terminal.
+  // Colour codes hide the loaded-test count this action reads back.
+  // Without this flag a clean unpinned run fails as an unreadable count.
+  const commandArguments = ["test", "--no-color", "--quiet=false", planJson];
   return evaluatePolicy(commandArguments, exec, configuration.floorExemptReason);
 };
 

@@ -41,6 +41,7 @@ const withoutUpdatePin = dropFlag("--update");
 const withoutColorPin = (args: string[]): string[] => args.filter((arg: string) => arg !== "--no-color");
 const withoutParserPin = dropFlag("--parser");
 const withoutNoFailPin = (args: string[]): string[] => args.filter((arg: string) => arg !== "--no-fail=false");
+const withoutCombinePin = (args: string[]): string[] => args.filter((arg: string) => arg !== "--combine=false");
 
 // Reproduces the invocation as it stood before this pin.
 // The consumer configuration file is read and nothing states that updates are off.
@@ -117,6 +118,7 @@ module.exports = {
   checkedInPolicyText,
   runLivePolicy,
   withoutColorPin,
+  withoutCombinePin,
   withoutConfigIsolation,
   withoutNoFailPin,
   withoutParserPin,

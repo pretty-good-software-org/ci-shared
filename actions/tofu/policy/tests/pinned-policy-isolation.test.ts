@@ -1,7 +1,8 @@
 // Live regressions: consumer configuration keys must not steer the evaluation.
-// Keys the action states as flags are covered by the environment regressions.
-// This file covers a key with no flag of its own.
-// There the isolated configuration file is the only thing between it and a clean report.
+// The isolated configuration file shadows every consumer configuration file.
+// That covers keys this action never names as flags, and keys conftest adds later.
+// Each control removes the isolation, plus the flag that also defends the key.
+// The control therefore shows the key acting with nothing in its way.
 //
 // Each guarded case is paired with a control that removes only the isolated config.
 // The controls assert current conftest behaviour.
@@ -12,9 +13,14 @@ import type { LiveFixture } from "./live-policy-types";
 const { it } = require("node:test");
 const assert = require("node:assert");
 const { CHECKED_IN_MARKER, PINNED_DENIAL, withLiveFixture } = require("./live-policy-fixture.ts");
-const { checkedInPolicyText, runLivePolicy, withoutConfigIsolation } = require("./live-policy-exec.ts");
+const {
+  checkedInPolicyText,
+  runLivePolicy,
+  withoutCombinePin,
+  withoutConfigIsolation,
+} = require("./live-policy-exec.ts");
 
-// Combining changes the shape of the document the policy is evaluated against.
+// Combining reshapes the document the policy is evaluated against.
 // A rule written for a plan stops matching, so nothing is denied.
 const COMBINE_CONFIG = 'namespace = ["policies.s3"]\ncombine = true\n';
 const REDIRECT_CONFIG = 'namespace = ["policies.s3"]\npolicy = ["checked-in-policy"]\n';
@@ -27,7 +33,8 @@ const assertVerifiedDenial = (outputs: Record<string, string>, rejection: string
 
 it("control: without the isolated config a `combine` key silences the verified policy", async () => {
   await withLiveFixture(COMBINE_CONFIG, async (fixture: LiveFixture) => {
-    const { outputs, rejection } = await runLivePolicy(fixture, { transform: withoutConfigIsolation });
+    const unguarded = (args: string[]) => withoutCombinePin(withoutConfigIsolation(args));
+    const { outputs, rejection } = await runLivePolicy(fixture, { transform: unguarded });
     assert.strictEqual(rejection, "", "the control must complete without an integrity failure");
     assert.strictEqual(outputs["has_violations"], "false", "the control must report no violations");
     assert.strictEqual(outputs["policy_violations"], "", "the control must report no violation detail");

@@ -8,9 +8,12 @@
 
 const CONFTEST_ENVIRONMENT_PREFIX = "CONFTEST_";
 
+// Windows resolves environment names case-insensitively.
+// Viper reads a lowercase conftest_parser there.
+// An uppercase-only filter would miss it, so either case is matched.
 const conftestEnvironmentNames = (env: NodeJS.ProcessEnv): string[] =>
   Object.keys(env)
-    .filter((name: string) => name.startsWith(CONFTEST_ENVIRONMENT_PREFIX))
+    .filter((name: string) => name.toUpperCase().startsWith(CONFTEST_ENVIRONMENT_PREFIX))
     .toSorted();
 
 const conftestEnvironmentFailure = (env: NodeJS.ProcessEnv): string => {

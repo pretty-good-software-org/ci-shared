@@ -46,7 +46,10 @@ const run = ({ planJson, cwd = process.cwd() }, exec = execCapture) => {
             policyViolations: `Policy integrity check failed: conftest pull failed: ${execErrorOutput(error)}`,
         };
     }
-    const commandArguments = ["test", "--quiet=false", planJson];
+    // Conftest colours its summary even when stdout is not a terminal.
+    // Colour codes hide the loaded-test count this action reads back.
+    // Without this flag a clean unpinned run fails as an unreadable count.
+    const commandArguments = ["test", "--no-color", "--quiet=false", planJson];
     return evaluatePolicy(commandArguments, exec, configuration.floorExemptReason);
 };
 const runPinned = (inputs, cwd, exec) => {
@@ -240,6 +243,9 @@ const commandArguments = (args, sources) => {
         // Without this, a run that found violations can still exit zero.
         // A zero exit is read here as a clean policy result.
         "--no-fail=false",
+        // Combining reshapes the document a rule is evaluated against.
+        // A rule written for a plan stops matching, so nothing is denied.
+        "--combine=false",
         // Conftest colours its summary even when stdout is not a terminal.
         // The loaded-test count is read back out of that summary.
         // Colour codes sit between the newline and the count, hiding it.
@@ -460,8 +466,11 @@ module.exports = { resolvePolicyDataDirectory };
 // Any inherited CONFTEST_* variable fails the run closed, including unknown ones.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const CONFTEST_ENVIRONMENT_PREFIX = "CONFTEST_";
+// Windows resolves environment names case-insensitively.
+// Viper reads a lowercase conftest_parser there.
+// An uppercase-only filter would miss it, so either case is matched.
 const conftestEnvironmentNames = (env) => Object.keys(env)
-    .filter((name) => name.startsWith(CONFTEST_ENVIRONMENT_PREFIX))
+    .filter((name) => name.toUpperCase().startsWith(CONFTEST_ENVIRONMENT_PREFIX))
     .toSorted();
 const conftestEnvironmentFailure = (env) => {
     const names = conftestEnvironmentNames(env);

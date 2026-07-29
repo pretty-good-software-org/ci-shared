@@ -12,17 +12,16 @@ import type { LiveFixture } from "./live-policy-types";
 const { it } = require("node:test");
 const assert = require("node:assert");
 const { PINNED_DENIAL, withLiveFixture } = require("./live-policy-fixture.ts");
-const { runLivePolicy, withoutNoFailPin, withoutParserPin } = require("./live-policy-exec.ts");
+const { runLivePolicy, withoutCombinePin, withoutNoFailPin, withoutParserPin } = require("./live-policy-exec.ts");
 
 const CLEAN_CONFIG = 'namespace = ["policies.s3"]\n';
 
 // Each control also removes the flag that would otherwise outrank the variable.
 // The control therefore shows the variable acting with nothing in its way.
-// CONFTEST_COMBINE has no flag of its own: the boundary is all that stops it.
 const SILENCING_SETTINGS = [
   { name: "CONFTEST_PARSER", transform: withoutParserPin, value: "ini" },
   { name: "CONFTEST_NO_FAIL", transform: withoutNoFailPin, value: "true" },
-  { name: "CONFTEST_COMBINE", transform: undefined, value: "true" },
+  { name: "CONFTEST_COMBINE", transform: withoutCombinePin, value: "true" },
 ];
 
 interface SilencingSetting {
@@ -57,6 +56,20 @@ SILENCING_SETTINGS.forEach((setting: SilencingSetting) => {
       assert.strictEqual(outputs["has_violations"], "true", "a refused run must not report a clean plan");
       assert.doesNotMatch(outputs["policy_violations"], new RegExp(PINNED_DENIAL), "no policy should have run");
     });
+  });
+});
+
+// Windows resolves environment names case-insensitively.
+// Conftest reads a lowercase name there, so the refusal matches either case.
+it("refuses to evaluate when a conftest setting is inherited in another case", async () => {
+  await withLiveFixture(CLEAN_CONFIG, async (fixture: LiveFixture) => {
+    const env = inheritedEnvironment("conftest_combine", "true");
+    const { rejection } = await runLivePolicy(fixture, { env });
+    assert.strictEqual(
+      rejection,
+      refusalFor(["conftest_combine"]),
+      "a lowercase conftest setting must stop the run too",
+    );
   });
 });
 

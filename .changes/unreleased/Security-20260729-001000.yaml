@@ -1,0 +1,6 @@
+kind: Security
+body: >-
+  Pin conftest's combine setting off during policy evaluation. Combining reshapes
+  the document a policy is evaluated against, so a rule written for a plan stopped
+  matching and a denied plan reported clean.
+time: 2026-07-29T00:10:00.000000+02:00

@@ -1,6 +1,6 @@
 kind: Fixed
 body: >-
-  Disable conftest colour output in the pinned policy run so the loaded-test
-  count stays readable; coloured summaries made every clean run fail as an
-  unreadable count.
+  Disable conftest colour output in both the pinned and the unpinned policy runs.
+  Conftest colours its summary even when stdout is a pipe, which hid the
+  loaded-test count and made every clean run fail as an unreadable count.
 time: 2026-07-28T00:01:00.000000+02:00
