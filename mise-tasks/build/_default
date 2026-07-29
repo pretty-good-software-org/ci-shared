@@ -14,14 +14,13 @@ for foreign_lock in bun.lock bun.lockb pnpm-lock.yaml yarn.lock; do
   fi
 done
 
-if [ -e node_modules/.pnpm ] || [ -e node_modules/.yarn-state.yml ] || [ -e node_modules/.bun ]; then
+# Recognise npm's own tree rather than listing the markers other managers leave.
+# A deny-list only stops the managers it already knows: bun's hoisted linker
+# writes real directories and no marker, and `bun install --no-save` leaves no
+# lockfile either, so it walks past a list of known markers. npm writes this
+# manifest on every install and no other manager does.
+if [ -d node_modules ] && [ ! -e node_modules/.package-lock.json ]; then
   echo "refusing to build: node_modules was not installed by npm; run 'npm ci'" >&2
-  exit 1
-fi
-
-# npm installs real directories; bun and pnpm link packages into a store.
-if [ -L node_modules/typescript ]; then
-  echo "refusing to build: node_modules/typescript is a link; run 'npm ci'" >&2
   exit 1
 fi
 

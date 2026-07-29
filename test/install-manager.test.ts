@@ -52,15 +52,27 @@ interface CompilerRun {
 
 // Stands a recording stub where ncc lives, so the success path is asserted by what
 // the build actually did rather than by an exit code that anything could produce.
-const runBuildWithStubCompiler = (): CompilerRun => {
+const runBuildWithStubCompiler = (exitCode = 0): CompilerRun => {
   const root = mkdtempSync(join(tmpdir(), "ci-shared-install-ok-"));
   try {
     mkdirSync(join(root, "node_modules/typescript"), { recursive: true });
     mkdirSync(join(root, "node_modules/.bin"), { recursive: true });
-    mkdirSync(join(root, "actions/example"), { recursive: true });
-    writeFileSync(join(root, "actions/example/action.ts"), "module.exports = {};\n", "utf8");
+    writeFileSync(join(root, "node_modules/.package-lock.json"), "{}\n", "utf8");
+    // More than one action, because "one call per action" asserted against a
+    // single action cannot see a loop that compiles only the first or the last.
+    // CI would not see it either: its backstop diffs the bundles that changed,
+    // and an action that was never recompiled leaves its committed bundle alone.
+    ["example", "example-two"].forEach((name: string) => {
+      mkdirSync(join(root, `actions/${name}`), { recursive: true });
+      writeFileSync(join(root, `actions/${name}/action.ts`), "module.exports = {};\n", "utf8");
+    });
+    // Helpers and previous output must stay out of the compile list.
+    mkdirSync(join(root, "actions/example/tests"), { recursive: true });
+    writeFileSync(join(root, "actions/example/tests/action.ts"), "module.exports = {};\n", "utf8");
+    mkdirSync(join(root, "actions/example/dist"), { recursive: true });
+    writeFileSync(join(root, "actions/example/dist/action.ts"), "module.exports = {};\n", "utf8");
     const log = join(root, "calls.log");
-    writeFileSync(join(root, "node_modules/.bin/ncc"), `#!/usr/bin/env bash\necho "$*" >> ${log}\n`, "utf8");
+    writeFileSync(join(root, "node_modules/.bin/ncc"), `#!/usr/bin/env bash\necho "$*" >> "${log}"\nexit ${exitCode}\n`, "utf8");
     chmodSync(join(root, "node_modules/.bin/ncc"), 0o755);
 
     const result = spawnSync("bash", [buildTask], { cwd: root, encoding: "utf8" });
@@ -92,20 +104,38 @@ describe("build refuses a tree npm did not install", () => {
     });
   });
 
-  it("rejects a pnpm-linked node_modules", () => {
-    const result = runBuildGuard((root: string) => mkdirSync(join(root, "node_modules/.pnpm"), { recursive: true }));
-    assert.equal(result.status, 1, "a pnpm store must stop the build");
-    assert.match(result.stderr, /run 'npm ci'/, "the refusal must say how to recover");
-  });
+  // Each layout another manager can leave behind, including the one that leaves
+  // no marker and no lockfile at all, which a list of known markers walks past.
+  const FOREIGN_LAYOUTS: [string, (root: string) => void][] = [
+    ["a pnpm store", (root: string) => mkdirSync(join(root, "node_modules/.pnpm"), { recursive: true })],
+    [
+      "a yarn state file",
+      (root: string) => {
+        mkdirSync(join(root, "node_modules"), { recursive: true });
+        writeFileSync(join(root, "node_modules/.yarn-state.yml"), "", "utf8");
+      },
+    ],
+    ["a bun isolated store", (root: string) => mkdirSync(join(root, "node_modules/.bun"), { recursive: true })],
+    [
+      "a bun hoisted tree, which leaves no marker",
+      (root: string) => mkdirSync(join(root, "node_modules/typescript"), { recursive: true }),
+    ],
+    [
+      "a linked package where npm writes a directory",
+      (root: string) => {
+        const modules = join(root, "node_modules");
+        mkdirSync(join(modules, "store"), { recursive: true });
+        symlinkSync(join(modules, "store"), join(modules, "typescript"));
+      },
+    ],
+  ];
 
-  it("rejects a linked package where npm writes a directory", () => {
-    const result = runBuildGuard((root: string) => {
-      const modules = join(root, "node_modules");
-      mkdirSync(join(modules, "store"), { recursive: true });
-      symlinkSync(join(modules, "store"), join(modules, "typescript"));
+  FOREIGN_LAYOUTS.forEach(([description, prepare]: [string, (root: string) => void]) => {
+    it(`rejects ${description}`, () => {
+      const result = runBuildGuard(prepare);
+      assert.equal(result.status, 1, `${description} must stop the build`);
+      assert.match(result.stderr, /run 'npm ci'/, "the refusal must say how to recover");
     });
-    assert.equal(result.status, 1, "a linked package must stop the build");
-    assert.match(result.stderr, /run 'npm ci'/, "the refusal must say how to recover");
   });
 
   // A fixture without a compiler exits 127, and asserting only "not 1" would pass
@@ -116,9 +146,19 @@ describe("build refuses a tree npm did not install", () => {
     assert.equal(invocations.status, 0, "a clean npm tree must build successfully");
     assert.doesNotMatch(invocations.stderr, /refusing to build/, "no refusal should be printed for an npm tree");
     assert.deepEqual(
-      invocations.calls,
-      ["build actions/example/action.ts -o actions/example/dist"],
-      "the guard must hand every action to the compiler unchanged",
+      invocations.calls.toSorted(),
+      [
+        "build actions/example-two/action.ts -o actions/example-two/dist",
+        "build actions/example/action.ts -o actions/example/dist",
+      ],
+      "every action must be compiled, and only the actions",
     );
+  });
+
+  // Without this, appending `|| true` to the compiler line passes every test.
+  it("fails the build when the compiler fails", () => {
+    const invocations = runBuildWithStubCompiler(1);
+    assert.notEqual(invocations.status, 0, "a failing compiler must fail the build");
+    assert.equal(invocations.calls.length, 1, "it stops at the first failure");
   });
 });

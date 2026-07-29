@@ -35,7 +35,6 @@ ci-shared
 │       ├── policy
 │       └── validate
 ├── AGENTS.md
-├── bun.lock
 ├── CHANGELOG.md
 ├── CLAUDE.md
 ├── cliff.toml
