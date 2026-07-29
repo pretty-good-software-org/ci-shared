@@ -87,10 +87,14 @@ const executePinnedPolicy = <Result>(args: ExecutePinnedPolicyArgs<Result>): Res
   fetchPinnedPolicy(args.checkoutRoot, args.policyRef, args.exec);
   verifyFetchedCommit(args.checkoutRoot, args.policyRef, args.exec);
   const policyDirectory = join(args.checkoutRoot, POLICY_DIRECTORY);
+  // Digest first, so the strict name check is what touches the tree first. The
+  // Namespace scan reads names as text, so an undecodable one reaches it as a
+  // Path that does not exist and it dies on ENOENT, hiding the refusal that
+  // Names the offending bytes. Same value either way; only the message differs.
+  const fetchedDigest = hashPolicyTree(policyDirectory);
   validateRequiredNamespaces(policyDirectory, args.requiredNamespaces);
   const dataDirectory = resolvePolicyDataDirectory(args.checkoutRoot, policyDirectory);
   const configFile = writeIsolatedConfig(args.checkoutRoot);
-  const fetchedDigest = hashPolicyTree(policyDirectory);
   const result = args.evaluatePolicy({ configFile, dataDirectory, policyDirectory });
   verifyPolicyTreeUnchanged(policyDirectory, fetchedDigest);
   return result;
