@@ -1,0 +1,6 @@
+kind: Fixed
+body: >-
+  Pin the build toolchain to exact versions and name the package explicitly, so
+  the committed action bundles are reproducible instead of depending on the
+  installed dependency tree or the checkout directory name.
+time: 2026-07-28T00:20:00.000000+02:00
