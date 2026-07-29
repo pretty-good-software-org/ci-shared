@@ -2,9 +2,12 @@
 // It compares the verified tree before and after conftest runs.
 // A replacement is caught even if a future conftest reorders flag precedence.
 
+import type { TestContext } from "node:test";
+
+const fs = require("node:fs");
 const { it } = require("node:test");
 const assert = require("node:assert");
-const { writeFileSync } = require("node:fs");
+const { writeFileSync } = fs;
 const { join } = require("node:path");
 const { POLICY_COMMIT, pinnedExec, runPinnedAction } = require("./pinned-policy-helpers.ts");
 
@@ -40,4 +43,33 @@ it("fails closed when a file is added to the verified tree during evaluation", a
   };
   const { action } = runPinnedAction(POLICY_COMMIT, "policies.s3", addingConftest);
   await assert.rejects(action, { message: TREE_CHANGED }, "an added policy file must not be trusted");
+});
+
+// The digest must be what touches the tree first, because the namespace scan reads
+// Names as text: an undecodable one reaches it as a path that does not exist and it
+// Dies on ENOENT, hiding the refusal that names the bytes. Since that scan captures
+// ReaddirSync at import and the digest reaches it through the module object, a mock
+// Reaches only the digest. Arming both failures at once makes the surfaced error
+// Say which ran first: revert the order and the namespace error wins instead.
+const undecodableEntry = () => ({
+  isDirectory: () => false,
+  isFile: () => true,
+  isSymbolicLink: () => false,
+  name: Buffer.from("70a0", "hex"),
+});
+
+it("refuses an undecodable name before the namespace scan reduces it to ENOENT", async (context: TestContext) => {
+  const { exec, getCheckoutRoot } = pinnedExec({ packages: ["policies.other"] });
+  const realReaddir = fs.readdirSync;
+  // Scoped to the policy directory, so cleanup and everything else read the real tree.
+  context.mock.method(fs, "readdirSync", (path: string, options: object) => {
+    const checkoutRoot = getCheckoutRoot();
+    if (checkoutRoot && String(path) === join(checkoutRoot, "policy")) {
+      return [undecodableEntry()];
+    }
+    return realReaddir(path, options);
+  });
+
+  const { action } = runPinnedAction(POLICY_COMMIT, "policies.s3", exec);
+  await assert.rejects(action, /not valid UTF-8: 70a0/u, "the digest must be what touches the tree first");
 });
