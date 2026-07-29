@@ -90,15 +90,17 @@ it("does not let a file body imitate the next entry's header", () => {
 // It covers relative paths, length-prefixed framing, byte reads and entry order.
 // Regenerate it only with a reviewed diff.
 // A change here means every verified tree digests differently from then on.
-const GOLDEN_TREE_DIGEST = "8a0603268ae8111c00be047e209dc9bfef629110dcc35a1edc29308b0afa2234";
+const GOLDEN_TREE_DIGEST = "c1987f84d37292e78bfcd4d65e64c86fe0280831ef1411dfe17ecd7687d2182c";
 
 const writeGoldenTree = (root: string): string => {
   const tree = join(root, "policy");
   mkdirSync(join(tree, "nested"), { recursive: true });
   writeFileSync(join(tree, "B.rego"), "package policies.b\n", "utf8");
-  // Seven UTF-8 bytes but six UTF-16 units.
-  // The golden value differs if the length prefix counts characters.
-  writeFileSync(join(tree, "\u00e9.rego"), "package policies.e\n", "utf8");
+  // Seven UTF-8 bytes but six UTF-16 units, so the golden value differs if the
+  // Length prefix counts characters. U+00F0 has no canonical decomposition, so a
+  // Filesystem that normalises to NFD hands back the same bytes and the golden
+  // Holds there too; an accented letter would not.
+  writeFileSync(join(tree, "\u00f0.rego"), "package policies.e\n", "utf8");
   writeFileSync(join(tree, "a.rego"), "package policies.a\n", "utf8");
   writeFileSync(join(tree, "nested", "c.rego"), "package policies.c\n", "utf8");
   symlinkSync("/nonexistent/target.rego", join(tree, "link.rego"));
