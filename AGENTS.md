@@ -1,5 +1,5 @@
 ---
-last_validated: 2026-07-22T22:59:21Z
+last_validated: 2026-07-29T09:57:35Z
 project_type: github-actions
 ---
 
@@ -15,6 +15,11 @@ with its own `action.yml`, TypeScript implementation, bundled JS, and tests.
 ```text
 ci-shared
 ├── actions
+│   ├── apm
+│   │   ├── install-apm.sh
+│   │   ├── path-validation.sh
+│   │   ├── verify-consumer
+│   │   └── verify-lock
 │   ├── aws
 │   │   ├── cleanup-dynamodb
 │   │   └── cleanup-s3
@@ -22,7 +27,7 @@ ci-shared
 │   │   └── comment
 │   ├── setup
 │   │   ├── mise
-│   │   ├── npm-auth
+│   │   └── npm-auth
 │   └── tofu
 │       ├── analyze-drift
 │       ├── apply
@@ -35,7 +40,6 @@ ci-shared
 │       ├── policy
 │       └── validate
 ├── AGENTS.md
-├── bun.lock
 ├── CHANGELOG.md
 ├── CLAUDE.md
 ├── cliff.toml
@@ -69,8 +73,6 @@ ci-shared
 │   │   ├── ts
 │   │   ├── typecheck
 │   │   └── yaml
-│   │   ├── regenerate
-│   │   └── verify
 │   ├── release
 │   │   ├── changelog
 │   │   └── release
@@ -85,9 +87,14 @@ ci-shared
 ├── README.md
 ├── RELEASING.md
 ├── test
+│   ├── install-manager.test.ts
 │   └── markdown-format.test.ts
 └── tsconfig.json
 ```
+
+The tree is generated. It omits `mise-tasks/build/`, which is tracked source rather than
+build output, because the generator excludes any directory named `build`. The root is
+normalised to the repository name because the generator writes the absolute path it ran in.
 
 ## Development Guidelines
 

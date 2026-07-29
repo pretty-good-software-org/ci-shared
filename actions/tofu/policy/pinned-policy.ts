@@ -7,6 +7,7 @@ const { join } = require("node:path");
 const { validateNamespaceNames, validateRequiredNamespaces } = require("./policy-namespace.ts");
 const { resolvePolicyDataDirectory } = require("./policy-data.ts");
 const { hashPolicyTree } = require("./policy-tree.ts");
+const { fingerprintPolicyTree, verifyTreeUntouched } = require("./policy-tree-runtime.ts");
 const { writeIsolatedConfig } = require("./conftest-config.ts");
 
 const POLICY_REPOSITORY = "ssh://git@github.com/pretty-good-software-org/opa-policies.git";
@@ -74,25 +75,28 @@ const verifyFetchedCommit = (checkoutRoot: string, policyRef: string, exec: Exec
   }
 };
 
-// Verifies the verified tree is still byte-identical once conftest has run.
-// A replacement would mean something reached past the pinning flags.
-const verifyPolicyTreeUnchanged = (policyDirectory: string, fetchedDigest: string): void => {
-  if (hashPolicyTree(policyDirectory) === fetchedDigest) {
-    return;
-  }
-  throw new Error("Policy integrity check failed: the verified policy tree changed during evaluation");
+// Digest first, so the strict name check is what touches the tree first. The
+// Namespace scan reads names as text, so an undecodable one reaches it as a path
+// That does not exist and it dies on ENOENT, hiding the refusal that names the
+// Offending bytes. Same value either way; only the message differs.
+const inspectPolicySource = (policyDirectory: string, requiredNamespaces: string[]): string => {
+  const fetchedDigest = hashPolicyTree(policyDirectory);
+  validateRequiredNamespaces(policyDirectory, requiredNamespaces);
+  return fetchedDigest;
 };
 
 const executePinnedPolicy = <Result>(args: ExecutePinnedPolicyArgs<Result>): Result => {
   fetchPinnedPolicy(args.checkoutRoot, args.policyRef, args.exec);
   verifyFetchedCommit(args.checkoutRoot, args.policyRef, args.exec);
   const policyDirectory = join(args.checkoutRoot, POLICY_DIRECTORY);
-  validateRequiredNamespaces(policyDirectory, args.requiredNamespaces);
+  const fetchedDigest = inspectPolicySource(policyDirectory, args.requiredNamespaces);
   const dataDirectory = resolvePolicyDataDirectory(args.checkoutRoot, policyDirectory);
   const configFile = writeIsolatedConfig(args.checkoutRoot);
-  const fetchedDigest = hashPolicyTree(policyDirectory);
+  // Taken last, so nothing this function does to prepare the checkout counts as
+  // A change made during evaluation.
+  const fetchedFingerprint = fingerprintPolicyTree(policyDirectory);
   const result = args.evaluatePolicy({ configFile, dataDirectory, policyDirectory });
-  verifyPolicyTreeUnchanged(policyDirectory, fetchedDigest);
+  verifyTreeUntouched(policyDirectory, { fetchedDigest, fetchedFingerprint });
   return result;
 };
 

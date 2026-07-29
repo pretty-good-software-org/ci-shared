@@ -1,0 +1,6 @@
+kind: Fixed
+body: >-
+  Recognise npm's own dependency tree rather than listing the markers other
+  managers leave. A bun install with its hoisted linker writes real directories
+  and no marker, so a deny-list of known markers walked past it.
+time: 2026-07-29T02:00:00.000000+02:00

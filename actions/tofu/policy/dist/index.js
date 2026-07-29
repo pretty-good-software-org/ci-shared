@@ -302,6 +302,7 @@ const { join } = __nccwpck_require__(760);
 const { validateNamespaceNames, validateRequiredNamespaces } = __nccwpck_require__(108);
 const { resolvePolicyDataDirectory } = __nccwpck_require__(511);
 const { hashPolicyTree } = __nccwpck_require__(547);
+const { fingerprintPolicyTree, verifyTreeUntouched } = __nccwpck_require__(482);
 const { writeIsolatedConfig } = __nccwpck_require__(573);
 const POLICY_REPOSITORY = "ssh://git@github.com/pretty-good-software-org/opa-policies.git";
 const POLICY_DIRECTORY = "policy";
@@ -344,24 +345,27 @@ const verifyFetchedCommit = (checkoutRoot, policyRef, exec) => {
         throw new Error("Policy integrity check failed: fetched policy commit does not match policy-ref");
     }
 };
-// Verifies the verified tree is still byte-identical once conftest has run.
-// A replacement would mean something reached past the pinning flags.
-const verifyPolicyTreeUnchanged = (policyDirectory, fetchedDigest) => {
-    if (hashPolicyTree(policyDirectory) === fetchedDigest) {
-        return;
-    }
-    throw new Error("Policy integrity check failed: the verified policy tree changed during evaluation");
+// Digest first, so the strict name check is what touches the tree first. The
+// Namespace scan reads names as text, so an undecodable one reaches it as a path
+// That does not exist and it dies on ENOENT, hiding the refusal that names the
+// Offending bytes. Same value either way; only the message differs.
+const inspectPolicySource = (policyDirectory, requiredNamespaces) => {
+    const fetchedDigest = hashPolicyTree(policyDirectory);
+    validateRequiredNamespaces(policyDirectory, requiredNamespaces);
+    return fetchedDigest;
 };
 const executePinnedPolicy = (args) => {
     fetchPinnedPolicy(args.checkoutRoot, args.policyRef, args.exec);
     verifyFetchedCommit(args.checkoutRoot, args.policyRef, args.exec);
     const policyDirectory = join(args.checkoutRoot, POLICY_DIRECTORY);
-    validateRequiredNamespaces(policyDirectory, args.requiredNamespaces);
+    const fetchedDigest = inspectPolicySource(policyDirectory, args.requiredNamespaces);
     const dataDirectory = resolvePolicyDataDirectory(args.checkoutRoot, policyDirectory);
     const configFile = writeIsolatedConfig(args.checkoutRoot);
-    const fetchedDigest = hashPolicyTree(policyDirectory);
+    // Taken last, so nothing this function does to prepare the checkout counts as
+    // A change made during evaluation.
+    const fetchedFingerprint = fingerprintPolicyTree(policyDirectory);
     const result = args.evaluatePolicy({ configFile, dataDirectory, policyDirectory });
-    verifyPolicyTreeUnchanged(policyDirectory, fetchedDigest);
+    verifyTreeUntouched(policyDirectory, { fetchedDigest, fetchedFingerprint });
     return result;
 };
 const errorMessage = (error) => {
@@ -595,6 +599,83 @@ module.exports = { evaluatePolicy, execErrorOutput };
 
 /***/ }),
 
+/***/ 482:
+/***/ ((module, exports, __nccwpck_require__) => {
+
+
+// A second fingerprint of the verified tree, over evidence a writer cannot reset.
+//
+// The content digest establishes what the policy is, and it is the right thing to
+// Compare against a source of truth. It cannot see a tree that was changed and put
+// Back: rewrite a policy, let conftest evaluate it, restore the original bytes, and
+// The content digest before and after are equal because the content is equal.
+//
+// Metadata closes that window. A same-user write, rename, add, remove or chmod all
+// Move ctime, and ctime cannot be set back: utimes moves atime and mtime only, and
+// Changing it is itself a metadata change. Evaluating policy only reads, so a run
+// That leaves this fingerprint intact did not modify the tree.
+//
+// Atime is excluded on purpose. Reading the tree is exactly what conftest does, so
+// Including it would fail every run on a filesystem that records reads eagerly.
+//
+// Ctime is the field that detects a change. The rest are independent witnesses for
+// The cases where it is not reliable: a clock moved backwards, a filesystem with
+// Coarse ctime, an overlayfs copy-up that changes ino while the file looks the
+// Same. Each one is pinned by its own test, which a stub drives by presenting two
+// Stats that differ in a single field.
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const { createHash } = __nccwpck_require__(598);
+const fs = __nccwpck_require__(24);
+const { join, relative } = __nccwpck_require__(760);
+const { digestPart, hashPolicyTree, sortedEntries } = __nccwpck_require__(547);
+// Identity, permissions, size and the moment metadata last changed. Device and
+// Inode catch a path swapped for a different file that happens to match.
+const statParts = (path) => {
+    const stat = fs.lstatSync(path, { bigint: true });
+    return [stat.dev, stat.ino, stat.ctimeNs, stat.mode, stat.size].join(",");
+};
+const fingerprintEntry = (context, directory, named) => {
+    const path = join(directory, named.name);
+    digestPart(context.digest, "path", relative(context.root, path));
+    digestPart(context.digest, "stat", statParts(path));
+    if (named.entry.isDirectory() && !named.entry.isSymbolicLink()) {
+        digestPart(context.digest, "directory", "");
+        fingerprintDirectory(context, path);
+    }
+};
+const fingerprintDirectory = (context, directory) => {
+    sortedEntries(directory).forEach((named) => fingerprintEntry(context, directory, named));
+};
+// Returns a digest of the tree's metadata, taken before evaluation and again after.
+const fingerprintPolicyTree = (policyDirectory) => {
+    const digest = createHash("sha256");
+    digestPart(digest, "root", statParts(policyDirectory));
+    fingerprintDirectory({ digest, root: policyDirectory }, policyDirectory);
+    return digest.digest("hex");
+};
+const verifyContentUnchanged = (policyDirectory, fetchedDigest) => {
+    if (hashPolicyTree(policyDirectory) === fetchedDigest) {
+        return;
+    }
+    throw new Error("Policy integrity check failed: the verified policy tree changed during evaluation");
+};
+const verifyRuntimeUnchanged = (policyDirectory, fetchedFingerprint) => {
+    if (fingerprintPolicyTree(policyDirectory) === fetchedFingerprint) {
+        return;
+    }
+    throw new Error("Policy integrity check failed: the verified policy tree was modified during evaluation");
+};
+// Content first, so a tree whose bytes changed keeps reporting that. The
+// Fingerprint then covers what content equality cannot see: a change put back.
+const verifyTreeUntouched = (policyDirectory, state) => {
+    verifyContentUnchanged(policyDirectory, state.fetchedDigest);
+    verifyRuntimeUnchanged(policyDirectory, state.fetchedFingerprint);
+};
+module.exports = { fingerprintPolicyTree, verifyTreeUntouched };
+
+
+/***/ }),
+
 /***/ 547:
 /***/ ((module, exports, __nccwpck_require__) => {
 
@@ -605,13 +686,36 @@ module.exports = { evaluatePolicy, execErrorOutput };
 // Following one would let a planted link pull host files into the digest.
 // Paths are digested relative to the tree root and file bodies as raw bytes.
 // The digest therefore describes the tree itself, not where it was checked out.
+//
+// Names are enumerated as raw bytes and decoded strictly. A lenient decode maps
+// Every invalid byte onto U+FFFD, so two distinct filenames collapse onto one
+// Path part and the tree they describe stops being unambiguous. Policy sources
+// Are Git paths that people maintain, so a name outside UTF-8 is refused rather
+// Than digested: the run stops instead of trusting a name it cannot represent.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const { createHash } = __nccwpck_require__(598);
-const { readFileSync, readdirSync, readlinkSync } = __nccwpck_require__(24);
+// ReaddirSync is reached through the module object, so a test can hand back
+// Entries out of order, the way a filesystem with unordered readdir does.
+const fs = __nccwpck_require__(24);
+const { readFileSync, readlinkSync } = fs;
 const { join, relative } = __nccwpck_require__(760);
+// Fatal decoding, so an invalid byte throws instead of becoming U+FFFD.
+const STRICT_UTF8 = new TextDecoder("utf-8", { fatal: true });
+const decodeName = (raw) => {
+    try {
+        return STRICT_UTF8.decode(raw);
+    }
+    catch {
+        throw new Error(`Policy integrity check failed: policy tree contains a filename that is not valid UTF-8: ${raw.toString("hex")}`);
+    }
+};
 // Each part is length-prefixed so no file body can imitate the next entry's header.
+// The prefix counts bytes rather than characters.
+// A string's .length is UTF-16 units, so an accented name declares six and
+// Absorbs seven, leaving the framing to rest on UTF-8 being a prefix code
+// Rather than on the count being right.
 const digestPart = (digest, label, value) => {
-    digest.update(`${label}:${value.length}:`);
+    digest.update(`${label}:${Buffer.byteLength(value)}:`);
     digest.update(value);
 };
 const digestContent = (context, path, entry) => {
@@ -628,7 +732,7 @@ const digestContent = (context, path, entry) => {
     digestPart(context.digest, "other", "");
 };
 const digestEntry = (context, directory, entry) => {
-    const path = join(directory, entry.name);
+    const path = join(directory, decodeName(entry.name));
     digestPart(context.digest, "path", relative(context.root, path));
     if (entry.isDirectory() && !entry.isSymbolicLink()) {
         digestPart(context.digest, "directory", "");
@@ -637,10 +741,18 @@ const digestEntry = (context, directory, entry) => {
     }
     digestContent(context, path, entry);
 };
-const byName = (left, right) => left.name.localeCompare(right.name);
+// Raw-byte order, which is the same on every machine. Ordering the decoded text
+// Instead would sort by UTF-16 code unit, where an astral name sorts before a
+// Three-byte one although its bytes are larger.
+const byName = (left, right) => Buffer.compare(left.name, right.name);
+// One walk order for every reader of the tree: raw-byte sort, strict decode.
+const sortedEntries = (directory) => {
+    const options = { encoding: "buffer", withFileTypes: true };
+    const entries = fs.readdirSync(directory, options).toSorted(byName);
+    return entries.map((entry) => ({ entry, name: decodeName(entry.name) }));
+};
 const digestDirectory = (context, directory) => {
-    const entries = readdirSync(directory, { withFileTypes: true }).toSorted(byName);
-    entries.forEach((entry) => digestEntry(context, directory, entry));
+    sortedEntries(directory).forEach(({ entry }) => digestEntry(context, directory, entry));
 };
 // Returns a stable digest over every relative path, file body and link target.
 const hashPolicyTree = (policyDirectory) => {
@@ -648,7 +760,7 @@ const hashPolicyTree = (policyDirectory) => {
     digestDirectory({ digest, root: policyDirectory }, policyDirectory);
     return digest.digest("hex");
 };
-module.exports = { hashPolicyTree };
+module.exports = { digestPart, hashPolicyTree, sortedEntries };
 
 
 /***/ }),

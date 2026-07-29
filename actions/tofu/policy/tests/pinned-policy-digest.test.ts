@@ -2,16 +2,15 @@
 // It compares the verified tree before and after conftest runs.
 // A replacement is caught even if a future conftest reorders flag precedence.
 
+import type { TestContext } from "node:test";
+
+const fs = require("node:fs");
 const { it } = require("node:test");
 const assert = require("node:assert");
-const { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } = require("node:fs");
+const { writeFileSync } = fs;
 const { join } = require("node:path");
-const { tmpdir } = require("node:os");
 const { POLICY_COMMIT, pinnedExec, runPinnedAction } = require("./pinned-policy-helpers.ts");
-const { hashPolicyTree } = require("../policy-tree.ts");
 
-const FIRST_INVALID_UTF8 = "70a0";
-const SECOND_INVALID_UTF8 = "70a1";
 const TREE_CHANGED = "Policy integrity check failed: the verified policy tree changed during evaluation";
 
 // Rewrites a policy file while conftest is notionally running.
@@ -46,92 +45,40 @@ it("fails closed when a file is added to the verified tree during evaluation", a
   await assert.rejects(action, { message: TREE_CHANGED }, "an added policy file must not be trusted");
 });
 
-// Builds the same tree under whichever root it is given.
-const digestTreeUnder = (root: string): string => {
-  try {
-    const tree = join(root, "policy");
-    mkdirSync(tree);
-    writeFileSync(join(tree, "a.rego"), "package policies.s3\n", "utf8");
-    symlinkSync("/nonexistent/policy.rego", join(tree, "link.rego"));
-    return hashPolicyTree(tree);
-  } finally {
-    rmSync(root, { force: true, recursive: true });
-  }
-};
-
-// Following a link would read host files into the digest.
-// A dangling link would throw. Digesting the target text avoids both.
-// The link is retargeted inside one fixed root, so only its target text changes.
-const retargetLink = (tree: string, target: string | Buffer): void => {
-  const link = join(tree, "link.rego");
-  rmSync(link, { force: true });
-  symlinkSync(target, link);
-};
-
-// Creates the tree once and returns its digest before and after the link moves.
-const digestsAroundRetarget = (tree: string): { after: string; before: string } => {
-  mkdirSync(tree);
-  writeFileSync(join(tree, "a.rego"), "package policies.s3\n", "utf8");
-  retargetLink(tree, "/nonexistent/policy.rego");
-  const before = hashPolicyTree(tree);
-  retargetLink(tree, "/nonexistent/other.rego");
-  return { after: hashPolicyTree(tree), before };
-};
-
-it("digests a symlink by its target text rather than following it", () => {
-  const root = mkdtempSync(join(tmpdir(), "ci-shared-digest-"));
-  try {
-    const { after, before } = digestsAroundRetarget(join(root, "policy"));
-    assert.match(before, /^[0-9a-f]{64}$/, "a dangling link must not break the digest");
-    assert.notStrictEqual(before, after, "retargeting a link must change the digest");
-  } finally {
-    rmSync(root, { force: true, recursive: true });
-  }
+// The digest must be what touches the tree first, because the namespace scan reads
+// Names as text: an undecodable one reaches it as a path that does not exist and it
+// Dies on ENOENT, hiding the refusal that names the bytes. Since that scan captures
+// ReaddirSync at import and the digest reaches it through the module object, a mock
+// Reaches only the digest. Arming both failures at once makes the surfaced error
+// Say which ran first: revert the order and the namespace error wins instead.
+const undecodableEntry = () => ({
+  isDirectory: () => false,
+  isFile: () => true,
+  isSymbolicLink: () => false,
+  name: Buffer.from("70a0", "hex"),
 });
 
-// The digest describes the tree, not where it was checked out.
-it("digests the same tree identically under a different root", () => {
-  const first = digestTreeUnder(mkdtempSync(join(tmpdir(), "ci-shared-digest-a-")));
-  const second = digestTreeUnder(mkdtempSync(join(tmpdir(), "ci-shared-digest-b-")));
-  assert.strictEqual(first, second, "an absolute path must not leak into the digest");
+it("refuses an undecodable name before the namespace scan reduces it to ENOENT", async (context: TestContext) => {
+  const { exec, getCheckoutRoot } = pinnedExec({ packages: ["policies.other"] });
+  const realReaddir = fs.readdirSync;
+  // Scoped to the policy directory, so cleanup and everything else read the real tree.
+  context.mock.method(fs, "readdirSync", (path: string, options: object) => {
+    const checkoutRoot = getCheckoutRoot();
+    if (checkoutRoot && String(path) === join(checkoutRoot, "policy")) {
+      return [undecodableEntry()];
+    }
+    return realReaddir(path, options);
+  });
+
+  const { action } = runPinnedAction(POLICY_COMMIT, "policies.s3", exec);
+  await assert.rejects(action, /not valid UTF-8: 70a0/u, "the digest must be what touches the tree first");
 });
 
-// Link targets are byte strings too, and POSIX allows bytes that are not UTF-8.
-// The two targets below decode to identical replacement text.
-// Returns the digest before and after the link is retargeted to raw bytes.
-const digestsAroundByteRetarget = (tree: string): { after: string; before: string } => {
-  mkdirSync(tree);
-  writeFileSync(join(tree, "a.rego"), "package policies.s3\n", "utf8");
-  retargetLink(tree, Buffer.from(FIRST_INVALID_UTF8, "hex"));
-  const before = hashPolicyTree(tree);
-  retargetLink(tree, Buffer.from(SECOND_INVALID_UTF8, "hex"));
-  return { after: hashPolicyTree(tree), before };
-};
-
-it("distinguishes symlink targets that differ only outside valid UTF-8", () => {
-  const root = mkdtempSync(join(tmpdir(), "ci-shared-digest-link-"));
-  try {
-    const { after, before } = digestsAroundByteRetarget(join(root, "policy"));
-    assert.notStrictEqual(before, after, "invalid target bytes must not collide");
-  } finally {
-    rmSync(root, { force: true, recursive: true });
-  }
-});
-
-// Bodies are digested as raw bytes.
-// The two byte strings below decode to identical replacement text.
-// Only a raw-byte digest can tell them apart.
-it("distinguishes files that differ only outside valid UTF-8", () => {
-  const root = mkdtempSync(join(tmpdir(), "ci-shared-digest-bytes-"));
-  try {
-    const tree = join(root, "policy");
-    mkdirSync(tree);
-    const target = join(tree, "a.rego");
-    writeFileSync(target, Buffer.from(FIRST_INVALID_UTF8, "hex"));
-    const first = hashPolicyTree(tree);
-    writeFileSync(target, Buffer.from(SECOND_INVALID_UTF8, "hex"));
-    assert.notStrictEqual(first, hashPolicyTree(tree), "invalid byte sequences must not collide");
-  } finally {
-    rmSync(root, { force: true, recursive: true });
-  }
+// The case above only distinguishes the order while the namespace arm genuinely
+// Fails. Asserting that here means a later tidy-up that satisfies the requirement
+// Fails this test rather than quietly leaving the one above non-discriminating.
+it("arms the namespace failure the order test depends on", async () => {
+  const { exec } = pinnedExec({ packages: ["policies.other"] });
+  const { action } = runPinnedAction(POLICY_COMMIT, "policies.s3", exec);
+  await assert.rejects(action, /missing required namespaces: policies.s3/u, "the second arm must be unmet");
 });

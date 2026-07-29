@@ -1,6 +1,7 @@
 {
   "name": "ci-shared",
   "private": true,
+  "packageManager": "npm@10.9.4",
   "devDependencies": {
     "@types/node": "22.19.13",
     "@vercel/ncc": "0.38.4",

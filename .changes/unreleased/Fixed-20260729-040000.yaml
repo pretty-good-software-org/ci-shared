@@ -1,0 +1,6 @@
+kind: Fixed
+body: >-
+  Keep the policy tree digest's golden fixture free of characters that a
+  filesystem may normalise, so the recorded value holds wherever it is checked
+  out, and assert that AGENTS.md's generated tree keeps its repository-name root.
+time: 2026-07-29T04:00:00.000000+02:00

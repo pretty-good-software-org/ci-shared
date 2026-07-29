@@ -4,16 +4,25 @@
 // Following one would let a planted link pull host files into the digest.
 // Paths are digested relative to the tree root and file bodies as raw bytes.
 // The digest therefore describes the tree itself, not where it was checked out.
+//
+// Names are enumerated as raw bytes and decoded strictly. A lenient decode maps
+// Every invalid byte onto U+FFFD, so two distinct filenames collapse onto one
+// Path part and the tree they describe stops being unambiguous. Policy sources
+// Are Git paths that people maintain, so a name outside UTF-8 is refused rather
+// Than digested: the run stops instead of trusting a name it cannot represent.
 
 const { createHash } = require("node:crypto");
-const { readFileSync, readdirSync, readlinkSync } = require("node:fs");
+// ReaddirSync is reached through the module object, so a test can hand back
+// Entries out of order, the way a filesystem with unordered readdir does.
+const fs = require("node:fs");
+const { readFileSync, readlinkSync } = fs;
 const { join, relative } = require("node:path");
 
 interface DirectoryEntry {
   isDirectory: () => boolean;
   isFile: () => boolean;
   isSymbolicLink: () => boolean;
-  name: string;
+  name: Buffer;
 }
 
 interface Digest {
@@ -25,9 +34,26 @@ interface DigestContext {
   root: string;
 }
 
+// Fatal decoding, so an invalid byte throws instead of becoming U+FFFD.
+const STRICT_UTF8 = new TextDecoder("utf-8", { fatal: true });
+
+const decodeName = (raw: Buffer): string => {
+  try {
+    return STRICT_UTF8.decode(raw);
+  } catch {
+    throw new Error(
+      `Policy integrity check failed: policy tree contains a filename that is not valid UTF-8: ${raw.toString("hex")}`,
+    );
+  }
+};
+
 // Each part is length-prefixed so no file body can imitate the next entry's header.
+// The prefix counts bytes rather than characters.
+// A string's .length is UTF-16 units, so an accented name declares six and
+// Absorbs seven, leaving the framing to rest on UTF-8 being a prefix code
+// Rather than on the count being right.
 const digestPart = (digest: Digest, label: string, value: string | Buffer): void => {
-  digest.update(`${label}:${value.length}:`);
+  digest.update(`${label}:${Buffer.byteLength(value)}:`);
   digest.update(value);
 };
 
@@ -46,7 +72,7 @@ const digestContent = (context: DigestContext, path: string, entry: DirectoryEnt
 };
 
 const digestEntry = (context: DigestContext, directory: string, entry: DirectoryEntry): void => {
-  const path = join(directory, entry.name);
+  const path = join(directory, decodeName(entry.name));
   digestPart(context.digest, "path", relative(context.root, path));
   if (entry.isDirectory() && !entry.isSymbolicLink()) {
     digestPart(context.digest, "directory", "");
@@ -56,11 +82,20 @@ const digestEntry = (context: DigestContext, directory: string, entry: Directory
   digestContent(context, path, entry);
 };
 
-const byName = (left: DirectoryEntry, right: DirectoryEntry): number => left.name.localeCompare(right.name);
+// Raw-byte order, which is the same on every machine. Ordering the decoded text
+// Instead would sort by UTF-16 code unit, where an astral name sorts before a
+// Three-byte one although its bytes are larger.
+const byName = (left: DirectoryEntry, right: DirectoryEntry): number => Buffer.compare(left.name, right.name);
+
+// One walk order for every reader of the tree: raw-byte sort, strict decode.
+const sortedEntries = (directory: string): { entry: DirectoryEntry; name: string }[] => {
+  const options = { encoding: "buffer", withFileTypes: true };
+  const entries = fs.readdirSync(directory, options).toSorted(byName);
+  return entries.map((entry: DirectoryEntry) => ({ entry, name: decodeName(entry.name) }));
+};
 
 const digestDirectory = (context: DigestContext, directory: string): void => {
-  const entries = readdirSync(directory, { withFileTypes: true }).toSorted(byName);
-  entries.forEach((entry: DirectoryEntry) => digestEntry(context, directory, entry));
+  sortedEntries(directory).forEach(({ entry }: { entry: DirectoryEntry }) => digestEntry(context, directory, entry));
 };
 
 // Returns a stable digest over every relative path, file body and link target.
@@ -70,4 +105,4 @@ const hashPolicyTree = (policyDirectory: string): string => {
   return digest.digest("hex");
 };
 
-module.exports = { hashPolicyTree };
+module.exports = { digestPart, hashPolicyTree, sortedEntries };
