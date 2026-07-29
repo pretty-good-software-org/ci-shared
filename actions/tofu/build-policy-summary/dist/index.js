@@ -2,7 +2,7 @@
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 464:
+/***/ 551:
 /***/ ((module, exports, __nccwpck_require__) => {
 
 
@@ -12,9 +12,9 @@
 // Reads policy violation status and actor from INPUT_* environment variables.
 // Builds a policy status line + actor footer and sets the policy-summary output.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const { resolveOutputWriter } = __nccwpck_require__(1);
-const { buildPolicySummary } = __nccwpck_require__(910);
-const { parseEnv } = __nccwpck_require__(265);
+const { resolveOutputWriter } = __nccwpck_require__(96);
+const { buildPolicySummary } = __nccwpck_require__(41);
+const { parseEnv } = __nccwpck_require__(484);
 const main = async (args = {}) => {
     const env = args.env || process.env;
     const policyArgs = parseEnv(env);
@@ -27,7 +27,7 @@ module.exports = Object.assign(main, { buildPolicySummary, parseEnv });
 
 /***/ }),
 
-/***/ 910:
+/***/ 41:
 /***/ ((module, exports) => {
 
 
@@ -51,7 +51,7 @@ module.exports = { buildPolicySummary, fallback };
 
 /***/ }),
 
-/***/ 265:
+/***/ 484:
 /***/ ((module, exports) => {
 
 
@@ -65,7 +65,7 @@ module.exports = { parseEnv };
 
 /***/ }),
 
-/***/ 1:
+/***/ 96:
 /***/ ((module, exports, __nccwpck_require__) => {
 
 
@@ -154,7 +154,7 @@ module.exports = require("node:fs");
 /******/ 	// startup
 /******/ 	// Load entry module and return exports
 /******/ 	// This entry module is referenced by other modules so it can't be inlined
-/******/ 	var __webpack_exports__ = __nccwpck_require__(464);
+/******/ 	var __webpack_exports__ = __nccwpck_require__(551);
 /******/ 	module.exports = __webpack_exports__;
 /******/ 	
 /******/ })()

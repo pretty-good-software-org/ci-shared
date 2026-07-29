@@ -33,7 +33,9 @@ const digestPart = (digest: Digest, label: string, value: string | Buffer): void
 
 const digestContent = (context: DigestContext, path: string, entry: DirectoryEntry): void => {
   if (entry.isSymbolicLink()) {
-    digestPart(context.digest, "symlink", readlinkSync(path));
+    // A link target is an arbitrary byte string, so it is read as bytes.
+    // Decoding it as text would collapse distinct targets onto one digest.
+    digestPart(context.digest, "symlink", readlinkSync(path, "buffer"));
     return;
   }
   if (entry.isFile()) {

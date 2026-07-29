@@ -2,7 +2,7 @@
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 937:
+/***/ 974:
 /***/ ((module, exports, __nccwpck_require__) => {
 
 
@@ -12,9 +12,9 @@
 // Reads plan text from INPUT_PLAN environment variable.
 // Builds a collapsible details block and sets the plan-details output.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const { resolveOutputWriter } = __nccwpck_require__(1);
-const { buildPlanDetails } = __nccwpck_require__(804);
-const { parseEnv } = __nccwpck_require__(950);
+const { resolveOutputWriter } = __nccwpck_require__(96);
+const { buildPlanDetails } = __nccwpck_require__(547);
+const { parseEnv } = __nccwpck_require__(471);
 const main = async (args = {}) => {
     const env = args.env || process.env;
     const detailsArgs = parseEnv(env);
@@ -27,7 +27,7 @@ module.exports = Object.assign(main, { buildPlanDetails, parseEnv });
 
 /***/ }),
 
-/***/ 804:
+/***/ 547:
 /***/ ((module, exports) => {
 
 
@@ -41,7 +41,7 @@ module.exports = { buildPlanDetails };
 
 /***/ }),
 
-/***/ 950:
+/***/ 471:
 /***/ ((module, exports) => {
 
 
@@ -54,7 +54,7 @@ module.exports = { parseEnv };
 
 /***/ }),
 
-/***/ 1:
+/***/ 96:
 /***/ ((module, exports, __nccwpck_require__) => {
 
 
@@ -143,7 +143,7 @@ module.exports = require("node:fs");
 /******/ 	// startup
 /******/ 	// Load entry module and return exports
 /******/ 	// This entry module is referenced by other modules so it can't be inlined
-/******/ 	var __webpack_exports__ = __nccwpck_require__(937);
+/******/ 	var __webpack_exports__ = __nccwpck_require__(974);
 /******/ 	module.exports = __webpack_exports__;
 /******/ 	
 /******/ })()

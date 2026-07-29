@@ -2,7 +2,7 @@
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 432:
+/***/ 681:
 /***/ ((module, exports, __nccwpck_require__) => {
 
 
@@ -10,7 +10,7 @@
 //
 // Runs tofu apply with -input=false -auto-approve against the plan file.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const { execStream } = __nccwpck_require__(361);
+const { execStream } = __nccwpck_require__(6);
 const stripPrefix = (path, prefix) => {
     const prefixWithSlash = `${prefix}/`;
     if (path.startsWith(prefixWithSlash)) {
@@ -34,7 +34,7 @@ module.exports = Object.assign(main, { run });
 
 /***/ }),
 
-/***/ 361:
+/***/ 6:
 /***/ ((module, exports, __nccwpck_require__) => {
 
 
@@ -133,7 +133,7 @@ module.exports = require("node:child_process");
 /******/ 	// startup
 /******/ 	// Load entry module and return exports
 /******/ 	// This entry module is referenced by other modules so it can't be inlined
-/******/ 	var __webpack_exports__ = __nccwpck_require__(432);
+/******/ 	var __webpack_exports__ = __nccwpck_require__(681);
 /******/ 	module.exports = __webpack_exports__;
 /******/ 	
 /******/ })()
