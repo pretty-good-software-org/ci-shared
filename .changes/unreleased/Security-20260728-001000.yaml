@@ -1,0 +1,7 @@
+kind: Security
+body: >-
+  Refuse to evaluate policy when any CONFTEST_* variable is inherited from the
+  environment. Viper reads those ahead of any configuration file, so
+  CONFTEST_PARSER, CONFTEST_NO_FAIL and CONFTEST_COMBINE could each silence a
+  plan the verified policy denies.
+time: 2026-07-28T00:10:00.000000+02:00

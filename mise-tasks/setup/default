@@ -5,4 +5,7 @@ set -euo pipefail
 mise install --locked
 MISE_ENV=development mise install --locked
 MISE_ENV=development mise exec -- lefthook install
-npm install
+# npm ci installs exactly what the lockfile pins. npm install may resolve a
+# different tree, and the committed action bundles are built from that tree,
+# so a drifted install produces bundles the Build check rejects.
+npm ci

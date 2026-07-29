@@ -51,7 +51,7 @@ it("fetches and evaluates the exact verified commit without credentials in the r
       `git -C ${checkoutRoot} fetch --quiet --depth=1 origin ${POLICY_COMMIT}`,
       `git -C ${checkoutRoot} checkout --quiet --detach FETCH_HEAD`,
       `git -C ${checkoutRoot} rev-parse --verify HEAD`,
-      `conftest test --policy ${join(checkoutRoot, "policy")} --namespace policies.s3 --namespace policies.kms --quiet=false tofu/plan.json`,
+      `conftest test --config-file ${join(checkoutRoot, "conftest-pinned.toml")} --policy ${join(checkoutRoot, "policy")} --update  --namespace policies.s3 --namespace policies.kms --parser json --no-fail=false --combine=false --no-color --quiet=false tofu/plan.json`,
     ],
     "pinned mode should fetch only the requested commit, verify it, then evaluate every required namespace",
   );

@@ -6,13 +6,21 @@ const { tmpdir } = require("node:os");
 const { join } = require("node:path");
 const { validateNamespaceNames, validateRequiredNamespaces } = require("./policy-namespace.ts");
 const { resolvePolicyDataDirectory } = require("./policy-data.ts");
+const { hashPolicyTree } = require("./policy-tree.ts");
+const { writeIsolatedConfig } = require("./conftest-config.ts");
 
 const POLICY_REPOSITORY = "ssh://git@github.com/pretty-good-software-org/opa-policies.git";
 const POLICY_DIRECTORY = "policy";
 const POLICY_REF_PATTERN = /^[0-9a-f]{40}$/;
 
+interface PolicySources {
+  configFile: string;
+  dataDirectory?: string;
+  policyDirectory: string;
+}
+
 interface PinnedPolicyArgs<Result> {
-  evaluatePolicy: (policyDirectory: string, dataDirectory?: string) => Result;
+  evaluatePolicy: (sources: PolicySources) => Result;
   exec: ExecFn;
   policyRef: string;
   requiredNamespaces: string[];
@@ -66,13 +74,26 @@ const verifyFetchedCommit = (checkoutRoot: string, policyRef: string, exec: Exec
   }
 };
 
+// Verifies the verified tree is still byte-identical once conftest has run.
+// A replacement would mean something reached past the pinning flags.
+const verifyPolicyTreeUnchanged = (policyDirectory: string, fetchedDigest: string): void => {
+  if (hashPolicyTree(policyDirectory) === fetchedDigest) {
+    return;
+  }
+  throw new Error("Policy integrity check failed: the verified policy tree changed during evaluation");
+};
+
 const executePinnedPolicy = <Result>(args: ExecutePinnedPolicyArgs<Result>): Result => {
   fetchPinnedPolicy(args.checkoutRoot, args.policyRef, args.exec);
   verifyFetchedCommit(args.checkoutRoot, args.policyRef, args.exec);
   const policyDirectory = join(args.checkoutRoot, POLICY_DIRECTORY);
   validateRequiredNamespaces(policyDirectory, args.requiredNamespaces);
   const dataDirectory = resolvePolicyDataDirectory(args.checkoutRoot, policyDirectory);
-  return args.evaluatePolicy(policyDirectory, dataDirectory);
+  const configFile = writeIsolatedConfig(args.checkoutRoot);
+  const fetchedDigest = hashPolicyTree(policyDirectory);
+  const result = args.evaluatePolicy({ configFile, dataDirectory, policyDirectory });
+  verifyPolicyTreeUnchanged(policyDirectory, fetchedDigest);
+  return result;
 };
 
 const errorMessage = (error: unknown): string => {
