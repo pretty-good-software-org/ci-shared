@@ -73,3 +73,12 @@ it("refuses an undecodable name before the namespace scan reduces it to ENOENT",
   const { action } = runPinnedAction(POLICY_COMMIT, "policies.s3", exec);
   await assert.rejects(action, /not valid UTF-8: 70a0/u, "the digest must be what touches the tree first");
 });
+
+// The case above only distinguishes the order while the namespace arm genuinely
+// Fails. Asserting that here means a later tidy-up that satisfies the requirement
+// Fails this test rather than quietly leaving the one above non-discriminating.
+it("arms the namespace failure the order test depends on", async () => {
+  const { exec } = pinnedExec({ packages: ["policies.other"] });
+  const { action } = runPinnedAction(POLICY_COMMIT, "policies.s3", exec);
+  await assert.rejects(action, /missing required namespaces: policies.s3/u, "the second arm must be unmet");
+});

@@ -13,13 +13,11 @@
 // Atime is excluded on purpose. Reading the tree is exactly what conftest does, so
 // Including it would fail every run on a filesystem that records reads eagerly.
 //
-// Ctime is the field that detects; dev, ino and size are cross-checks, and none of
-// Them is separately covered by a test because none can be. Every operation that
-// Changes an inode or a size also moves ctime, so no filesystem operation isolates
-// Them. The atime exclusion is likewise undemonstrable where atime updates lazily,
-// As it does under relatime: a second read inside the window leaves it untouched.
-// They are kept because the cost is a few bytes and the alternative is resting the
-// Whole check on one field of one stat.
+// Ctime is the field that detects a change. The rest are independent witnesses for
+// The cases where it is not reliable: a clock moved backwards, a filesystem with
+// Coarse ctime, an overlayfs copy-up that changes ino while the file looks the
+// Same. Each one is pinned by its own test, which a stub drives by presenting two
+// Stats that differ in a single field.
 
 const { createHash } = require("node:crypto");
 const fs = require("node:fs");
