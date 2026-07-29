@@ -6,7 +6,10 @@
 // The digest therefore describes the tree itself, not where it was checked out.
 
 const { createHash } = require("node:crypto");
-const { readFileSync, readdirSync, readlinkSync } = require("node:fs");
+// ReaddirSync is reached through the module object, so a test can hand back
+// Entries out of order, the way a filesystem with unordered readdir does.
+const fs = require("node:fs");
+const { readFileSync, readlinkSync } = fs;
 const { join, relative } = require("node:path");
 
 interface DirectoryEntry {
@@ -56,10 +59,20 @@ const digestEntry = (context: DigestContext, directory: string, entry: Directory
   digestContent(context, path, entry);
 };
 
-const byName = (left: DirectoryEntry, right: DirectoryEntry): number => left.name.localeCompare(right.name);
+// Code-unit order rather than localeCompare, whose collation is locale-dependent.
+// The digest must be the same value on every machine that computes it.
+const byName = (left: DirectoryEntry, right: DirectoryEntry): number => {
+  if (left.name === right.name) {
+    return 0;
+  }
+  if (left.name < right.name) {
+    return -1;
+  }
+  return 1;
+};
 
 const digestDirectory = (context: DigestContext, directory: string): void => {
-  const entries = readdirSync(directory, { withFileTypes: true }).toSorted(byName);
+  const entries = fs.readdirSync(directory, { withFileTypes: true }).toSorted(byName);
   entries.forEach((entry: DirectoryEntry) => digestEntry(context, directory, entry));
 };
 

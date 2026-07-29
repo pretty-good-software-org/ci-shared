@@ -2,6 +2,29 @@
 #MISE description="Compile TypeScript to JavaScript"
 set -euo pipefail
 
+# The committed bundles are built from the installed dependency tree, and ncc
+# derives its module ids from where those modules sit on disk. bun and pnpm lay
+# the tree out differently from npm, so building under one of them emits bundles
+# that differ from the runner's on actions the change never touched, and the
+# Build check then rejects them. Refuse to build from a tree npm did not install.
+for foreign_lock in bun.lock bun.lockb pnpm-lock.yaml yarn.lock; do
+  if [ -e "${foreign_lock}" ]; then
+    echo "refusing to build: ${foreign_lock} is present; this repo installs with npm only" >&2
+    exit 1
+  fi
+done
+
+if [ -e node_modules/.pnpm ] || [ -e node_modules/.yarn-state.yml ] || [ -e node_modules/.bun ]; then
+  echo "refusing to build: node_modules was not installed by npm; run 'npm ci'" >&2
+  exit 1
+fi
+
+# npm installs real directories; bun and pnpm link packages into a store.
+if [ -L node_modules/typescript ]; then
+  echo "refusing to build: node_modules/typescript is a link; run 'npm ci'" >&2
+  exit 1
+fi
+
 while IFS= read -r action_file; do
   ./node_modules/.bin/ncc build "${action_file}" -o "$(dirname "${action_file}")/dist"
 done < <(find actions -name 'action.ts' -not -path '*/tests/*' -not -path '*/dist/*')

@@ -1,0 +1,7 @@
+kind: Fixed
+body: >-
+  Make npm the only manager that may install this repository. A bun or pnpm
+  install lays node_modules out differently, which changes the module ids ncc
+  emits, so the committed action bundles stopped matching the ones CI rebuilds.
+  The build now refuses a tree npm did not install.
+time: 2026-07-29T01:00:00.000000+02:00

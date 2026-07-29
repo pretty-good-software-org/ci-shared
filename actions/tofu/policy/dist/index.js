@@ -607,7 +607,10 @@ module.exports = { evaluatePolicy, execErrorOutput };
 // The digest therefore describes the tree itself, not where it was checked out.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const { createHash } = __nccwpck_require__(598);
-const { readFileSync, readdirSync, readlinkSync } = __nccwpck_require__(24);
+// ReaddirSync is reached through the module object, so a test can hand back
+// Entries out of order, the way a filesystem with unordered readdir does.
+const fs = __nccwpck_require__(24);
+const { readFileSync, readlinkSync } = fs;
 const { join, relative } = __nccwpck_require__(760);
 // Each part is length-prefixed so no file body can imitate the next entry's header.
 const digestPart = (digest, label, value) => {
@@ -637,9 +640,19 @@ const digestEntry = (context, directory, entry) => {
     }
     digestContent(context, path, entry);
 };
-const byName = (left, right) => left.name.localeCompare(right.name);
+// Code-unit order rather than localeCompare, whose collation is locale-dependent.
+// The digest must be the same value on every machine that computes it.
+const byName = (left, right) => {
+    if (left.name === right.name) {
+        return 0;
+    }
+    if (left.name < right.name) {
+        return -1;
+    }
+    return 1;
+};
 const digestDirectory = (context, directory) => {
-    const entries = readdirSync(directory, { withFileTypes: true }).toSorted(byName);
+    const entries = fs.readdirSync(directory, { withFileTypes: true }).toSorted(byName);
     entries.forEach((entry) => digestEntry(context, directory, entry));
 };
 // Returns a stable digest over every relative path, file body and link target.

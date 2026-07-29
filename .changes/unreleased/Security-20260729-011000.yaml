@@ -1,0 +1,7 @@
+kind: Security
+body: >-
+  Cover the policy tree digest's framing and ordering. The length prefix that
+  stops a policy file from imitating the next entry's header, and the entry sort
+  that makes the digest independent of filesystem order, were both documented but
+  unverified. The comparator no longer depends on locale.
+time: 2026-07-29T01:10:00.000000+02:00
