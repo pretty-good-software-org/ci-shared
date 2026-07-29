@@ -87,10 +87,15 @@ const digestEntry = (context: DigestContext, directory: string, entry: Directory
 // Three-byte one although its bytes are larger.
 const byName = (left: DirectoryEntry, right: DirectoryEntry): number => Buffer.compare(left.name, right.name);
 
-const digestDirectory = (context: DigestContext, directory: string): void => {
+// One walk order for every reader of the tree: raw-byte sort, strict decode.
+const sortedEntries = (directory: string): { entry: DirectoryEntry; name: string }[] => {
   const options = { encoding: "buffer", withFileTypes: true };
   const entries = fs.readdirSync(directory, options).toSorted(byName);
-  entries.forEach((entry: DirectoryEntry) => digestEntry(context, directory, entry));
+  return entries.map((entry: DirectoryEntry) => ({ entry, name: decodeName(entry.name) }));
+};
+
+const digestDirectory = (context: DigestContext, directory: string): void => {
+  sortedEntries(directory).forEach(({ entry }: { entry: DirectoryEntry }) => digestEntry(context, directory, entry));
 };
 
 // Returns a stable digest over every relative path, file body and link target.
@@ -100,4 +105,4 @@ const hashPolicyTree = (policyDirectory: string): string => {
   return digest.digest("hex");
 };
 
-module.exports = { hashPolicyTree };
+module.exports = { digestPart, hashPolicyTree, sortedEntries };

@@ -1,0 +1,7 @@
+kind: Security
+body: >-
+  Detect a policy tree that is changed during evaluation and put back. The content
+  digest compares bytes before and after, so a tree rewritten while conftest read
+  it and restored afterwards compared equal. A second fingerprint over metadata
+  that a writer cannot reset closes that window.
+time: 2026-07-29T06:00:00.000000+02:00
