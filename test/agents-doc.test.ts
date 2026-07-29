@@ -33,8 +33,12 @@ describe("generated repository tree", () => {
     assert.equal(documentedTree()[0], REPOSITORY_NAME, "the generator writes an absolute path here");
   });
 
+  // Matching known home directories would only catch the machines we happen to use:
+  // A Linux runner's /home/runner, /root and /tmp would all pass. Any absolute path
+  // Is wrong here whatever its prefix, and only the root line could ever be one.
   it("contains no absolute path from whoever regenerated it", () => {
-    const leaked = documentedTree().filter((line: string) => line.includes("/Users/") || line.includes("/private/"));
+    const absolute = /^(\/|[A-Za-z]:\\)/u;
+    const leaked = documentedTree().filter((line: string) => absolute.test(line));
     assert.deepEqual(leaked, [], "a local path reached the committed documentation");
   });
 

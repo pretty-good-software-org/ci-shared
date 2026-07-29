@@ -92,6 +92,10 @@ ci-shared
 └── tsconfig.json
 ```
 
+The tree is generated. It omits `mise-tasks/build/`, which is tracked source rather than
+build output, because the generator excludes any directory named `build`. The root is
+normalised to the repository name because the generator writes the absolute path it ran in.
+
 ## Development Guidelines
 
 - Zero npm runtime dependencies — use Node built-in modules only
