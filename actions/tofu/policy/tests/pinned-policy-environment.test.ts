@@ -73,6 +73,21 @@ it("refuses to evaluate when a conftest setting is inherited in another case", a
   });
 });
 
+// The boundary refuses these before conftest runs.
+// These cases hand the variable straight to conftest instead.
+// The flag layer must hold on its own, so each fails if its flag is dropped.
+SILENCING_SETTINGS.forEach((setting: SilencingSetting) => {
+  it(`holds against ${setting.name} when it reaches conftest past the boundary`, async () => {
+    await withLiveFixture(CLEAN_CONFIG, async (fixture: LiveFixture) => {
+      const childOnlyEnv = { ...process.env, [setting.name]: setting.value };
+      const { outputs, rejection } = await runLivePolicy(fixture, { childOnlyEnv });
+      assert.strictEqual(rejection, "", "the pinned run must not fail on integrity");
+      assert.strictEqual(outputs["has_violations"], "true", "the verified policy must still reject the plan");
+      assert.match(outputs["policy_violations"], new RegExp(PINNED_DENIAL), "the denial must be reported");
+    });
+  });
+});
+
 it("refuses to evaluate when an unknown conftest setting is inherited", async () => {
   await withLiveFixture(CLEAN_CONFIG, async (fixture: LiveFixture) => {
     const env = inheritedEnvironment("CONFTEST_SOME_FUTURE_KNOB", "1");
